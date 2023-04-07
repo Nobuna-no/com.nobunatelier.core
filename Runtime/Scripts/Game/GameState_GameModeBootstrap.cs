@@ -1,0 +1,87 @@
+using NaughtyAttributes;
+using UnityEngine;
+using UnityEngine.Events;
+
+namespace NobunAtelier
+{
+    public class GameState_GameModeBootstrap : StateComponent<GameStateDefinition>
+    {
+        [System.Flags]
+        private enum BootstrapTypes
+        {
+            ListenToGameModeStop = 1 << 0,
+            GameModeInit = 1 << 1,
+            GameModeStart = 1 << 2
+        }
+
+        [Header("GameMode")]
+        [SerializeField]
+        private BootstrapTypes m_gameModeHandling = BootstrapTypes.GameModeInit | BootstrapTypes.ListenToGameModeStop | BootstrapTypes.GameModeStart;
+
+        [SerializeField, ShowIf("IsTransitioningOnGameModeStop")]
+        private GameStateDefinition m_nextStateOnGameModeStop;
+
+        [Header("Events")]
+        [ShowIf("IsInitializingGameMode")]
+        public UnityEvent OnGameModeInitEvent;
+
+        [ShowIf("IsStartingGameMode")]
+        public UnityEvent OnGameModeStartEvent;
+
+        [ShowIf("IsTransitioningOnGameModeStop")]
+        public UnityEvent OnGameModeStopEvent;
+
+        public override void Enter()
+        {
+            base.Enter();
+            var gamemode = FindFirstObjectByType<GameModeManager>();
+            if (!gamemode)
+            {
+                Debug.LogWarning($"{this}: No game mode found");
+                return;
+            }
+
+            if (IsInitializingGameMode())
+            {
+                gamemode.GameModeInit();
+                OnGameModeInitEvent?.Invoke();
+            }
+            if (IsTransitioningOnGameModeStop())
+            {
+                gamemode.OnGameModeEnd.AddListener(OnGameModeEnd);
+            }
+            if (IsStartingGameMode())
+            {
+                gamemode.GameModeStart();
+                OnGameModeStartEvent?.Invoke();
+            }
+        }
+
+        private bool IsTransitioningOnGameModeStop()
+        {
+            return (m_gameModeHandling & BootstrapTypes.ListenToGameModeStop) != 0;
+        }
+
+        private bool IsInitializingGameMode()
+        {
+            return (m_gameModeHandling & BootstrapTypes.GameModeInit) != 0;
+        }
+
+        private bool IsStartingGameMode()
+        {
+            return (m_gameModeHandling & BootstrapTypes.GameModeStart) != 0;
+        }
+
+        private void OnGameModeEnd()
+        {
+            OnGameModeStopEvent?.Invoke();
+            if (!m_nextStateOnGameModeStop)
+            {
+                Debug.LogWarning($"{this}: Game mode ended but no state to follow");
+                return;
+            }
+
+            SetState(m_nextStateOnGameModeStop);
+        }
+    }
+}

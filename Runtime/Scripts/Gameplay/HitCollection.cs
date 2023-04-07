@@ -1,0 +1,11 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace NobunAtelier.Gameplay
+{
+    [CreateAssetMenu(menuName = "NobunAtelier/Gameplay/Data Collection/Hit")]
+    public class HitCollection : DataCollection<HitDefinition>
+    {
+    }
+}
