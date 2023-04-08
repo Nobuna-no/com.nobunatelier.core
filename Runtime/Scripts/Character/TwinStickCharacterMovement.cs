@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
+    [RequireComponent(typeof(UnityEngine.CharacterController))]
     public class TwinStickCharacterMovement : CharacterMovement
     {
         [Header("Twin Stick Movement")]

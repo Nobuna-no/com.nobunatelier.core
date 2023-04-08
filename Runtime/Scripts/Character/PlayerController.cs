@@ -15,7 +15,7 @@ namespace NobunAtelier
         [SerializeField]
         protected PlayerInput m_playerInput;
 
-        [SerializeField, Tooltip("Action map used by this controller to get bindigsn from.")]
+        [SerializeField, Tooltip("Action map used by this controller to get bindings from.")]
         private string m_actionMapName = "Player";
 
         private InputActionMap m_actionMap;
@@ -24,7 +24,7 @@ namespace NobunAtelier
         private bool m_mountInputOnAwake = false;
 
         public bool IsInputReady { get; private set; } = false;
-        
+
         public virtual void MountPlayerInput(PlayerInput player, bool enableInput = true)
         {
             m_playerInput = player;
