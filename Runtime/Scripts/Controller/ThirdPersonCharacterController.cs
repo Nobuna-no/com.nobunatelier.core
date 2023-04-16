@@ -31,7 +31,7 @@ namespace NobunAtelier
 
         [Header("Gamepad Settings")]
         [SerializeField]
-        private AnimationCurve m_gamepadInputResponseCurve = AnimationCurve.Linear(0,0,1,1);
+        private AnimationCurve m_gamepadInputResponseCurve = AnimationCurve.Linear(0, 0, 1, 1);
 
         [SerializeField]
         private float m_gamepadCameraHorizontalSpeed = 10f;
@@ -39,8 +39,6 @@ namespace NobunAtelier
         [SerializeField]
         private float m_gamepadCameraVerticalSpeed = 3f;
 
-        [SerializeField]
-        private float m_cameraStickDeadzone = 0.3f;
 #if UNITY_EDITOR
 
         [Header("Debug")]
@@ -52,7 +50,6 @@ namespace NobunAtelier
 
 #endif
 
-        protected InputActionMap m_playerActionMap;
         private InputAction m_moveAction;
         private InputAction m_lookAction;
 
@@ -63,14 +60,15 @@ namespace NobunAtelier
         {
             base.Awake();
 
-            Debug.Assert(m_characterMovement != null);
-            Debug.Assert(PlayerInput != null);
-
-            m_playerActionMap = PlayerInput.actions.FindActionMap("Player");
-            m_moveAction = m_playerActionMap.FindAction("Move");
-            m_lookAction = m_playerActionMap.FindAction("Look");
-
             Debug.Assert(m_cameraTarget != null, $"{this} has no camera assigned.");
+        }
+
+        public override void EnableInput()
+        {
+            base.EnableInput();
+
+            m_moveAction = ActiveActionMap.FindAction("Move");
+            m_lookAction = ActiveActionMap.FindAction("Look");
         }
 
         protected override void ControllerUpdate()
@@ -94,28 +92,36 @@ namespace NobunAtelier
             }
         }
 
-        protected override void ControllerFixedUpdate()
-        {
-            // GamepadCameraRotationDampingUpdate();
-        }
-
         protected virtual void OnEnable()
         {
-            m_moveAction.performed += OnMoveActionPerformed;
-            m_moveAction.canceled += OnMoveActionCanceled;
+            if (m_moveAction != null)
+            {
+                m_moveAction.performed += OnMoveActionPerformed;
+                m_moveAction.canceled += OnMoveActionCanceled;
+            }
 
-            m_lookAction.performed += OnLookActionPerformed;
-            m_lookAction.canceled += OnLookActionCancelled;
+            if (m_lookAction != null)
+            {
+                m_lookAction.performed += OnLookActionPerformed;
+                m_lookAction.canceled += OnLookActionCancelled;
+            }
             CursorLockAndHide(true);
         }
 
         protected virtual void OnDisable()
         {
-            m_moveAction.performed -= OnMoveActionPerformed;
-            m_moveAction.canceled -= OnMoveActionCanceled;
+            if (m_moveAction != null)
+            {
+                m_moveAction.performed -= OnMoveActionPerformed;
+                m_moveAction.canceled -= OnMoveActionCanceled;
+            }
 
-            m_lookAction.performed -= OnLookActionPerformed;
-            m_lookAction.canceled -= OnLookActionCancelled;
+            if (m_lookAction != null)
+            {
+                m_lookAction.performed -= OnLookActionPerformed;
+                m_lookAction.canceled -= OnLookActionCancelled;
+            }
+
             CursorLockAndHide(false);
         }
 
@@ -189,7 +195,6 @@ namespace NobunAtelier
                 m_lastLookInputValue.x = m_gamepadInputResponseCurve.Evaluate(Mathf.Abs(val.y)) * Mathf.Sign(val.y) * m_gamepadCameraVerticalSpeed;
                 m_lastLookInputValue.y = m_gamepadInputResponseCurve.Evaluate(Mathf.Abs(val.x)) * Mathf.Sign(val.x) * m_gamepadCameraHorizontalSpeed;
             }
-
         }
 
         private void OnLookActionCancelled(InputAction.CallbackContext obj)

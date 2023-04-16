@@ -13,7 +13,7 @@ namespace NobunAtelier
         public IReadOnlyList<GameModeParticipant> PlayersController => m_characterControllers;
         public PlayerController PlayerControllerPrefab => m_playerControllerPrefab;
         public BaseAIControler AIControllerPrefab => m_aiControllerPrefab;
-        public CharacterMovement CharacterMovementPrefab => m_characterMovementPrefab;
+        public Character CharacterMovementPrefab => m_characterMovementPrefab;
 
         [Header("GameMode")]
         [SerializeField]
@@ -31,7 +31,7 @@ namespace NobunAtelier
         [SerializeField, ReadOnly]
         protected bool m_isPaused = false;
 
-        [Header("Character & Controller")]
+        [Header("ModuleOwner & PlayerController")]
         [InfoBox("This settings allow to instantiate controller and character on a player spawned by a PlayerControllerManager")]
         [SerializeField]
         private bool m_instantiateController = true;
@@ -49,7 +49,7 @@ namespace NobunAtelier
         private bool m_instantiateCharacterMovement = true;
 
         [SerializeField, ShowIf("m_instantiateCharacterMovement")]
-        private CharacterMovement m_characterMovementPrefab;
+        private Character m_characterMovementPrefab;
 
         private List<GameModeParticipant> m_characterControllers = new List<GameModeParticipant>();
 
@@ -181,7 +181,7 @@ namespace NobunAtelier
 
             var basePlayerController = participant.Controller as PlayerController;
             var humanPlayer = participant as Player;
-            Debug.Assert(humanPlayer, "Controller is BasePlayerController but it is not a Human Player!");
+            Debug.Assert(humanPlayer, "PlayerController is BasePlayerController but it is not a Human Player!");
             
             basePlayerController.MountPlayerInput(humanPlayer.PlayerInput);
                 

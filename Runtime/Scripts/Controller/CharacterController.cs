@@ -4,12 +4,12 @@ namespace NobunAtelier
 {
     public abstract class CharacterController : MonoBehaviour
     {
-        public CharacterMovement CharacterMovement => m_characterMovement;
+        public Character CharacterMovement => m_characterMovement;
         public abstract bool IsAI { get; }
 
-        [Header("Character Controller")]
+        [Header("ModuleOwner PlayerController")]
         [SerializeField]
-        protected CharacterMovement m_characterMovement;
+        protected Character m_characterMovement;
 
         public virtual void ResetCharacter(Vector3 position, Quaternion rotation)
         {
@@ -17,14 +17,16 @@ namespace NobunAtelier
         }
 
         protected virtual void Awake()
-        { }
+        {
+            Debug.Assert(m_characterMovement != null, $"[{Time.frameCount}] {this}: ModuleOwner is required");
+        }
 
         protected virtual void Start()
         {
             m_characterMovement?.Mount(this);
         }
 
-        public virtual void SetCharacterMovementReference(CharacterMovement movement)
+        public virtual void SetCharacterMovementReference(Character movement)
         {
             m_characterMovement = movement;
             m_characterMovement?.Mount(this);

@@ -29,7 +29,7 @@ namespace NobunAtelier
             {
                 Vector3 dir = new Vector3(m_lastMoveInputValue.x, 0, m_lastMoveInputValue.y);
                 m_characterMovement.Move(dir, Time.deltaTime);
-                m_characterMovement.StickAim(dir);
+                m_characterMovement.Rotate(dir);
             }
         }
 

@@ -7,10 +7,7 @@ namespace NobunAtelier
     public abstract class PlayerController : CharacterController
     {
         public override bool IsAI => false;
-
         public PlayerInput PlayerInput => m_playerInput;
-        protected InputActionMap ActionMap => m_actionMap;
-        protected string ActionMapName => m_actionMapName;
 
         [SerializeField]
         protected PlayerInput m_playerInput;
@@ -18,12 +15,15 @@ namespace NobunAtelier
         [SerializeField, Tooltip("Action map used by this controller to get bindings from.")]
         private string m_actionMapName = "Player";
 
-        private InputActionMap m_actionMap;
-
         [SerializeField, ShowIf("IsPlayerInputValid")]
         private bool m_mountInputOnAwake = false;
 
+        protected InputActionMap ActionMap => m_actionMap;
+        protected string ActionMapName => m_actionMapName;
+        protected InputActionMap ActiveActionMap => m_actionMap;
         public bool IsInputReady { get; private set; } = false;
+
+        private InputActionMap m_actionMap;
 
         public virtual void MountPlayerInput(PlayerInput player, bool enableInput = true)
         {
@@ -41,6 +41,11 @@ namespace NobunAtelier
             m_playerInput = null;
         }
 
+        /// <summary>
+        /// Activate PlayerInput and switch action map to <cref="m_actionMapName">m_actionMapName</cref>
+        /// Access the active action map using <cref="ActiveActionMap">ActiveActionMap</cref>.
+        /// Don't forget to call the base.EnableInput() in order to initialize the player input!
+        /// </summary>
         public virtual void EnableInput()
         {
             Debug.Assert(m_playerInput != null, $"[{Time.frameCount}] {this}: PlayerInput is required");

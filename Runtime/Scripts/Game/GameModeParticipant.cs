@@ -7,9 +7,9 @@ namespace NobunAtelier
     public class GameModeParticipant : MonoBehaviour
     {
         public CharacterController Controller { get; private set; }
-        public CharacterMovement CharacterMovement { get; private set; }
+        public Character CharacterMovement { get; private set; }
 
-        public virtual void InstantiateCharacter(CharacterMovement characterPrefab)
+        public virtual void InstantiateCharacter(Character characterPrefab)
         {
             this.CharacterMovement = null;
             if (!characterPrefab)

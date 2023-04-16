@@ -4,7 +4,7 @@ using UnityEngine;
 namespace NobunAtelier
 {
     [RequireComponent(typeof(UnityEngine.CharacterController))]
-    public class SingleStickCharacterMovement : CharacterMovement
+    public class SingleStickCharacter : Character
     {
         [Header("Single Stick Movement")]
         [SerializeField]
@@ -54,31 +54,14 @@ namespace NobunAtelier
             m_movement.Move(movement);
         }
 
-        public override void MouseAim(Vector3 normalizedDirection)
+        public override void Rotate(Vector3 normalizedDirection)
         { }
 
-        public override void StickAim(Vector3 normalizedDirection)
-        { }
-
-        public override void SetForward(Vector3 dir, float stepSpeed)
+        private void SetForward(Vector3 dir, float stepSpeed)
         {
             transform.transform.forward = Vector3.Slerp(transform.transform.forward, dir, stepSpeed);
         }
 
-        public override void ResetCharacter(Vector3 position, Quaternion rotation)
-        {
-            // m_movement.enabled = false;
-            base.ResetCharacter(position, rotation);
-            Physics.SyncTransforms();
-            // m_movement.enabled = true;
-            //transform.SetPositionAndRotation(position, rotation);
-        }
-
-        public override void ResetCharacter(Transform transform)
-        {
-            base.ResetCharacter(transform);
-            Physics.SyncTransforms();
-        }
         private void OnValidate()
         {
             m_movement = GetComponent<UnityEngine.CharacterController>();

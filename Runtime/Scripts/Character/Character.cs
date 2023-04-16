@@ -1,11 +1,11 @@
 using UnityEngine;
 
 // Can be improved by splitting the logic:
-// - Character -> handle mounting, animation and any character behaviour such as CharacterMovement...
+// - ModuleOwner -> handle mounting, animation and any character behaviour such as ModuleOwner...
 // - CharacterMovement -> only handle movement logic
 namespace NobunAtelier
 {
-    public abstract class CharacterMovement : MonoBehaviour, ITargetable
+    public abstract class Character : MonoBehaviour, ITargetable
     {
         public virtual CharacterController Controller { get; private set; }
         public Animator Animator { get; private set; }
@@ -26,7 +26,8 @@ namespace NobunAtelier
             Controller = controller;
         }
 
-        public virtual void Move(Vector3 normalizedDirection, float deltaTime)
+        // moveInput doesn't need to be normalized
+        public virtual void Move(Vector3 moveInput, float deltaTime)
         {
         }
 
@@ -34,17 +35,13 @@ namespace NobunAtelier
         {
         }
 
-        public virtual void MouseAim(Vector3 normalizedDirection)
+        public virtual void Rotate(Vector3 normalizedDirection)
         {
         }
 
-        public virtual void StickAim(Vector3 normalizedDirection)
-        {
-        }
-
-        public virtual void SetForward(Vector3 dir, float stepSpeed)
-        {
-        }
+        //public virtual void SetForward(Vector3 dir, float stepSpeed)
+        //{
+        //}
 
         public virtual void AttachAnimator(Animator animator, bool destroyCurrent = true)
         {
@@ -64,11 +61,13 @@ namespace NobunAtelier
         public virtual void ResetCharacter(Vector3 position, Quaternion rotation)
         {
             transform.SetPositionAndRotation(position, rotation);
+            Physics.SyncTransforms();
         }
 
         public virtual void ResetCharacter(Transform transform)
         {
             this.transform.SetPositionAndRotation(transform.position, transform.rotation);
+            Physics.SyncTransforms();
         }
 
         protected virtual void Awake()

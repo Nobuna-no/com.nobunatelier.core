@@ -1,0 +1,28 @@
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+namespace NobunAtelier
+{
+    public class #SCRIPTNAME#: PlayerControllerExtension
+    {
+        public override void PlayerControllerExtensionEnableInput(PlayerInput playerInput, InputActionMap activeActionMap)
+        {
+		#NOTRIM#
+        }
+
+        public override void PlayerControllerExtensionDisableInput(PlayerInput playerInput, InputActionMap activeActionMap)
+        {
+		#NOTRIM#
+        }
+
+        public virtual void PlayerControllerExtensionInit(PlayerController controller)
+        {
+            base.PlayerControllerExtensionInit();
+        }
+
+        public virtual void PlayerControllerExtensionUpdate(float deltaTime)
+        {
+		#NOTRIM#
+        }
+    }
+}
