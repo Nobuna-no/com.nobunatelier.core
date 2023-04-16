@@ -18,7 +18,7 @@ namespace NobunAtelier
     //    }
     //}
 
-    public abstract class AtelierCharacterRotation : AtelierCharacterModule
+    public abstract class CharacterRotationModule : CharacterModuleBase
     {
         public virtual void RotateInput(Vector3 normalizedDirection) { }
 
@@ -35,7 +35,7 @@ namespace NobunAtelier
         //Flying
     }
 
-    public abstract class AtelierCharacterMovement : AtelierCharacterModule
+    public abstract class CharacterVelocityModule : CharacterModuleBase
     {
         public Vector2 LastMoveInput { get; protected set; }
 
@@ -44,14 +44,13 @@ namespace NobunAtelier
             LastMoveInput = input;
         }
 
-        public virtual void StateUpdate(bool grounded)
-        { }
+
 
         public abstract Vector3 VelocityUpdate(Vector3 currentVelocity, float deltaTime);
     }
 
     [Serializable]
-    public class AtelierCharacter2DMovement : AtelierCharacterMovement
+    public class AtelierCharacter2DMovement : CharacterVelocityModule
     {
         public enum MovementAxes
         {
@@ -151,7 +150,7 @@ namespace NobunAtelier
     }
 
     [Serializable]
-    public class AtelierCharacterGravity : AtelierCharacterMovement
+    public class AtelierCharacterGravity : CharacterVelocityModule
     {
         [SerializeField]
         private float m_gravityMultiplier = 1;
@@ -183,7 +182,7 @@ namespace NobunAtelier
     }
 
     [Serializable]
-    public class AtelierCharacterJump : AtelierCharacterMovement
+    public class AtelierCharacterJump : CharacterVelocityModule
     {
         [SerializeField]
         private float m_jumpHeight = 20;
@@ -241,7 +240,7 @@ namespace NobunAtelier
 
     // Process RotateInput and StickAim inputDirection to rotate the character
     [Serializable]
-    public class AtelierCharacterInputDrivenRotation : AtelierCharacterRotation
+    public class AtelierCharacterInputDrivenRotation : CharacterRotationModule
     {
         [Serializable]
         public enum RotationAxis
@@ -283,7 +282,7 @@ namespace NobunAtelier
     }
 
     [Serializable]
-    public class AtelierCharacterVelocityDrivenRotation : AtelierCharacterRotation
+    public class AtelierCharacterVelocityDrivenRotation : CharacterRotationModule
     {
         [SerializeField]
         protected float m_rotationSpeed;
@@ -330,7 +329,7 @@ namespace NobunAtelier
         private CharacterMovementModule[] m_modules;
 
         // Execute all of them in priority order
-        private List<AtelierCharacterMovement> m_modules_concept;
+        private List<CharacterVelocityModule> m_modules_concept;
 
         [Header("Movement")]
         [SerializeField]
@@ -357,11 +356,11 @@ namespace NobunAtelier
         private AtelierCharacterRotateTowardTarget m_rotateTowardTargetModule;
 
         // Evaluate and only execute the best module
-        private List<AtelierCharacterRotation> m_rotationModule_Concepts;
+        private List<CharacterRotationModule> m_rotationModule_Concepts;
 
         private Vector3 m_lastMoveDir;
 
-        private AtelierCharacterRotation GetBestRotationModule()
+        private CharacterRotationModule GetBestRotationModule()
         {
             if (m_rotationModule_Concepts == null)
             {
@@ -369,7 +368,7 @@ namespace NobunAtelier
             }
 
             int bestPriority = 0;
-            AtelierCharacterRotation bestModule = null;
+            CharacterRotationModule bestModule = null;
             for (int i = 0, c = m_rotationModule_Concepts.Count; i < c; i++)
             {
                 if (m_rotationModule_Concepts[i].CanBeExecuted() && m_rotationModule_Concepts[i].Priority > bestPriority)
@@ -395,7 +394,7 @@ namespace NobunAtelier
             return null;
         }
 
-        public T GetModule_Concept<T>() where T : AtelierCharacterModule
+        public T GetModule_Concept<T>() where T : CharacterModuleBase
         {
             foreach (var module in m_modules_concept)
             {
@@ -456,7 +455,7 @@ namespace NobunAtelier
             base.Awake();
             m_movement = GetComponent<UnityEngine.CharacterController>();
 
-            m_modules_concept = new List<AtelierCharacterMovement>
+            m_modules_concept = new List<CharacterVelocityModule>
             {
                 //m_inputDrivenRotationModule,
                 //m_velocityDrivenRotationModule,
@@ -465,7 +464,7 @@ namespace NobunAtelier
                 m_pawnMovementModule2D
             };
 
-            m_rotationModule_Concepts = new List<AtelierCharacterRotation>
+            m_rotationModule_Concepts = new List<CharacterRotationModule>
             {
                 m_inputDrivenRotationModule,
                 m_velocityDrivenRotationModule,

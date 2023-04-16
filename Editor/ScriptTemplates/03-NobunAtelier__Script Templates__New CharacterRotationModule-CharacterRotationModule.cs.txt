@@ -1,0 +1,32 @@
+using System;
+using UnityEngine;
+
+namespace NobunAtelier
+{
+    public class #SCRIPTNAME# : CharacterRotationModule
+    {
+        // [Mandatory]
+        public override void RotationUpdate(float deltaTime)
+        {
+        }
+
+        // [Optional] Override if your module should not be evaluated in certain scenarios.
+        public override bool CanBeExecuted()
+        {
+            return true;
+        }
+
+        // [Optional] Override if you need to convert directionInput for your need or use LastMoveInput instead.
+        public override void RotateInput(Vector3 direction)
+        {
+		#NOTRIM#
+        }
+
+
+        // [Optional] Called before VelocityUpdate.
+        public override void StateUpdate(bool grounded)
+        {
+		#NOTRIM#
+        }
+    }
+}
