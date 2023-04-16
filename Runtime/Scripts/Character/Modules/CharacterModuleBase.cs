@@ -12,6 +12,12 @@ namespace NobunAtelier
         [SerializeField]
         private int m_priority = 0;
 
+#if UNITY_EDITOR
+        public bool EditorDisabled => m_editorDisabled;
+        [SerializeField]
+        private bool m_editorDisabled = false;
+#endif
+
         public virtual void ModuleInit(AtelierCharacter character)
         {
             ModuleOwner = character;

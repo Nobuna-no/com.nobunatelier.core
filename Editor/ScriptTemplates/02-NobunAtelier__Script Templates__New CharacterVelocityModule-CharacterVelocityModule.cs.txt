@@ -8,7 +8,7 @@ namespace NobunAtelier
         // [Mandatory] Called before the CharacterPositionModule.
         public override Vector3 VelocityUpdate(Vector3 currentVelocity, float deltaTime)
         {
-		#NOTRIM#
+		    return Vector3.zero;
         }
 
         // [Optional] Override if your module should not be evaluated in certain scenarios.
@@ -20,7 +20,7 @@ namespace NobunAtelier
         // [Optional] Override if you need to convert directionInput for your need or use LastMoveInput instead.
         public override void MoveInput(Vector2 directionInput)
         {
-            base.MoveInput();
+            base.MoveInput(directionInput);
         }
 
         // [Optional] Called before VelocityUpdate.

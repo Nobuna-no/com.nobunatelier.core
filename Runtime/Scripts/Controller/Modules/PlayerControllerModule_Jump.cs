@@ -31,7 +31,7 @@ namespace NobunAtelier
                 return;
             }
 
-            var module = character.GetModule_Concept<AtelierCharacterJump>();
+            var module = character.GetModule_Concept<CharacterBasicJumpVelocity>();
             Debug.Assert(module != null);
             module.DoJump();
         }
