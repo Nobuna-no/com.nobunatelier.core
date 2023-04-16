@@ -24,7 +24,7 @@ namespace NobunAtelier
 
         private void M_jumpAction_performed(InputAction.CallbackContext obj)
         {
-            var character = PlayerController.CharacterMovement as AtelierCharacter;
+            var character = PlayerController.ControlledCharacter as AtelierCharacter;
 
             if (character == null)
             {

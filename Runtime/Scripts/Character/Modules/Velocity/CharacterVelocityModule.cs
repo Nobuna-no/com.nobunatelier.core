@@ -4,11 +4,11 @@ namespace NobunAtelier
 {
     public abstract class CharacterVelocityModule : CharacterModuleBase
     {
-        public Vector2 LastMoveInput { get; protected set; }
+        public Vector3 LastMoveDirection { get; protected set; }
 
-        public virtual void MoveInput(Vector2 input)
+        public virtual void MoveInput(Vector3 direction)
         {
-            LastMoveInput = input;
+            LastMoveDirection = direction;
         }
 
         public abstract Vector3 VelocityUpdate(Vector3 currentVelocity, float deltaTime);

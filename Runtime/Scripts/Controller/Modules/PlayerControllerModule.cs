@@ -8,7 +8,7 @@ namespace NobunAtelier
         public PlayerController PlayerController { get; private set; }
 
         public PlayerInput PlayerInput { get; private set; }
-        public Character CharacterMovement { get; private set; }
+        public Character ControlledCharacter { get; private set; }
 
         public abstract void PlayerControllerExtensionEnableInput(PlayerInput playerInput, InputActionMap activeActionMap);
 
@@ -18,12 +18,17 @@ namespace NobunAtelier
         {
             PlayerController = controller;
             PlayerInput = controller.PlayerInput;
-            CharacterMovement = controller.CharacterMovement;
+            ControlledCharacter = controller.ControlledCharacter;
         }
 
         public virtual void PlayerControllerExtensionUpdate(float deltaTime)
         {
 
+        }
+
+        public virtual bool CanBeEvaluated()
+        {
+            return isActiveAndEnabled;
         }
     }
 }

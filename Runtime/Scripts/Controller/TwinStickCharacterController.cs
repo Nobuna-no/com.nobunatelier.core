@@ -21,7 +21,7 @@ namespace NobunAtelier
         {
             base.Awake();
 
-            Debug.Assert(m_characterMovement != null);
+            Debug.Assert(m_controlledCharacter != null);
             Debug.Assert(PlayerInput != null);
 
             m_playerActionMap = PlayerInput.actions.FindActionMap("Player");
@@ -39,7 +39,7 @@ namespace NobunAtelier
             if (m_lastMoveInputValue != Vector2.zero)
             {
                 Vector3 dir = new Vector3(m_lastMoveInputValue.x, 0, m_lastMoveInputValue.y);
-                m_characterMovement.Move(dir, Time.deltaTime);
+                m_controlledCharacter.Move(dir);
             }
         }
 
@@ -49,12 +49,12 @@ namespace NobunAtelier
             {
                 if (PlayerInput.currentControlScheme == "Gamepad")
                 {
-                    m_characterMovement.Rotate(m_lastLookInputValue);
+                    m_controlledCharacter.Rotate(m_lastLookInputValue);
                 }
                 else
                 {
-                    Vector3 direction = Input.mousePosition - m_camera.WorldToScreenPoint(m_characterMovement.transform.position);
-                    m_characterMovement.Rotate(direction.normalized);
+                    Vector3 direction = Input.mousePosition - m_camera.WorldToScreenPoint(m_controlledCharacter.transform.position);
+                    m_controlledCharacter.Rotate(direction.normalized);
                 }
             }
         }

@@ -44,12 +44,12 @@ namespace NobunAtelier
             {
                 if (PlayerInput.currentControlScheme == "Gamepad")
                 {
-                    CharacterMovement.Rotate(m_lastLookInputValue);
+                    ControlledCharacter.Rotate(m_lastLookInputValue);
                 }
                 else
                 {
-                    Vector3 direction = Input.mousePosition - m_camera.WorldToScreenPoint(CharacterMovement.transform.position);
-                    CharacterMovement.Rotate(direction.normalized);
+                    Vector3 direction = Input.mousePosition - m_camera.WorldToScreenPoint(ControlledCharacter.transform.position);
+                    ControlledCharacter.Rotate(direction.normalized);
                 }
             }
         }

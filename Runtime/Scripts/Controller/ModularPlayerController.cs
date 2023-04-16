@@ -21,6 +21,8 @@ namespace NobunAtelier
 
         public override void EnableInput()
         {
+            Debug.Assert(m_controlledCharacter, "Enabling input but not character controlled!");
+
             base.EnableInput();
 
             foreach (var extension in m_extensions)
@@ -41,10 +43,18 @@ namespace NobunAtelier
 
         protected override void ControllerUpdate()
         {
-            base.ControllerUpdate();
+            if (m_controlledCharacter == null)
+            {
+                return;
+            }
 
             foreach (var extension in m_extensions)
             {
+                if (!extension.CanBeEvaluated())
+                {
+                    continue;
+                }
+
                 extension.PlayerControllerExtensionUpdate(Time.deltaTime);
             }
         }

@@ -7,103 +7,6 @@ using UnityEngine.Accessibility;
 
 namespace NobunAtelier
 {
-    // Need a way to say for which physics controller the movement will be use... (CharacterController.Move vs SimpleMove vs Rigidbody velocity)
-    //public abstract class CharacterModule
-    //{
-    //    public AtelierCharacter ModuleOwner { get; private set; }
-
-    //    public virtual void ModuleInit(AtelierCharacter character)
-    //    {
-    //        ModuleOwner = character;
-    //    }
-    //}
-
-    public abstract class CharacterRotationModule : CharacterModuleBase
-    {
-        public virtual void RotateInput(Vector3 normalizedDirection) { }
-
-        public abstract void RotationUpdate(float deltaTime);
-    }
-
-    // Process RotateInput and StickAim inputDirection to rotate the character
-    [Serializable]
-    public class AtelierCharacterInputDrivenRotation : CharacterRotationModule
-    {
-        [Serializable]
-        public enum RotationAxis
-        {
-            X,
-            Y,
-            Z
-        }
-
-        [SerializeField]
-        private RotationAxis m_rotationAxis = RotationAxis.Y;
-
-        private Vector3 m_lastDirection;
-
-        public override void RotateInput(Vector3 normalizedDirection)
-        {
-            m_lastDirection = normalizedDirection;
-        }
-
-        public override void RotationUpdate(float deltaTime)
-        {
-            ModuleOwner.transform.rotation = TowDownDirectionToQuaternion(m_lastDirection);
-        }
-
-        private Quaternion TowDownDirectionToQuaternion(Vector3 normalizedDirection)
-        {
-            switch (m_rotationAxis)
-            {
-                case RotationAxis.X:
-                    return Quaternion.Euler(new Vector3(Mathf.Atan2(normalizedDirection.x, normalizedDirection.y) * Mathf.Rad2Deg, 0, 0));
-                case RotationAxis.Y:
-                    return Quaternion.Euler(new Vector3(0, Mathf.Atan2(normalizedDirection.x, normalizedDirection.y) * Mathf.Rad2Deg, 0));
-                case RotationAxis.Z:
-                    return Quaternion.Euler(new Vector3(0, 0, Mathf.Atan2(normalizedDirection.x, normalizedDirection.y) * Mathf.Rad2Deg));
-            }
-
-            return Quaternion.identity;
-        }
-    }
-
-    [Serializable]
-    public class AtelierCharacterVelocityDrivenRotation : CharacterRotationModule
-    {
-        [SerializeField]
-        protected float m_rotationSpeed;
-
-        protected void SetForward(Vector3 dir, float stepSpeed)
-        {
-            ModuleOwner.transform.forward = Vector3.Slerp(ModuleOwner.transform.forward, dir, stepSpeed);
-        }
-
-        public override void RotationUpdate(float deltaTime)
-        {
-            SetForward(ModuleOwner.GetMoveVector(), m_rotationSpeed * deltaTime);
-        }
-
-    }
-
-    [Serializable]
-    public class AtelierCharacterRotateTowardTarget : AtelierCharacterVelocityDrivenRotation
-    {
-        [SerializeField]
-        private Transform m_target;
-
-        public override void RotationUpdate(float deltaTime)
-        {
-            var dir = (m_target.position - ModuleOwner.Position).normalized;
-
-            SetForward(dir, m_rotationSpeed);
-        }
-
-        public override bool CanBeExecuted()
-        {
-            return m_target != null;
-        }
-    }
 
     // Unity pawn
     // Use Unity CharacterController to handle move.
@@ -115,52 +18,40 @@ namespace NobunAtelier
         // [SerializeField]
         private CharacterMovementModule[] m_modules;
 
-        // Execute all of them in priority order
-        private List<CharacterVelocityModule> m_modules_concept;
-
-        [Header("Movement")]
+        // Executes all of them in priority order
+        [Header("Velocity")]
         [SerializeField]
-        private Character2DVelocity m_pawnMovementModule2D;
-        [SerializeField]
-        private bool m_useGravity = false;
-        [SerializeField]
-        private CharacterGravityVelocity m_pawnMovementModuleGravity;
-        [SerializeField]
-        private bool m_canJump = false;
-        [SerializeField]
-        private CharacterBasicJumpVelocity m_pawnMovementModuleJump;
-
+        private List<CharacterVelocityModule> m_velocityModules;
 
         [Header("Rotation")]
+        // Evaluates and only execute the best module
         [SerializeField]
-        private bool m_inputDrivenRotation = true;
+        private List<CharacterRotationModule> m_rotationModules;
 
         [SerializeField]
-        private AtelierCharacterInputDrivenRotation m_inputDrivenRotationModule;
+        private CharacterInputDrivenRotation m_inputDrivenRotationModule;
         [SerializeField]
-        private AtelierCharacterVelocityDrivenRotation m_velocityDrivenRotationModule;
+        private CharacterVelocityDrivenRotation m_velocityDrivenRotationModule;
         [SerializeField]
-        private AtelierCharacterRotateTowardTarget m_rotateTowardTargetModule;
+        private CharacterRotationToTarget m_rotateTowardTargetModule;
 
-        // Evaluate and only execute the best module
-        private List<CharacterRotationModule> m_rotationModule_Concepts;
 
         private Vector3 m_lastMoveDir;
 
         private CharacterRotationModule GetBestRotationModule()
         {
-            if (m_rotationModule_Concepts == null)
+            if (m_rotationModules == null)
             {
                 return null;
             }
 
             int bestPriority = 0;
             CharacterRotationModule bestModule = null;
-            for (int i = 0, c = m_rotationModule_Concepts.Count; i < c; i++)
+            for (int i = 0, c = m_rotationModules.Count; i < c; i++)
             {
-                if (m_rotationModule_Concepts[i].CanBeExecuted() && m_rotationModule_Concepts[i].Priority > bestPriority)
+                if (m_rotationModules[i].CanBeExecuted() && m_rotationModules[i].Priority > bestPriority)
                 {
-                    bestModule = m_rotationModule_Concepts[i];
+                    bestModule = m_rotationModules[i];
                     bestPriority = bestModule.Priority;
                 }
             }
@@ -183,7 +74,7 @@ namespace NobunAtelier
 
         public T GetModule_Concept<T>() where T : CharacterModuleBase
         {
-            foreach (var module in m_modules_concept)
+            foreach (var module in m_velocityModules)
             {
                 if (module.GetType() == typeof(T))
                 {
@@ -209,9 +100,13 @@ namespace NobunAtelier
             return 0;
         }
 
-        public override void Move(Vector3 direction, float deltaTime)
+        public override void Move(Vector3 direction)
         {
-            m_pawnMovementModule2D.MoveInput(direction);
+            Debug.Log($"Move: {direction}");
+            for (int i = 0, c = m_velocityModules.Count; i < c; ++i)
+            {
+                m_velocityModules[i].MoveInput(direction);
+            }
         }
 
         public override void ProceduralMove(Vector3 deltaMovement)
@@ -242,29 +137,44 @@ namespace NobunAtelier
             base.Awake();
             m_movement = GetComponent<UnityEngine.CharacterController>();
 
-            m_modules_concept = new List<CharacterVelocityModule>
-            {
-                //m_inputDrivenRotationModule,
-                //m_velocityDrivenRotationModule,
-                m_pawnMovementModuleJump,
-                m_pawnMovementModuleGravity,
-                m_pawnMovementModule2D
-            };
+            //m_velocityModules = new List<CharacterVelocityModule>
+            //{
+            //    //m_inputDrivenRotationModule,
+            //    //m_velocityDrivenRotationModule,
+            //    m_pawnMovementModuleJump,
+            //    m_pawnMovementModuleGravity,
+            //    m_pawnMovementModule2D
+            //};
 
-            m_rotationModule_Concepts = new List<CharacterRotationModule>
+            //m_rotationModules = new List<CharacterRotationModule>
+            //{
+            //    m_inputDrivenRotationModule,
+            //    m_velocityDrivenRotationModule,
+            //    m_rotateTowardTargetModule
+            //};
+        }
+
+        private void ModulesInit()
+        {
+            for (int i = 0, c = m_velocityModules.Count;  i < c; ++i)
             {
-                m_inputDrivenRotationModule,
-                m_velocityDrivenRotationModule,
-                m_rotateTowardTargetModule
-            };
+                m_velocityModules[i].ModuleInit(this);
+            }
+
+            for (int i = 0, c = m_rotationModules.Count; i < c; ++i)
+            {
+                m_rotationModules[i].ModuleInit(this);
+            }
         }
 
         private void Start()
         {
-            m_inputDrivenRotationModule.ModuleInit(this);
-            m_rotateTowardTargetModule.ModuleInit(this);
-            m_velocityDrivenRotationModule.ModuleInit(this);
-            m_pawnMovementModuleJump.ModuleInit(this);
+            ModulesInit();
+
+            // m_inputDrivenRotationModule.ModuleInit(this);
+            // m_rotateTowardTargetModule.ModuleInit(this);
+            // m_velocityDrivenRotationModule.ModuleInit(this);
+            // m_pawnMovementModuleJump.ModuleInit(this);
         }
 
         private void Update()
@@ -286,18 +196,31 @@ namespace NobunAtelier
             //    m_velocityDrivenRotationModule.RotationUpdate(deltaTime);
             //}
 
+            m_velocityModules.Sort((x, y) => x.Priority.CompareTo(y.Priority));
+
+            bool isGrounded = m_movement.isGrounded;
             Vector3 currentVel = Vector3.zero;
-            currentVel = m_pawnMovementModule2D.VelocityUpdate(currentVel, deltaTime);
-            if (m_useGravity)
+
+            for (int i = 0, c = m_velocityModules.Count; i < c; ++i)
             {
-                m_pawnMovementModuleGravity.StateUpdate(m_movement.isGrounded);
-                currentVel = m_pawnMovementModuleGravity.VelocityUpdate(currentVel, deltaTime);
+                m_velocityModules[i].StateUpdate(isGrounded);
+                if (m_velocityModules[i].CanBeExecuted())
+                {
+                    currentVel = m_velocityModules[i].VelocityUpdate(currentVel, deltaTime);
+                }
             }
-            if (m_canJump)
-            {
-                m_pawnMovementModuleJump.StateUpdate(m_movement.isGrounded);
-                currentVel = m_pawnMovementModuleJump.VelocityUpdate(currentVel, deltaTime);
-            }
+
+            //currentVel = m_pawnMovementModule2D.VelocityUpdate(currentVel, deltaTime);
+            //if (m_useGravity)
+            //{
+            //    m_pawnMovementModuleGravity.StateUpdate(m_movement.isGrounded);
+            //    currentVel = m_pawnMovementModuleGravity.VelocityUpdate(currentVel, deltaTime);
+            //}
+            //if (m_canJump)
+            //{
+            //    m_pawnMovementModuleJump.StateUpdate(m_movement.isGrounded);
+            //    currentVel = m_pawnMovementModuleJump.VelocityUpdate(currentVel, deltaTime);
+            //}
 
             m_lastMoveDir = currentVel.normalized;
             // CharacterController.Move uses deltaPosition.

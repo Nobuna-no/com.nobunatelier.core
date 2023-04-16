@@ -36,7 +36,7 @@ namespace NobunAtelier
             return m_lastMoveSpeed / m_moveSpeed;
         }
 
-        public override void Move(Vector3 normalizedDirection, float deltaTime)
+        public override void Move(Vector3 normalizedDirection)
         {
             m_hasReceivedInputThisFrame = true;
             m_lastMoveVector = normalizedDirection * m_moveSpeed;

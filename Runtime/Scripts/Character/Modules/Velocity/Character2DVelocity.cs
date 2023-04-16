@@ -1,3 +1,4 @@
+using NaughtyAttributes;
 using System;
 using UnityEngine;
 
@@ -25,6 +26,10 @@ namespace NobunAtelier
 
         [SerializeField]
         private MovementAxes m_movementAxes = MovementAxes.XZ;
+        [ShowIf("DisplayCustomMovementAxes")]
+        public Vector3 CustomForwardAxis = Vector3.forward;
+        [ShowIf("DisplayCustomMovementAxes")]
+        public Vector3 CustomRightAxis = Vector3.right;
         [SerializeField]
         private VelocityProcessing m_accelerationApplication = VelocityProcessing.FromRawInput;
         [SerializeField, Range(0, 100f)]
@@ -35,30 +40,35 @@ namespace NobunAtelier
         private Vector3 m_movementVector;
         private Vector3 m_acceleration;
 
-        public Vector3 CustomMovementAxesForward = Vector3.forward;
-        public Vector3 CustomMovementAxesRight = Vector3.right;
+
+#if UNITY_EDITOR
+        private bool DisplayCustomMovementAxes()
+        {
+            return m_movementAxes == MovementAxes.Custom;
+        }
+#endif
 
         public bool EvaluateState()
         {
             return true;
         }
 
-        public override void MoveInput(Vector2 inputDirection)
+        public override void MoveInput(Vector3 direction)
         {
             switch (m_movementAxes)
             {
                 case MovementAxes.XZ:
-                    m_movementVector = inputDirection;
+                    m_movementVector = direction;
                     m_movementVector.y = 0;
                     break;
                 case MovementAxes.XY:
-                    m_movementVector = new Vector3(inputDirection.x, inputDirection.y, 0);
+                    m_movementVector = new Vector3(direction.x, direction.z, 0);
                     break;
                 case MovementAxes.YZ:
-                    m_movementVector = new Vector3(0, inputDirection.y, inputDirection.x);
+                    m_movementVector = new Vector3(0, direction.z, direction.x);
                     break;
                 case MovementAxes.Custom:
-                    m_movementVector = CustomMovementAxesRight * inputDirection.x + CustomMovementAxesForward * inputDirection.y;
+                    m_movementVector = CustomRightAxis * direction.x + CustomForwardAxis * direction.z;
                     break;
             }
 
@@ -81,9 +91,7 @@ namespace NobunAtelier
                 case VelocityProcessing.DesiredVelocityFromAcceleration:
                     Vector3 desiredVelocity = m_movementVector * m_maxSpeed;
                     float maxSpeedChange = m_maxAcceleration * deltaTime;
-
-                    currentVelocity.x = Mathf.MoveTowards(currentVelocity.x, desiredVelocity.x, maxSpeedChange);
-                    currentVelocity.z = Mathf.MoveTowards(currentVelocity.z, desiredVelocity.z, maxSpeedChange);
+                    currentVelocity = Vector3.MoveTowards(currentVelocity, desiredVelocity, maxSpeedChange);
                     break;
             }
 

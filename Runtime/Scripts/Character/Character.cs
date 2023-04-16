@@ -2,7 +2,7 @@ using UnityEngine;
 
 // Can be improved by splitting the logic:
 // - ModuleOwner -> handle mounting, animation and any character behaviour such as ModuleOwner...
-// - CharacterMovement -> only handle movement logic
+// - ControlledCharacter -> only handle movement logic
 namespace NobunAtelier
 {
     public abstract class Character : MonoBehaviour, ITargetable
@@ -26,8 +26,7 @@ namespace NobunAtelier
             Controller = controller;
         }
 
-        // moveInput doesn't need to be normalized
-        public virtual void Move(Vector3 moveInput, float deltaTime)
+        public virtual void Move(Vector3 direction)
         {
         }
 

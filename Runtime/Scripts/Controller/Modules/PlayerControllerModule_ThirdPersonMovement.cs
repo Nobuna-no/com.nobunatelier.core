@@ -54,7 +54,7 @@ namespace NobunAtelier
 
                 // Move inputDirection to camera space: https://www.youtube.com/watch?v=7j5yW5QDC2U
                 Vector3 dest = right * inputDir.x + forward * inputDir.z;
-                CharacterMovement.Move(dest, Time.deltaTime);
+                ControlledCharacter.Move(dest);
 
 #if UNITY_EDITOR
                 if (m_debugEnabled)

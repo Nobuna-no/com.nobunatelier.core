@@ -43,10 +43,9 @@ namespace NobunAtelier
             return m_lastMoveSpeed / m_moveSpeed;
         }
 
-        public override void Move(Vector3 normalizedDirection, float deltaTime)
+        public override void Move(Vector3 direction)
         {
-            m_lastMoveVector = normalizedDirection * m_moveSpeed * deltaTime;
-            m_lastMoveSpeed = m_lastMoveVector.magnitude / deltaTime;
+            m_lastMoveVector = direction.normalized;;
         }
 
         public override void ProceduralMove(Vector3 movement)
@@ -75,8 +74,10 @@ namespace NobunAtelier
 
         protected virtual void Update()
         {
-            m_movement.Move(m_lastMoveVector);
-            m_movement.Move(Physics.gravity * Time.deltaTime);
+            float deltaTime = Time.deltaTime;
+            m_lastMoveSpeed = m_lastMoveVector.magnitude / deltaTime;
+            m_movement.Move(m_lastMoveVector * m_moveSpeed * deltaTime);
+            m_movement.Move(Physics.gravity * deltaTime);
             SetForward(m_lastMoveVector, m_rotationSpeed);
 
             if (Animator != null)

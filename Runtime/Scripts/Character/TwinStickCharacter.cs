@@ -41,12 +41,11 @@ namespace NobunAtelier
             return m_orientedAngle;
         }
 
-        public override void Move(Vector3 normalizedDirection, float deltaTime)
+        public override void Move(Vector3 direction)
         {
             // need to remove delta time dependency
             m_hasReceivedInputThisFrame = true;
-            m_lastMoveVector = normalizedDirection * m_moveSpeed * deltaTime;
-            m_lastMoveSpeed = m_lastMoveVector.magnitude / deltaTime;
+            m_lastMoveVector = direction;
 
             Vector2 dir = new Vector2(transform.forward.x, transform.forward.z);
             Vector2 vel = new Vector2(m_lastMoveVector.x, m_lastMoveVector.z);
@@ -64,11 +63,6 @@ namespace NobunAtelier
             transform.rotation = TowDownDirectionToQuaternion(normalizedDirection);
         }
 
-        //public override void SetForward(Vector3 dir, float stepSpeed)
-        //{
-        //    transform.transform.forward = Vector3.Slerp(transform.transform.forward, dir, stepSpeed);
-        //}
-
         private void OnValidate()
         {
             m_characterController = GetComponent<UnityEngine.CharacterController>();
@@ -82,14 +76,17 @@ namespace NobunAtelier
 
         protected virtual void FixedUpdate()
         {
+            float deltaTime = Time.fixedDeltaTime;
+
             if (m_hasReceivedInputThisFrame)
             {
-                m_characterController.Move(m_lastMoveVector);
+                m_lastMoveSpeed = m_lastMoveVector.magnitude / deltaTime;
+                m_characterController.Move(m_lastMoveVector * m_moveSpeed * deltaTime);
                 m_hasConsumedInputLastUpdate = true;
                 m_hasReceivedInputThisFrame = false;
             }
 
-            m_characterController.Move(Physics.gravity * Time.fixedDeltaTime);
+            m_characterController.Move(Physics.gravity * deltaTime);
         }
 
         protected virtual void LateUpdate()

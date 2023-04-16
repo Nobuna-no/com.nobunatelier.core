@@ -34,7 +34,7 @@ namespace NobunAtelier
             if (m_lastMoveInputValue != Vector2.zero)
             {
                 Vector3 dir = new Vector3(m_lastMoveInputValue.x, 0, m_lastMoveInputValue.y);
-                CharacterMovement.Move(dir, deltaTime);
+                ControlledCharacter.Move(dir);
             }
         }
 
