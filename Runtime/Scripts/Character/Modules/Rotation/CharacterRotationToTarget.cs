@@ -12,7 +12,7 @@ namespace NobunAtelier
         {
             var dir = (m_target.position - ModuleOwner.Position).normalized;
 
-            SetForward(dir, m_rotationSpeed);
+            SetForward(dir, m_rotationSpeed * deltaTime);
         }
 
         public override bool CanBeExecuted()

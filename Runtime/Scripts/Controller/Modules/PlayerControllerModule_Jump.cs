@@ -31,9 +31,14 @@ namespace NobunAtelier
                 return;
             }
 
-            var module = character.GetModule_Concept<CharacterBasicJumpVelocity>();
-            Debug.Assert(module != null);
-            module.DoJump();
+            if (character.TryGetVelocityModule<CharacterBasicJumpVelocity>(out var module))
+            {
+                module.DoJump();
+            }
+            else
+            {
+                Debug.LogWarning($"Trying to jump but no CharacterBasicJumpVelocity module attached on the controlled character: {ControlledCharacter}");
+            }
         }
     }
 }

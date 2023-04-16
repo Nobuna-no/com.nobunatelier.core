@@ -30,17 +30,25 @@ namespace NobunAtelier
         public Vector3 CustomForwardAxis = Vector3.forward;
         [ShowIf("DisplayCustomMovementAxisFields")]
         public Vector3 CustomRightAxis = Vector3.right;
-        [SerializeField]
-        private VelocityProcessing m_accelerationApplication = VelocityProcessing.FromRawInput;
-        [SerializeField, Range(0, 100f)]
-        private float m_maxAcceleration = 10.0f;
-        [ShowIf("DisplayDecelerationField")]
-        [SerializeField, Range(0, 100f)]
-        private float m_decelerationSpeed = 10.0f;
         [SerializeField, Range(0, 100f)]
         private float m_maxSpeed = 10.0f;
 
+        [SerializeField]
+        private VelocityProcessing m_accelerationApplication = VelocityProcessing.FromRawInput;
+        [ShowIf("DisplayAcelerationFields")]
+        [SerializeField, Range(0.01f, 1f)]
+        private float m_accelerationTimeInSeconds = 10.0f;
+        [ShowIf("DisplayAcelerationFields")]
+        [SerializeField, Range(0.01f, 1f)]
+        private float m_decelerationTimeInSeconds = 10.0f;
+        [ShowIf("DisplayDesiredVelocityFields")]
+        [SerializeField, Range(0f, 100f)]
+        private float m_desiredVelocityMaxAcceleration = 50.0f;
+
         private Vector3 m_movementVector;
+#if UNITY_EDITOR
+        [SerializeField, ReadOnly]
+#endif
         private Vector3 m_velocity;
 #if UNITY_EDITOR
         private bool DisplayCustomMovementAxisFields()
@@ -48,9 +56,14 @@ namespace NobunAtelier
             return m_movementAxes == MovementAxes.Custom;
         }
 
-        private bool DisplayDecelerationField()
+        private bool DisplayAcelerationFields()
         {
             return m_accelerationApplication == VelocityProcessing.FromAcceleration;
+        }
+
+        private bool DisplayDesiredVelocityFields()
+        {
+            return m_accelerationApplication == VelocityProcessing.DesiredVelocityFromAcceleration;
         }
 #endif
 
@@ -81,34 +94,45 @@ namespace NobunAtelier
             m_movementVector.Normalize();
         }
 
-        public override Vector3 VelocityUpdate(Vector3 currentExternalVelocity, float deltaTime)
+        public override Vector3 VelocityUpdate(Vector3 currentVel, float deltaTime)
         {
             switch (m_accelerationApplication)
             {
                 case VelocityProcessing.FromRawInput:
-                    m_velocity = currentExternalVelocity + m_movementVector * m_maxSpeed;
+                    m_velocity = m_movementVector * m_maxSpeed;
                     break;
 
                 case VelocityProcessing.FromAcceleration:
                     if (m_movementVector == Vector3.zero)
                     {
-                        m_velocity = Vector3.Slerp(m_velocity, Vector3.zero, deltaTime * m_decelerationSpeed);
-                        m_velocity += currentExternalVelocity;
+                        if (m_velocity == Vector3.zero)
+                        {
+                            return m_velocity;
+                        }
+
+                        float previousSqrtMag = m_velocity.sqrMagnitude;
+                        Vector3 acceleration = m_velocity.normalized / m_decelerationTimeInSeconds;
+                        m_velocity -= acceleration * m_maxSpeed * deltaTime;
+
+                        if (m_velocity.sqrMagnitude > previousSqrtMag)
+                        {
+                            m_velocity = Vector3.zero;
+                        }
                     }
                     else
                     {
-                        Vector3 acceleration = m_movementVector * m_maxAcceleration;
-                        m_velocity += currentExternalVelocity + acceleration * m_maxSpeed * deltaTime;
+                        Vector3 acceleration = m_movementVector / m_accelerationTimeInSeconds;
+                        m_velocity += acceleration * m_maxSpeed * deltaTime;
                         m_velocity = Vector3.ClampMagnitude(m_velocity, m_maxSpeed);
                     }
                     break;
 
+                // To move in a new module...
                 case VelocityProcessing.DesiredVelocityFromAcceleration:
                     Vector3 desiredVelocity = m_movementVector * m_maxSpeed;
-                    float maxSpeedChange = m_maxAcceleration * deltaTime;
+                    float maxSpeedChange = deltaTime * m_desiredVelocityMaxAcceleration;
 
-                    m_velocity += currentExternalVelocity;
-                    m_velocity = Vector3.MoveTowards(m_velocity, desiredVelocity, maxSpeedChange);
+                    m_velocity = Vector3.MoveTowards(currentVel, desiredVelocity, maxSpeedChange);
                     break;
             }
 

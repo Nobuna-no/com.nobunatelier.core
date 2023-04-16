@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using UnityEngine;
-using UnityEngine.Accessibility;
+using NaughtyAttributes;
+using UnityEngine.UIElements;
+using Codice.Utils;
+using JetBrains.Annotations;
 
 namespace NobunAtelier
 {
@@ -12,31 +14,23 @@ namespace NobunAtelier
     // Use Unity CharacterController to handle move.
     public class AtelierCharacter : Character
     {
-        protected UnityEngine.CharacterController m_movement;
-        protected UnityEngine.Rigidbody m_body;
+        public CharacterBodyModuleBase Body => m_body;
 
-        // [SerializeField]
-        private CharacterMovementModule[] m_modules;
-
-        // Executes all of them in priority order
-        [Header("Velocity")]
         [SerializeField]
+        private CharacterBodyModuleBase m_body;
+
+        [SerializeField, Tooltip("Each frame, the modules are sorted per priority and availability and then executed.")]
         private List<CharacterVelocityModule> m_velocityModules;
 
-        [Header("Rotation")]
-        // Evaluates and only execute the best module
         [SerializeField]
+        private bool m_positionProcessingOnFixedUpdate = false;
+
+        [SerializeField, Tooltip("Only one rotation module executed per frame. The best module is evaluated based on availability and priority.")]
         private List<CharacterRotationModule> m_rotationModules;
 
-        [SerializeField]
-        private CharacterInputDrivenRotation m_inputDrivenRotationModule;
-        [SerializeField]
-        private CharacterVelocityDrivenRotation m_velocityDrivenRotationModule;
-        [SerializeField]
-        private CharacterRotationToTarget m_rotateTowardTargetModule;
-
-
         private Vector3 m_lastMoveDir;
+
+        public override Vector3 Position => Body.Position;
 
         private CharacterRotationModule GetBestRotationModule()
         {
@@ -59,35 +53,41 @@ namespace NobunAtelier
             return bestModule;
         }
 
-        public T GetModule<T>() where T : CharacterMovementModule
+        public bool TryGetVelocityModule<T>(out T outModule) where T : CharacterVelocityModule
         {
-            foreach (var module in m_modules)
+            outModule = null;
+            for (int i = 0; i < m_velocityModules.Count; ++i)
             {
+                var module = m_velocityModules[i];
                 if (module.GetType() == typeof(T))
                 {
-                    return module as T;
+                    outModule = module as T;
+                    return true;
                 }
             }
 
-            return null;
+            return false;
         }
 
-        public T GetModule_Concept<T>() where T : CharacterModuleBase
+        public bool TryGetRotationModule<T>(out T outModule) where T : CharacterRotationModule
         {
-            foreach (var module in m_velocityModules)
+            outModule = null;
+            for (int i = 0; i < m_rotationModules.Count; ++i)
             {
+                var module = m_rotationModules[i];
                 if (module.GetType() == typeof(T))
                 {
-                    return module as T;
+                    outModule = module as T;
+                    return true;
                 }
             }
 
-            return null;
+            return false;
         }
 
         public override Vector3 GetMoveVector()
         {
-            return m_lastMoveDir;
+            return m_body.Velocity;// m_body.velocity : m_lastMoveDir;
         }
 
         public override float GetMoveSpeed()
@@ -102,7 +102,6 @@ namespace NobunAtelier
 
         public override void Move(Vector3 direction)
         {
-            Debug.Log($"Move: {direction}");
             for (int i = 0, c = m_velocityModules.Count; i < c; ++i)
             {
                 m_velocityModules[i].MoveInput(direction);
@@ -122,36 +121,13 @@ namespace NobunAtelier
             }
 
             rotationModule.RotateInput(normalizedDirection);
-            //if (m_inputDrivenRotation)
-            //{
-            //    m_inputDrivenRotationModule.RotateInput(normalizedDirection);
-            //}
-            //else
-            //{
-            //    m_velocityDrivenRotationModule.RotateInput(normalizedDirection);
-            //}
         }
 
         protected override void Awake()
         {
             base.Awake();
-            m_movement = GetComponent<UnityEngine.CharacterController>();
-
-            //m_velocityModules = new List<CharacterVelocityModule>
-            //{
-            //    //m_inputDrivenRotationModule,
-            //    //m_velocityDrivenRotationModule,
-            //    m_pawnMovementModuleJump,
-            //    m_pawnMovementModuleGravity,
-            //    m_pawnMovementModule2D
-            //};
-
-            //m_rotationModules = new List<CharacterRotationModule>
-            //{
-            //    m_inputDrivenRotationModule,
-            //    m_velocityDrivenRotationModule,
-            //    m_rotateTowardTargetModule
-            //};
+            Debug.Assert(m_body, $"{this} is missing a body module!");
+            m_body.ModuleInit(this);
         }
 
         private void ModulesInit()
@@ -170,11 +146,6 @@ namespace NobunAtelier
         private void Start()
         {
             ModulesInit();
-
-            // m_inputDrivenRotationModule.ModuleInit(this);
-            // m_rotateTowardTargetModule.ModuleInit(this);
-            // m_velocityDrivenRotationModule.ModuleInit(this);
-            // m_pawnMovementModuleJump.ModuleInit(this);
         }
 
         private void Update()
@@ -187,49 +158,97 @@ namespace NobunAtelier
                 rotationModule.RotationUpdate(deltaTime);
             }
 
-            //if (m_inputDrivenRotation)
-            //{
-            //    m_inputDrivenRotationModule.RotationUpdate(deltaTime);
-            //}
-            //else
-            //{
-            //    m_velocityDrivenRotationModule.RotationUpdate(deltaTime);
-            //}
+            if (m_positionProcessingOnFixedUpdate)
+            {
+                return;
+            }
+            MovementProcessing(deltaTime);
+        }
 
+        private void FixedUpdate()
+        {
+            if (!m_positionProcessingOnFixedUpdate)
+            {
+                return;
+            }
+
+            float deltaTime = Time.fixedDeltaTime;
+            MovementProcessing(deltaTime);
+        }
+
+        [SerializeField, LayerAttribute]
+        private int m_groundLayer;
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            Debug.Log($"Collided with {collision.collider} - layerMask: {collision.collider.gameObject.layer}");
+            if (collision.collider.gameObject.layer == m_groundLayer)
+            {
+                isGrounded = true;
+            }
+        }
+
+        private void OnCollisionExit(Collision collision)
+        {
+            if (collision.collider.gameObject.layer == m_groundLayer)
+            {
+                isGrounded = false;
+            }
+        }
+
+        bool isGrounded = false;
+        [SerializeField]
+        private Vector3 m_maxVelocity = new Vector3(10, 50, 10);
+        [SerializeField, ReadOnly]
+        Vector3 currentVel = Vector3.zero;
+        private void MovementProcessing(float deltaTime)
+        {
             m_velocityModules.Sort((x, y) => x.Priority.CompareTo(y.Priority));
 
-            bool isGrounded = m_movement.isGrounded;
-            Vector3 currentVel = Vector3.zero;
+            currentVel = m_body.Velocity;
 
+            bool isUpdateInterrupted = false;
             for (int i = 0, c = m_velocityModules.Count; i < c; ++i)
             {
-                m_velocityModules[i].StateUpdate(isGrounded);
-                if (m_velocityModules[i].CanBeExecuted())
+                var vModule = m_velocityModules[i];
+                vModule.StateUpdate(isGrounded);
+                if (vModule.CanBeExecuted())
                 {
-                    currentVel = m_velocityModules[i].VelocityUpdate(currentVel, deltaTime);
+                    if (isUpdateInterrupted)
+                    {
+                        vModule.OnVelocityUpdateCancelled();
+                    }
+                    else
+                    {
+                        currentVel = vModule.VelocityUpdate(currentVel, deltaTime);
+                        isUpdateInterrupted = vModule.StopVelocityUpdate();
+                    }
                 }
             }
 
-            //currentVel = m_pawnMovementModule2D.VelocityUpdate(currentVel, deltaTime);
-            //if (m_useGravity)
-            //{
-            //    m_pawnMovementModuleGravity.StateUpdate(m_movement.isGrounded);
-            //    currentVel = m_pawnMovementModuleGravity.VelocityUpdate(currentVel, deltaTime);
-            //}
-            //if (m_canJump)
-            //{
-            //    m_pawnMovementModuleJump.StateUpdate(m_movement.isGrounded);
-            //    currentVel = m_pawnMovementModuleJump.VelocityUpdate(currentVel, deltaTime);
-            //}
+            currentVel.x = Mathf.Clamp(currentVel.x, -m_maxVelocity.x, m_maxVelocity.x);
+            currentVel.y = Mathf.Clamp(currentVel.y, -m_maxVelocity.y, m_maxVelocity.y);
+            currentVel.z = Mathf.Clamp(currentVel.z, -m_maxVelocity.z, m_maxVelocity.z);
 
             m_lastMoveDir = currentVel.normalized;
-            // CharacterController.Move uses deltaPosition.
-            m_movement.Move(currentVel * deltaTime);
 
-            // CharacterController.SimpleMove uses units/s.
-            // m_movement.SimpleMove(currentVel);
+            m_body.ApplyVelocity(currentVel, deltaTime);
 
-            // Rigidbody gave more control but might not be useful for more simpler movement...
+            //if (m_movement)
+            //{
+            //    m_movement.Move(currentVel * deltaTime);
+            //}
+            //else if (m_body)
+            //{
+            //    if (m_body.isKinematic)
+            //    {
+            //        m_body.position += currentVel * deltaTime;
+            //    }
+            //    else
+            //    {
+            //        m_body.velocity = currentVel;
+            //    }
+            //}
         }
     }
 }

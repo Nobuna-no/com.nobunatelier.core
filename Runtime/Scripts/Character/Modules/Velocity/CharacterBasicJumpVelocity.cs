@@ -13,6 +13,7 @@ namespace NobunAtelier
         private int m_currentJumpCount = 0;
         private bool m_canJump = true;
         private bool m_wantToJump = false;
+        private bool m_hasJumpedThisFrame = false;
 
         public void DoJump()
         {
@@ -24,9 +25,9 @@ namespace NobunAtelier
 
         private float Jump()
         {
-            m_canJump = ++m_currentJumpCount < m_maxJumpCount;
+            ++m_currentJumpCount;
             m_wantToJump = false;
-
+            m_hasJumpedThisFrame = true;
             return Mathf.Sqrt(2f * -Physics.gravity.y * m_jumpHeight);
         }
 
@@ -42,13 +43,20 @@ namespace NobunAtelier
 
         public override bool CanBeExecuted()
         {
-            return m_wantToJump && m_canJump;
+            return base.CanBeExecuted() && m_wantToJump && m_canJump;
         }
 
-        public override Vector3 VelocityUpdate(Vector3 currentVelocity, float deltaTime)
+        public override bool StopVelocityUpdate()
         {
-            currentVelocity.y += Jump();
-            return currentVelocity;
+            bool stopUpdate = m_hasJumpedThisFrame;
+            m_hasJumpedThisFrame = false;
+            return stopUpdate;
+        }
+
+        public override Vector3 VelocityUpdate(Vector3 currentVel, float deltaTime)
+        {
+            currentVel.y = Jump();
+            return Vector3.up * Jump();
         }
     }
 }

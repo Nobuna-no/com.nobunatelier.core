@@ -11,6 +11,16 @@ namespace NobunAtelier
             LastMoveDirection = direction;
         }
 
-        public abstract Vector3 VelocityUpdate(Vector3 currentVelocity, float deltaTime);
+        public abstract Vector3 VelocityUpdate(Vector3 currentVel, float deltaTime);
+
+        public virtual bool StopVelocityUpdate()
+        {
+            return false;
+        }
+
+        public virtual void OnVelocityUpdateCancelled()
+        {
+
+        }
     }
 }
