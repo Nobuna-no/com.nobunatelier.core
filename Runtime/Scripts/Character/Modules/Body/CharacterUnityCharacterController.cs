@@ -4,8 +4,11 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
+    [AddComponentMenu("NobunAtelier/Character Module/Body Character Controller")]
     public class CharacterUnityCharacterController : CharacterBodyModuleBase
     {
+        [SerializeField]
+        private UnityEngine.CharacterController m_targetCharacterController;
         [SerializeField]
         private Vector3 m_maxVelocity = new Vector3(10f, 20f, 10f);
 
@@ -21,8 +24,8 @@ namespace NobunAtelier
 
         public override Vector3 Position
         {
-            get => m_body.transform.position;
-            set => m_body.transform.position = value;
+            get => m_targetCharacterController.transform.position;
+            set => m_targetCharacterController.transform.position = value;
         }
 
         public override Vector3 Velocity { get; set; }
@@ -39,18 +42,23 @@ namespace NobunAtelier
             }
         }
 
-        public override bool IsGrounded => m_body.isGrounded;
+        public override bool IsGrounded => m_targetCharacterController.isGrounded;
 
-        private UnityEngine.CharacterController m_body;
         public override void ModuleInit(AtelierCharacter character)
         {
             base.ModuleInit(character);
-            m_body = ModuleOwner.GetComponent<UnityEngine.CharacterController>();
 
-            if (m_body == null)
+            if (m_targetCharacterController)
+            {
+                return;
+            }
+
+            // If no character movement assign, try to find one and instantiate in last resort.
+            m_targetCharacterController = ModuleOwner.GetComponent<UnityEngine.CharacterController>();
+            if (m_targetCharacterController == null)
             {
                 Debug.LogWarning($"No Unity CharacterController found on {ModuleOwner}, instancing default one.");
-                m_body = ModuleOwner.gameObject.AddComponent<UnityEngine.CharacterController>();
+                m_targetCharacterController = ModuleOwner.gameObject.AddComponent<UnityEngine.CharacterController>();
             }
         }
 
@@ -62,11 +70,11 @@ namespace NobunAtelier
 
             if (m_useSimpleMove)
             {
-                m_body.SimpleMove(newVelocity);
+                m_targetCharacterController.SimpleMove(newVelocity);
             }
             else
             {
-                m_body.Move(newVelocity * deltaTime);
+                m_targetCharacterController.Move(newVelocity * deltaTime);
             }
 
             Velocity = newVelocity;

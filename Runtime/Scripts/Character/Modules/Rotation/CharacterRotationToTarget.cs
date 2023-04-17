@@ -3,7 +3,8 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    public class CharacterRotationToTarget : CharacterVelocityDrivenRotation
+    [AddComponentMenu("NobunAtelier/Character Module/Rotation To Target")]
+    public class CharacterRotationToTarget : CharacterVelocityDrivenForwardRotation
     {
         [SerializeField]
         private Transform m_target;
@@ -12,7 +13,7 @@ namespace NobunAtelier
         {
             var dir = (m_target.position - ModuleOwner.Position).normalized;
 
-            SetForward(dir, m_rotationSpeed * deltaTime);
+            SetForward(dir, deltaTime);
         }
 
         public override bool CanBeExecuted()

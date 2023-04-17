@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
+    [AddComponentMenu("NobunAtelier/Character Module/Velocity 2D")]
     public class Character2DVelocity : CharacterVelocityModule
     {
         public enum MovementAxes
@@ -18,29 +19,37 @@ namespace NobunAtelier
         {
             // No acceleration, velocity calculated from raw inputDirection
             FromRawInput,
+
             // Prioritize acceleration control over velocity
             FromAcceleration,
+
             // Use the acceleration but prioritize velocity control
             DesiredVelocityFromAcceleration,
         }
 
         [SerializeField]
         private MovementAxes m_movementAxes = MovementAxes.XZ;
+
         [ShowIf("DisplayCustomMovementAxisFields")]
         public Vector3 CustomForwardAxis = Vector3.forward;
+
         [ShowIf("DisplayCustomMovementAxisFields")]
         public Vector3 CustomRightAxis = Vector3.right;
+
         [SerializeField, Range(0, 100f)]
         private float m_maxSpeed = 10.0f;
 
         [SerializeField]
         private VelocityProcessing m_accelerationApplication = VelocityProcessing.FromRawInput;
+
         [ShowIf("DisplayAcelerationFields")]
         [SerializeField, Range(0.01f, 1f)]
         private float m_accelerationTimeInSeconds = 10.0f;
+
         [ShowIf("DisplayAcelerationFields")]
         [SerializeField, Range(0.01f, 1f)]
         private float m_decelerationTimeInSeconds = 10.0f;
+
         [ShowIf("DisplayDesiredVelocityFields")]
         [SerializeField, Range(0f, 100f)]
         private float m_desiredVelocityMaxAcceleration = 50.0f;
@@ -48,9 +57,8 @@ namespace NobunAtelier
         private Vector3 m_movementVector;
 #if UNITY_EDITOR
         [SerializeField, ReadOnly]
-#endif
         private Vector3 m_velocity;
-#if UNITY_EDITOR
+
         private bool DisplayCustomMovementAxisFields()
         {
             return m_movementAxes == MovementAxes.Custom;
@@ -80,12 +88,15 @@ namespace NobunAtelier
                     m_movementVector = direction;
                     m_movementVector.y = 0;
                     break;
+
                 case MovementAxes.XY:
                     m_movementVector = new Vector3(direction.x, direction.z, 0);
                     break;
+
                 case MovementAxes.YZ:
                     m_movementVector = new Vector3(0, direction.z, direction.x);
                     break;
+
                 case MovementAxes.Custom:
                     m_movementVector = CustomRightAxis * direction.x + CustomForwardAxis * direction.z;
                     break;
@@ -107,7 +118,7 @@ namespace NobunAtelier
                     {
                         if (m_velocity == Vector3.zero)
                         {
-                            return m_velocity;
+                            return currentVel;
                         }
 
                         float previousSqrtMag = m_velocity.sqrMagnitude;
@@ -136,12 +147,12 @@ namespace NobunAtelier
                     break;
             }
 
-            var diffVec = Vector3.one - GetVectorasd();
+            var diffVec = Vector3.one - GetMovementSpace();
             if (diffVec.x != 0)
             {
                 m_velocity.x = currentVel.x;
             }
-            if(diffVec.y != 0)
+            if (diffVec.y != 0)
             {
                 m_velocity.y = currentVel.y;
             }
@@ -150,23 +161,24 @@ namespace NobunAtelier
                 m_velocity.z = currentVel.z;
             }
 
-            // m_velocity += new Vector3(diffVec.x * currentVel.x, diffVec.y * currentVel.y, diffVec.z * currentVel.z);
-            // Debug.Log(diffVec);
             m_movementVector = Vector3.zero;
 
             return m_velocity;
         }
 
-        Vector3 GetVectorasd()
+        private Vector3 GetMovementSpace()
         {
             switch (m_movementAxes)
             {
                 case MovementAxes.XZ:
                     return new Vector3(1, 0, 1);
+
                 case MovementAxes.XY:
                     return new Vector3(1, 1, 0);
+
                 case MovementAxes.YZ:
                     return new Vector3(0, 1, 1);
+
                 case MovementAxes.Custom:
                     return CustomRightAxis + CustomForwardAxis;
             }

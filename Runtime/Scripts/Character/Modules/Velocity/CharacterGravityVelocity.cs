@@ -4,12 +4,14 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
+    // Better use the rigidbody.gravity instead...
+    [AddComponentMenu("NobunAtelier/Character Module/Velocity Gravity")]
     public class CharacterGravityVelocity : CharacterVelocityModule
     {
         [SerializeField]
         private float m_maxFreeFallSpeed = 100f;
-        [SerializeField, Range(0, 1)]
-        private float m_gravityAcceleration = 0.5f;
+        [SerializeField, Range(0, 10)]
+        private float m_gravityMultiplier = 1f;
         private bool m_isGrounded;
 
         public override void StateUpdate(bool grounded)
@@ -24,7 +26,7 @@ namespace NobunAtelier
                 currentVel.y = 0;
             }
 
-            Vector3 finalVelocity = currentVel + Vector3.up * Physics.gravity.y * m_gravityAcceleration * deltaTime;
+            Vector3 finalVelocity = currentVel + Vector3.up * Physics.gravity.y * m_gravityMultiplier * deltaTime;
             finalVelocity.y = Mathf.Max(finalVelocity.y, -m_maxFreeFallSpeed);
 
             return finalVelocity;

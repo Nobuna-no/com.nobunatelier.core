@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
+    [AddComponentMenu("NobunAtelier/Character Module/Velocity Basic Jump")]
     public class CharacterBasicJumpVelocity : CharacterVelocityModule
     {
         [SerializeField]
@@ -12,7 +13,6 @@ namespace NobunAtelier
         private int m_currentJumpCount = 0;
         private bool m_canJump = true;
         private bool m_wantToJump = false;
-        private bool m_hasJumpedThisFrame = false;
 
         public void DoJump()
         {
@@ -24,9 +24,9 @@ namespace NobunAtelier
 
         private float Jump()
         {
+            // ModuleOwner.Body.IsGrounded = false;
             ++m_currentJumpCount;
             m_wantToJump = false;
-            m_hasJumpedThisFrame = true;
             return Mathf.Sqrt(2f * -Physics.gravity.y * m_jumpHeight);
         }
 
@@ -43,14 +43,6 @@ namespace NobunAtelier
         public override bool CanBeExecuted()
         {
             return base.CanBeExecuted() && m_wantToJump && m_canJump;
-        }
-
-        public override bool StopVelocityUpdate()
-        {
-            // bool stopUpdate = m_hasJumpedThisFrame;
-            // m_hasJumpedThisFrame = false;
-            // return stopUpdate;
-            return false;
         }
 
         public override Vector3 VelocityUpdate(Vector3 currentVel, float deltaTime)

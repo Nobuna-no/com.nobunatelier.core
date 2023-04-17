@@ -12,10 +12,10 @@ namespace NobunAtelier
     // Use Unity CharacterController to handle move.
     public class AtelierCharacter : Character
     {
-        public CharacterBodyModuleBase Body => m_body;
+        public CharacterBodyModuleBase Body => m_bodyModule;
 
         [SerializeField]
-        private CharacterBodyModuleBase m_body;
+        private CharacterBodyModuleBase m_bodyModule;
 
         [SerializeField, Tooltip("Each frame, the modules are sorted per priority and availability and then executed.")]
         private List<CharacterVelocityModule> m_velocityModules;
@@ -83,7 +83,7 @@ namespace NobunAtelier
 
         public override Vector3 GetMoveVector()
         {
-            return m_body.Velocity;
+            return m_bodyModule.Velocity;
         }
 
         public override float GetMoveSpeed()
@@ -122,8 +122,17 @@ namespace NobunAtelier
         protected override void Awake()
         {
             base.Awake();
-            Debug.Assert(m_body, $"{this} is missing a body module!");
-            m_body.ModuleInit(this);
+            if (!m_bodyModule)
+            {
+                m_bodyModule = GetComponent<CharacterBodyModuleBase>();
+                if (m_bodyModule == null)
+                {
+                    m_bodyModule = gameObject.AddComponent<CharacterUnityCharacterController>();
+                    Debug.LogWarning($"No body module found on {this}, instancing a default CharacterUnityCharacterController.");
+                }
+            }
+
+            m_bodyModule.ModuleInit(this);
         }
 
         private void ModulesInit()
@@ -154,7 +163,7 @@ namespace NobunAtelier
                 rotationModule.RotationUpdate(deltaTime);
             }
 
-            if (m_body.VelocityUpdate != CharacterBodyModuleBase.VelocityApplicationUpdate.Update)
+            if (m_bodyModule.VelocityUpdate != CharacterBodyModuleBase.VelocityApplicationUpdate.Update)
             {
                 return;
             }
@@ -164,7 +173,7 @@ namespace NobunAtelier
 
         private void FixedUpdate()
         {
-            if (m_body.VelocityUpdate != CharacterBodyModuleBase.VelocityApplicationUpdate.FixedUpdate)
+            if (m_bodyModule.VelocityUpdate != CharacterBodyModuleBase.VelocityApplicationUpdate.FixedUpdate)
             {
                 return;
             }
@@ -174,25 +183,25 @@ namespace NobunAtelier
 
         private void OnCollisionEnter(Collision collision)
         {
-            m_body.OnModuleCollisionEnter(collision);
+            m_bodyModule.OnModuleCollisionEnter(collision);
         }
 
         private void OnCollisionStay(Collision collision)
         {
-            m_body.OnModuleCollisionStay(collision);
+            m_bodyModule.OnModuleCollisionStay(collision);
         }
 
         private void OnCollisionExit(Collision collision)
         {
-            m_body.OnModuleCollisionExit(collision);
+            m_bodyModule.OnModuleCollisionExit(collision);
         }
 
         private void MovementProcessing(float deltaTime)
         {
             m_velocityModules.Sort((x, y) => x.Priority.CompareTo(y.Priority));
 
-            currentVel = m_body.Velocity;
-            bool isGrounded = m_body.IsGrounded;
+            currentVel = m_bodyModule.Velocity;
+            bool isGrounded = m_bodyModule.IsGrounded;
 
             for (int i = 0, c = m_velocityModules.Count; i < c; ++i)
             {
@@ -204,7 +213,7 @@ namespace NobunAtelier
                 }
             }
 
-            m_body.ApplyVelocity(currentVel, deltaTime);
+            m_bodyModule.ApplyVelocity(currentVel, deltaTime);
         }
     }
 }
