@@ -7,7 +7,17 @@ namespace NobunAtelier
     public class CharacterUnityCharacterController : CharacterBodyModuleBase
     {
         [SerializeField]
+        private Vector3 m_maxVelocity = new Vector3(10f, 20f, 10f);
+
+        [SerializeField]
         private bool m_useSimpleMove = false;
+        public override VelocityApplicationUpdate VelocityUpdate
+        {
+            get
+            {
+                return m_useSimpleMove ? VelocityApplicationUpdate.FixedUpdate : VelocityApplicationUpdate.Update;
+            }
+        }
 
         public override Vector3 Position
         {
@@ -46,6 +56,10 @@ namespace NobunAtelier
 
         public override void ApplyVelocity(Vector3 newVelocity, float deltaTime)
         {
+            newVelocity.x = Mathf.Clamp(newVelocity.x, -m_maxVelocity.x, m_maxVelocity.x);
+            newVelocity.y = Mathf.Clamp(newVelocity.y, -m_maxVelocity.y, m_maxVelocity.y);
+            newVelocity.z = Mathf.Clamp(newVelocity.z, -m_maxVelocity.z, m_maxVelocity.z);
+
             if (m_useSimpleMove)
             {
                 m_body.SimpleMove(newVelocity);

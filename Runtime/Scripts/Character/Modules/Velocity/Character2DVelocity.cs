@@ -136,9 +136,42 @@ namespace NobunAtelier
                     break;
             }
 
+            var diffVec = Vector3.one - GetVectorasd();
+            if (diffVec.x != 0)
+            {
+                m_velocity.x = currentVel.x;
+            }
+            if(diffVec.y != 0)
+            {
+                m_velocity.y = currentVel.y;
+            }
+            if (diffVec.z != 0)
+            {
+                m_velocity.z = currentVel.z;
+            }
+
+            // m_velocity += new Vector3(diffVec.x * currentVel.x, diffVec.y * currentVel.y, diffVec.z * currentVel.z);
+            // Debug.Log(diffVec);
             m_movementVector = Vector3.zero;
 
             return m_velocity;
+        }
+
+        Vector3 GetVectorasd()
+        {
+            switch (m_movementAxes)
+            {
+                case MovementAxes.XZ:
+                    return new Vector3(1, 0, 1);
+                case MovementAxes.XY:
+                    return new Vector3(1, 1, 0);
+                case MovementAxes.YZ:
+                    return new Vector3(0, 1, 1);
+                case MovementAxes.Custom:
+                    return CustomRightAxis + CustomForwardAxis;
+            }
+
+            return Vector3.zero;
         }
     }
 }

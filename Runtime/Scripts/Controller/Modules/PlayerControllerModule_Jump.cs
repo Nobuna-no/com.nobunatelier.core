@@ -35,6 +35,10 @@ namespace NobunAtelier
             {
                 module.DoJump();
             }
+            else if (character.TryGetVelocityModule<CharacterProceduralJumpVelocity>(out var module2))
+            {
+                module2.DoJump();
+            }
             else
             {
                 Debug.LogWarning($"Trying to jump but no CharacterBasicJumpVelocity module attached on the controlled character: {ControlledCharacter}");

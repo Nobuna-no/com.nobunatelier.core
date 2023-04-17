@@ -9,8 +9,6 @@ using JetBrains.Annotations;
 
 namespace NobunAtelier
 {
-
-    // Unity pawn
     // Use Unity CharacterController to handle move.
     public class AtelierCharacter : Character
     {
@@ -22,13 +20,11 @@ namespace NobunAtelier
         [SerializeField, Tooltip("Each frame, the modules are sorted per priority and availability and then executed.")]
         private List<CharacterVelocityModule> m_velocityModules;
 
-        [SerializeField]
-        private bool m_positionProcessingOnFixedUpdate = false;
-
         [SerializeField, Tooltip("Only one rotation module executed per frame. The best module is evaluated based on availability and priority.")]
         private List<CharacterRotationModule> m_rotationModules;
 
-        private Vector3 m_lastMoveDir;
+        [SerializeField, ReadOnly]
+        Vector3 currentVel = Vector3.zero;
 
         public override Vector3 Position => Body.Position;
 
@@ -87,7 +83,7 @@ namespace NobunAtelier
 
         public override Vector3 GetMoveVector()
         {
-            return m_body.Velocity;// m_body.velocity : m_lastMoveDir;
+            return m_body.Velocity;
         }
 
         public override float GetMoveSpeed()
@@ -158,97 +154,57 @@ namespace NobunAtelier
                 rotationModule.RotationUpdate(deltaTime);
             }
 
-            if (m_positionProcessingOnFixedUpdate)
+            if (m_body.VelocityUpdate != CharacterBodyModuleBase.VelocityApplicationUpdate.Update)
             {
                 return;
             }
+
             MovementProcessing(deltaTime);
         }
 
         private void FixedUpdate()
         {
-            if (!m_positionProcessingOnFixedUpdate)
+            if (m_body.VelocityUpdate != CharacterBodyModuleBase.VelocityApplicationUpdate.FixedUpdate)
             {
                 return;
             }
 
-            float deltaTime = Time.fixedDeltaTime;
-            MovementProcessing(deltaTime);
+            MovementProcessing(Time.fixedDeltaTime);
         }
-
-        [SerializeField, LayerAttribute]
-        private int m_groundLayer;
 
         private void OnCollisionEnter(Collision collision)
         {
-            Debug.Log($"Collided with {collision.collider} - layerMask: {collision.collider.gameObject.layer}");
-            if (collision.collider.gameObject.layer == m_groundLayer)
-            {
-                isGrounded = true;
-            }
+            m_body.OnModuleCollisionEnter(collision);
+        }
+
+        private void OnCollisionStay(Collision collision)
+        {
+            m_body.OnModuleCollisionStay(collision);
         }
 
         private void OnCollisionExit(Collision collision)
         {
-            if (collision.collider.gameObject.layer == m_groundLayer)
-            {
-                isGrounded = false;
-            }
+            m_body.OnModuleCollisionExit(collision);
         }
 
-        bool isGrounded = false;
-        [SerializeField]
-        private Vector3 m_maxVelocity = new Vector3(10, 50, 10);
-        [SerializeField, ReadOnly]
-        Vector3 currentVel = Vector3.zero;
         private void MovementProcessing(float deltaTime)
         {
             m_velocityModules.Sort((x, y) => x.Priority.CompareTo(y.Priority));
 
             currentVel = m_body.Velocity;
+            bool isGrounded = m_body.IsGrounded;
 
-            bool isUpdateInterrupted = false;
             for (int i = 0, c = m_velocityModules.Count; i < c; ++i)
             {
                 var vModule = m_velocityModules[i];
                 vModule.StateUpdate(isGrounded);
                 if (vModule.CanBeExecuted())
                 {
-                    if (isUpdateInterrupted)
-                    {
-                        vModule.OnVelocityUpdateCancelled();
-                    }
-                    else
-                    {
-                        currentVel = vModule.VelocityUpdate(currentVel, deltaTime);
-                        isUpdateInterrupted = vModule.StopVelocityUpdate();
-                    }
+                    currentVel = vModule.VelocityUpdate(currentVel, deltaTime);
                 }
             }
 
-            currentVel.x = Mathf.Clamp(currentVel.x, -m_maxVelocity.x, m_maxVelocity.x);
-            currentVel.y = Mathf.Clamp(currentVel.y, -m_maxVelocity.y, m_maxVelocity.y);
-            currentVel.z = Mathf.Clamp(currentVel.z, -m_maxVelocity.z, m_maxVelocity.z);
-
-            m_lastMoveDir = currentVel.normalized;
-
             m_body.ApplyVelocity(currentVel, deltaTime);
-
-            //if (m_movement)
-            //{
-            //    m_movement.Move(currentVel * deltaTime);
-            //}
-            //else if (m_body)
-            //{
-            //    if (m_body.isKinematic)
-            //    {
-            //        m_body.position += currentVel * deltaTime;
-            //    }
-            //    else
-            //    {
-            //        m_body.velocity = currentVel;
-            //    }
-            //}
         }
     }
 }

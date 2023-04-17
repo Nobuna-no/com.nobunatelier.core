@@ -18,9 +18,10 @@ namespace NobunAtelier
             return false;
         }
 
-        public virtual void OnVelocityUpdateCancelled()
-        {
+        public virtual void OnModuleCollisionEnter(Collision collision) { }
 
-        }
+        public virtual void OnModuleCollisionExit(Collision collision) { }
+
+        public void OnModuleCollisionStay(Collision collision) { }
     }
 }

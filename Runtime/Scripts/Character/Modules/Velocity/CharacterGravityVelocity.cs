@@ -10,33 +10,24 @@ namespace NobunAtelier
         private float m_maxFreeFallSpeed = 100f;
         [SerializeField, Range(0, 1)]
         private float m_gravityAcceleration = 0.5f;
-
-#if UNITY_EDITOR
-        [SerializeField, ReadOnly]
-#endif
-        private float m_verticalVelocity = 0;
+        private bool m_isGrounded;
 
         public override void StateUpdate(bool grounded)
         {
-            if (!grounded)
-            {
-                return;
-            }
-
-            m_verticalVelocity = 0;
+            m_isGrounded = grounded;
         }
 
         public override Vector3 VelocityUpdate(Vector3 currentVel, float deltaTime)
         {
-            m_verticalVelocity += m_gravityAcceleration * Physics.gravity.y * deltaTime;
-            m_verticalVelocity = Mathf.Max(m_verticalVelocity, -m_maxFreeFallSpeed);
+            if (m_isGrounded)
+            {
+                currentVel.y = 0;
+            }
 
-            return currentVel + Vector3.up * m_verticalVelocity;
-        }
+            Vector3 finalVelocity = currentVel + Vector3.up * Physics.gravity.y * m_gravityAcceleration * deltaTime;
+            finalVelocity.y = Mathf.Max(finalVelocity.y, -m_maxFreeFallSpeed);
 
-        public override void OnVelocityUpdateCancelled()
-        {
-            m_verticalVelocity = 0;
+            return finalVelocity;
         }
     }
 }

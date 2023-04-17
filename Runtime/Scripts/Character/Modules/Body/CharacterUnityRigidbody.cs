@@ -1,11 +1,18 @@
-using System.Collections;
-using System.Collections.Generic;
+using NaughtyAttributes;
 using UnityEngine;
 
 namespace NobunAtelier
 {
     public class CharacterUnityRigidBody : CharacterBodyModuleBase
     {
+        [SerializeField]
+        private Vector3 m_maxVelocity = new Vector3(10f, 20f, 10f);
+
+        [SerializeField, LayerAttribute]
+        private int m_groundLayer;
+
+        public override VelocityApplicationUpdate VelocityUpdate => VelocityApplicationUpdate.FixedUpdate;
+
         public override Vector3 Position
         {
             get => m_body.position;
@@ -23,7 +30,6 @@ namespace NobunAtelier
                 m_body.velocity = value;
             }
         }
-
 
         public override Quaternion Rotation
         {
@@ -56,6 +62,10 @@ namespace NobunAtelier
 
         public override void ApplyVelocity(Vector3 newVelocity, float deltaTime)
         {
+            newVelocity.x = Mathf.Clamp(newVelocity.x, -m_maxVelocity.x, m_maxVelocity.x);
+            newVelocity.y = Mathf.Clamp(newVelocity.y, -m_maxVelocity.y, m_maxVelocity.y);
+            newVelocity.z = Mathf.Clamp(newVelocity.z, -m_maxVelocity.z, m_maxVelocity.z);
+
             if (m_body.isKinematic)
             {
                 m_body.position += newVelocity * deltaTime;
@@ -65,7 +75,13 @@ namespace NobunAtelier
             {
                 m_body.velocity = newVelocity;
             }
+
+            m_isGrounded = false;
+        }
+
+        public override void OnModuleCollisionStay(Collision collision)
+        {
+            m_isGrounded = collision.collider.gameObject.layer == m_groundLayer;
         }
     }
-
 }
