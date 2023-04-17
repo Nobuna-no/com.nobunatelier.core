@@ -11,9 +11,9 @@ namespace NobunAtelier
         public static GameModeManager Instance { get; private set; }
 
         public IReadOnlyList<GameModeParticipant> PlayersController => m_characterControllers;
-        public PlayerController PlayerControllerPrefab => m_playerControllerPrefab;
-        public BaseAIControler AIControllerPrefab => m_aiControllerPrefab;
-        public Character CharacterMovementPrefab => m_characterMovementPrefab;
+        public LegacyPlayerControllerBase PlayerControllerPrefab => m_playerControllerPrefab;
+        public LegacyAIControlerBase AIControllerPrefab => m_aiControllerPrefab;
+        public LegacyCharacterBase CharacterMovementPrefab => m_characterMovementPrefab;
 
         [Header("GameMode")]
         [SerializeField]
@@ -31,16 +31,16 @@ namespace NobunAtelier
         [SerializeField, ReadOnly]
         protected bool m_isPaused = false;
 
-        [Header("ModuleOwner & PlayerController")]
+        [Header("ModuleOwner & LegacyPlayerControllerBase")]
         [InfoBox("This settings allow to instantiate controller and character on a player spawned by a PlayerControllerManager")]
         [SerializeField]
         private bool m_instantiateController = true;
 
         [SerializeField, ShowIf("m_instantiateController")]
-        private PlayerController m_playerControllerPrefab;
+        private LegacyPlayerControllerBase m_playerControllerPrefab;
 
         [SerializeField, ShowIf("m_instantiateController")]
-        private BaseAIControler m_aiControllerPrefab;
+        private LegacyAIControlerBase m_aiControllerPrefab;
 
         [SerializeField, ShowIf("m_instantiateController")]
         private bool m_enableInputOnJoin = true;
@@ -49,7 +49,7 @@ namespace NobunAtelier
         private bool m_instantiateCharacterMovement = true;
 
         [SerializeField, ShowIf("m_instantiateCharacterMovement")]
-        private Character m_characterMovementPrefab;
+        private LegacyCharacterBase m_characterMovementPrefab;
 
         private List<GameModeParticipant> m_characterControllers = new List<GameModeParticipant>();
 
@@ -82,7 +82,7 @@ namespace NobunAtelier
             {
                 if (m_characterControllers[i].Controller.IsAI)
                 {
-                    var ai = m_characterControllers[i].Controller as BaseAIControler;
+                    var ai = m_characterControllers[i].Controller as LegacyAIControlerBase;
 
                     if (!ai)
                     {
@@ -93,7 +93,7 @@ namespace NobunAtelier
                 }
                 else
                 {
-                    var controller = m_characterControllers[i].Controller as PlayerController;
+                    var controller = m_characterControllers[i].Controller as LegacyPlayerControllerBase;
 
                     if (!controller || !controller.PlayerInput)
                     {
@@ -179,9 +179,9 @@ namespace NobunAtelier
                 participant.InstantiateController(m_playerControllerPrefab);
             }
 
-            var basePlayerController = participant.Controller as PlayerController;
+            var basePlayerController = participant.Controller as LegacyPlayerControllerBase;
             var humanPlayer = participant as Player;
-            Debug.Assert(humanPlayer, "PlayerController is BasePlayerController but it is not a Human Player!");
+            Debug.Assert(humanPlayer, "LegacyPlayerControllerBase is BasePlayerController but it is not a Human Player!");
             
             basePlayerController.MountPlayerInput(humanPlayer.PlayerInput);
                 

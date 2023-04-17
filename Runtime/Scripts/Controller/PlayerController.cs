@@ -4,7 +4,8 @@ using UnityEngine.InputSystem;
 
 namespace NobunAtelier
 {
-    public abstract class PlayerController : CharacterController
+    [AddComponentMenu("NobunAtelier/Controller/PlayerController")]
+    public class PlayerController : CharacterControllerBase<PlayerControllerModuleBase>
     {
         public override bool IsAI => false;
         public PlayerInput PlayerInput => m_playerInput;
@@ -25,6 +26,19 @@ namespace NobunAtelier
 
         private InputActionMap m_actionMap;
 
+        // [SerializeField]
+        // protected PlayerControllerModuleBase[] m_modules;
+
+        protected override void Awake()
+        {
+            base.Awake();
+
+            if (m_playerInput && m_mountInputOnAwake)
+            {
+                EnableInput();
+            }
+        }
+
         public virtual void MountPlayerInput(PlayerInput player, bool enableInput = true)
         {
             m_playerInput = player;
@@ -35,7 +49,7 @@ namespace NobunAtelier
             }
         }
 
-        public virtual void PlayerInputUnMount()
+        public virtual void UnMountPlayerInput()
         {
             DisableInput();
             m_playerInput = null;
@@ -55,6 +69,11 @@ namespace NobunAtelier
             m_actionMap = m_playerInput.actions.FindActionMap(m_actionMapName);
 
             IsInputReady = true;
+
+            foreach (var extension in m_modules)
+            {
+                extension.EnableModuleInput(PlayerInput, ActiveActionMap);
+            }
         }
 
         public virtual void DisableInput()
@@ -62,15 +81,28 @@ namespace NobunAtelier
             m_playerInput.DeactivateInput();
             m_actionMap = null;
             IsInputReady = false;
+
+            foreach (var extension in m_modules)
+            {
+                extension.DisableModuleInput(PlayerInput, ActiveActionMap);
+            }
         }
 
-        protected override void Awake()
+        protected override void UpdateController()
         {
-            base.Awake();
-
-            if (m_playerInput && m_mountInputOnAwake)
+            if (m_controlledCharacter == null)
             {
-                EnableInput();
+                return;
+            }
+
+            foreach (var extension in m_modules)
+            {
+                if (!extension.IsAvailable())
+                {
+                    continue;
+                }
+
+                extension.UpdateModule(Time.deltaTime);
             }
         }
 
@@ -81,7 +113,100 @@ namespace NobunAtelier
 
         protected virtual void OnDestroy()
         {
-            PlayerInputUnMount();
+            UnMountPlayerInput();
+        }
+
+        protected override void OnEnable()
+        {
+            EnableInput();
+            base.OnEnable();
+        }
+
+        protected override void OnDisable()
+        {
+            DisableInput();
+            base.OnDisable();
+        }
+
+        private void Update()
+        {
+            UpdateController();
         }
     }
+
+    //public class PlayerController : LegacyPlayerControllerBase
+    //{
+    //    [SerializeField]
+    //    protected PlayerControllerModuleBase[] m_modules;
+
+    //    protected override void Awake()
+    //    {
+    //        base.Awake();
+
+    //        foreach(var extension in m_modules)
+    //        {
+    //            extension.InitModule(this);
+    //        }
+    //    }
+
+    //    public override void EnableInput()
+    //    {
+    //        Debug.Assert(m_controlledCharacter, "Enabling input but not character controlled!");
+
+    //        base.EnableInput();
+
+    //        foreach (var extension in m_modules)
+    //        {
+    //            extension.EnableModuleInput(PlayerInput, ActiveActionMap);
+    //        }
+    //    }
+
+    //    public override void DisableInput()
+    //    {
+    //        base.DisableInput();
+
+    //        foreach (var extension in m_modules)
+    //        {
+    //            extension.DisableModuleInput(PlayerInput, ActiveActionMap);
+    //        }
+    //    }
+
+    //    protected override void UpdateController()
+    //    {
+    //        if (m_controlledCharacter == null)
+    //        {
+    //            return;
+    //        }
+
+    //        foreach (var extension in m_modules)
+    //        {
+    //            if (!extension.IsAvailable())
+    //            {
+    //                continue;
+    //            }
+
+    //            extension.UpdateModule(Time.deltaTime);
+    //        }
+    //    }
+
+    //    private void OnEnable()
+    //    {
+    //        EnableInput();
+
+    //        foreach (var extension in m_modules)
+    //        {
+    //            extension.enabled = true;
+    //        }
+    //    }
+
+    //    private void OnDisable()
+    //    {
+    //        DisableInput();
+
+    //        foreach (var extension in m_modules)
+    //        {
+    //            extension.enabled = false;
+    //        }
+    //    }
+    //}
 }

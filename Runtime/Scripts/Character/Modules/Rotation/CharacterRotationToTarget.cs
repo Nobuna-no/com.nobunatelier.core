@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Character Module/Rotation To Target")]
+    [AddComponentMenu("NobunAtelier/Character/RotationModule Look At Target")]
     public class CharacterRotationToTarget : CharacterVelocityDrivenForwardRotation
     {
         [SerializeField]

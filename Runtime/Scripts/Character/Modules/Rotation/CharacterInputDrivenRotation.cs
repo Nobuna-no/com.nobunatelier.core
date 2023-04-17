@@ -3,8 +3,8 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Character Module/Rotation Input Driven")]
-    public class CharacterInputDrivenRotation : CharacterRotationModule
+    [AddComponentMenu("NobunAtelier/Character/RotationModule Input Driven")]
+    public class CharacterInputDrivenRotation : CharacterRotationModuleBase
     {
         [Serializable]
         public enum RotationAxis

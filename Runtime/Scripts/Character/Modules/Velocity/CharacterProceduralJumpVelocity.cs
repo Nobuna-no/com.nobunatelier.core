@@ -4,7 +4,7 @@ using UnityEngine;
 namespace NobunAtelier
 {
     // WIP
-    [AddComponentMenu("NobunAtelier/Character Module/Velocity Procedural Jump")]
+    [AddComponentMenu("NobunAtelier/Character/VelocityModule Procedural Jump")]
     public class CharacterProceduralJumpVelocity : CharacterVelocityModule
     {
         [SerializeField]

@@ -6,10 +6,10 @@ namespace NobunAtelier
     // Use cases: Players, AIs, Spectators, ...
     public class GameModeParticipant : MonoBehaviour
     {
-        public CharacterController Controller { get; private set; }
-        public Character CharacterMovement { get; private set; }
+        public LegacyCharacterControllerBase Controller { get; private set; }
+        public LegacyCharacterBase CharacterMovement { get; private set; }
 
-        public virtual void InstantiateCharacter(Character characterPrefab)
+        public virtual void InstantiateCharacter(LegacyCharacterBase characterPrefab)
         {
             this.CharacterMovement = null;
             if (!characterPrefab)
@@ -20,7 +20,7 @@ namespace NobunAtelier
             this.CharacterMovement = Instantiate(characterPrefab, gameObject.transform);
         }
 
-        public virtual void InstantiateController(CharacterController controllerPrefab)
+        public virtual void InstantiateController(LegacyCharacterControllerBase controllerPrefab)
         {
             this.Controller = null;
             if (!controllerPrefab)

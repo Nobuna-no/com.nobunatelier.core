@@ -6,13 +6,13 @@ namespace NobunAtelier
     using Gameplay;
 
     // For top down 3D only
-    [RequireComponent(typeof(Character))]
+    [RequireComponent(typeof(LegacyCharacterBase))]
     public class HitPushBackBehaviour : MonoBehaviour
     {
         [SerializeField]
         private bool m_ForwardZ = true;
 
-        private Character m_characterMovement;
+        private LegacyCharacterBase m_characterMovement;
         private HealthBehaviour m_healthComponent;
         private Vector3 m_destination = Vector3.zero;
         private Vector3 m_origin = Vector3.zero;
@@ -51,7 +51,7 @@ namespace NobunAtelier
 
         private void Awake()
         {
-            m_characterMovement = GetComponent<Character>();
+            m_characterMovement = GetComponent<LegacyCharacterBase>();
             m_healthComponent = GetComponent<HealthBehaviour>();
             this.enabled = false;
 

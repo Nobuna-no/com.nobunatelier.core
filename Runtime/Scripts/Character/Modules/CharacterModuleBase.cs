@@ -6,13 +6,13 @@ namespace NobunAtelier
 {
     public abstract class CharacterModuleBase : MonoBehaviour
     {
-        public AtelierCharacter ModuleOwner { get; private set; }
+        public Character ModuleOwner { get; private set; }
         public int Priority => m_priority;
 
         [SerializeField]
         private int m_priority = 0;
 
-        public virtual void ModuleInit(AtelierCharacter character)
+        public virtual void ModuleInit(Character character)
         {
             ModuleOwner = character;
         }
