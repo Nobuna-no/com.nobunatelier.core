@@ -59,7 +59,7 @@
 //    { }
 
 //    // Useful to initialize the new object and bind method to IPoolableObject.onActivation for instance.
-//    protected virtual void OnObjectCreation(PoolableBehaviour obj)
+//    protected virtual void OnProductCreation(PoolableBehaviour obj)
 //    { }
 
 //    protected virtual void OnObjectSpawned(PoolableBehaviour obj)
@@ -124,7 +124,7 @@
 //        {
 //            out_array[i] = Instantiate(prefab.gameObject, Vector3.zero, Quaternion.identity, m_reserveParent).GetComponent<PoolableBehaviour>();
 //            out_array[i].ResetObject();
-//            OnObjectCreation(out_array[i]);
+//            OnProductCreation(out_array[i]);
 //        }
 
 //        return out_array;
