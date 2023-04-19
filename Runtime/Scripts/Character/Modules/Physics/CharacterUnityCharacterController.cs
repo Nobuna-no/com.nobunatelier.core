@@ -34,11 +34,11 @@ namespace NobunAtelier
         {
             get
             {
-                return ModuleOwner.gameObject.transform.rotation;
+                return m_targetCharacterController.transform.rotation;
             }
             set
             {
-                ModuleOwner.gameObject.transform.rotation = value;
+                m_targetCharacterController.transform.rotation = value;
             }
         }
 
@@ -57,7 +57,7 @@ namespace NobunAtelier
             m_targetCharacterController = ModuleOwner.GetComponent<UnityEngine.CharacterController>();
             if (m_targetCharacterController == null)
             {
-                Debug.LogWarning($"No Unity LegacyCharacterControllerBase found on {ModuleOwner}, instancing default one.");
+                Debug.LogWarning($"No Unity CharacterController found on {ModuleOwner}, instancing default one.");
                 m_targetCharacterController = ModuleOwner.gameObject.AddComponent<UnityEngine.CharacterController>();
             }
         }

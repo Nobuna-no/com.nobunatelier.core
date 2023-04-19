@@ -5,7 +5,7 @@ using UnityEngine;
 namespace NobunAtelier
 {
     [AddComponentMenu("NobunAtelier/Character/VelocityModule 2D Movement")]
-    public class Character2DMovementVelocity : CharacterVelocityModule
+    public class Character2DMovementVelocity : CharacterVelocityModuleBase
     {
         public enum MovementAxes
         {
@@ -44,11 +44,11 @@ namespace NobunAtelier
 
         [ShowIf("DisplayAcelerationFields")]
         [SerializeField, Range(0.01f, 1f)]
-        private float m_accelerationTimeInSeconds = 10.0f;
+        private float m_accelerationTimeInSeconds = .25f;
 
         [ShowIf("DisplayAcelerationFields")]
         [SerializeField, Range(0.01f, 1f)]
-        private float m_decelerationTimeInSeconds = 10.0f;
+        private float m_decelerationTimeInSeconds = .25f;
 
         [ShowIf("DisplayDesiredVelocityFields")]
         [SerializeField, Range(0f, 100f)]

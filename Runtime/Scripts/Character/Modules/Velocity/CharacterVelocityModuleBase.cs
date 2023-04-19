@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    public abstract class CharacterVelocityModule : CharacterModuleBase
+    public abstract class CharacterVelocityModuleBase : CharacterModuleBase
     {
         public Vector3 LastMoveDirection { get; protected set; }
 

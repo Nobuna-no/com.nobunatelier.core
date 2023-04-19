@@ -1,3 +1,4 @@
+using NaughtyAttributes;
 using UnityEngine;
 
 namespace NobunAtelier
@@ -11,6 +12,10 @@ namespace NobunAtelier
         [SerializeField, Range(0, 50f)]
         private float m_rotationSpeed = 10f;
 
+#if UNITY_EDITOR
+        [SerializeField, ReadOnly]
+        private Vector3 m_lastDirection;
+#endif
         protected void SetForward(Vector3 dir, float deltaTime)
         {
             dir = Vector3.Slerp(ModuleOwner.transform.forward, dir, m_rotationSpeed * deltaTime);
@@ -24,6 +29,10 @@ namespace NobunAtelier
             dir.x = dir.x * m_forwardSpace.x;
             dir.y = dir.y * m_forwardSpace.y;
             dir.z = dir.z * m_forwardSpace.z;
+
+#if UNITY_EDITOR
+            m_lastDirection= dir;
+#endif
 
             if (dir.sqrMagnitude <= 1)
             {

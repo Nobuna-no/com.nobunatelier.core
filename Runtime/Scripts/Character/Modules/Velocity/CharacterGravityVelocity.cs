@@ -6,7 +6,7 @@ namespace NobunAtelier
 {
     // Better use the rigidbody.gravity instead...
     [AddComponentMenu("NobunAtelier/Character/VelocityModule Gravity")]
-    public class CharacterGravityVelocity : CharacterVelocityModule
+    public class CharacterGravityVelocity : CharacterVelocityModuleBase
     {
         [SerializeField]
         private float m_maxFreeFallSpeed = 100f;

@@ -5,7 +5,7 @@ namespace NobunAtelier
 {
     // WIP
     [AddComponentMenu("NobunAtelier/Character/VelocityModule Procedural Jump")]
-    public class CharacterProceduralJumpVelocity : CharacterVelocityModule
+    public class CharacterProceduralJumpVelocity : CharacterVelocityModuleBase
     {
         [SerializeField]
         private float m_jumpHeight = 20;

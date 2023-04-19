@@ -33,6 +33,8 @@ namespace NobunAtelier
         {
             base.Awake();
 
+            CapturePlayerInputAndSetBehaviour();
+
             if (m_playerInput && m_mountInputOnAwake)
             {
                 EnableInput();
@@ -131,6 +133,25 @@ namespace NobunAtelier
         private void Update()
         {
             UpdateController();
+        }
+
+        protected override void OnValidate()
+        {
+            base.OnValidate();
+            CapturePlayerInputAndSetBehaviour();
+        }
+        
+        private void CapturePlayerInputAndSetBehaviour()
+        {
+            if (m_playerInput == null)
+            {
+                m_playerInput = GetComponent<PlayerInput>();
+            }
+
+            if (m_playerInput)
+            {
+                m_playerInput.notificationBehavior = PlayerNotifications.InvokeCSharpEvents;
+            }
         }
     }
 

@@ -49,6 +49,8 @@ namespace NobunAtelier
                 Debug.Assert(m_controlledCharacter, $"No Character found for {this.transform.parent.gameObject.name}/{this}");
             }
 
+            CaptureCharacterControllerModules();
+
             foreach (var extension in m_modules)
             {
                 extension.InitModule(this);
@@ -87,6 +89,18 @@ namespace NobunAtelier
             {
                 module.enabled = false;
             }
+        }
+
+
+        protected virtual void OnValidate()
+        {
+            CaptureCharacterControllerModules();
+        }
+
+        [NaughtyAttributes.Button("Refresh modules")]
+        protected virtual void CaptureCharacterControllerModules()
+        {
+            m_modules = GetComponents<T>();
         }
     }
 }
