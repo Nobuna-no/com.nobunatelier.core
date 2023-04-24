@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace NobunAtelier
@@ -18,13 +16,10 @@ namespace NobunAtelier
         }
 
         public virtual void Reset()
-        {
-
-        }
+        { }
 
         public virtual void StateUpdate(bool grounded)
         { }
-
 
         public virtual bool CanBeExecuted()
         {
