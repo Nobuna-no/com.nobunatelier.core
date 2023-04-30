@@ -163,6 +163,8 @@ namespace NobunAtelier
 
             m_movementVector = Vector3.zero;
 
+            m_velocity = Vector3.ClampMagnitude(m_velocity, m_maxSpeed);
+
             return m_velocity;
         }
 
