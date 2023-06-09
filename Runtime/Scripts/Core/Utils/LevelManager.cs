@@ -2,15 +2,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using NaughtyAttributes;
-using static UnityEditor.Experimental.AssetDatabaseExperimental.AssetDatabaseCounters;
-using UnityEditor.SearchService;
 
 #if UNITY_EDITOR
+using UnityEditor.SearchService;
 using UnityEditor.SceneManagement;
 #endif
 
 namespace NobunAtelier
-{   
+{
 
     public class LevelManager : SingletonManager<LevelManager>
     {
@@ -111,7 +110,7 @@ namespace NobunAtelier
             {
                 return;
             }
-            
+
             SceneSetup[] setup = EditorSceneManager.GetSceneManagerSetup();
 
             foreach (var s in setup)

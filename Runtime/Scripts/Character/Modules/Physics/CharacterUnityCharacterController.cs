@@ -11,6 +11,8 @@ namespace NobunAtelier
         private UnityEngine.CharacterController m_targetCharacterController;
         [SerializeField]
         private Vector3 m_maxVelocity = new Vector3(10f, 20f, 10f);
+        [SerializeField]
+        private float m_maxSpeed = 20f;
 
         [SerializeField]
         private bool m_useSimpleMove = false;
@@ -67,6 +69,7 @@ namespace NobunAtelier
             newVelocity.x = Mathf.Clamp(newVelocity.x, -m_maxVelocity.x, m_maxVelocity.x);
             newVelocity.y = Mathf.Clamp(newVelocity.y, -m_maxVelocity.y, m_maxVelocity.y);
             newVelocity.z = Mathf.Clamp(newVelocity.z, -m_maxVelocity.z, m_maxVelocity.z);
+            newVelocity = Vector3.ClampMagnitude(newVelocity, m_maxSpeed);
 
             if (m_useSimpleMove)
             {

@@ -27,6 +27,13 @@ namespace NobunAtelier
             DesiredVelocityFromAcceleration,
         }
 
+        public enum VelocityClampingOption
+        {
+            None = 0,
+            ClampWhenCharacterVelocityIsZero,
+            ClampToSmallerAbsoluteCharacterVelocity,
+        }
+
         [SerializeField]
         private MovementAxes m_movementAxes = MovementAxes.XZ;
 
@@ -38,6 +45,9 @@ namespace NobunAtelier
 
         [SerializeField, Range(0, 100f)]
         private float m_maxSpeed = 10.0f;
+
+        [SerializeField]
+        private VelocityClampingOption m_internalVelocityClamping = VelocityClampingOption.ClampWhenCharacterVelocityIsZero;
 
         [SerializeField]
         private VelocityProcessing m_accelerationApplication = VelocityProcessing.FromRawInput;
@@ -55,9 +65,11 @@ namespace NobunAtelier
         private float m_desiredVelocityMaxAcceleration = 50.0f;
 
         private Vector3 m_movementVector;
-#if UNITY_EDITOR
+
         [SerializeField, ReadOnly]
         private Vector3 m_velocity;
+
+#if UNITY_EDITOR
 
         private bool DisplayCustomMovementAxisFields()
         {
@@ -73,6 +85,7 @@ namespace NobunAtelier
         {
             return m_accelerationApplication == VelocityProcessing.DesiredVelocityFromAcceleration;
         }
+
 #endif
 
         public bool EvaluateState()
@@ -107,6 +120,44 @@ namespace NobunAtelier
 
         public override Vector3 VelocityUpdate(Vector3 currentVel, float deltaTime)
         {
+            // Clamp internal velocity based on the last frame final character velocity.
+            // For instance, this allows to reset the internal velocity of the module when hitting a wall.
+            switch (m_internalVelocityClamping)
+            {
+                case VelocityClampingOption.ClampToSmallerAbsoluteCharacterVelocity:
+                    if (Mathf.Abs(currentVel.x) < Mathf.Abs(m_velocity.x))
+                    {
+                        m_velocity.x = currentVel.x;
+                    }
+                    if (Mathf.Abs(currentVel.y) < Mathf.Abs(m_velocity.y))
+                    {
+                        m_velocity.y = currentVel.y;
+                    }
+                    if (Mathf.Abs(currentVel.z) < Mathf.Abs(m_velocity.z))
+                    {
+                        m_velocity.z = currentVel.z;
+                    }
+                    break;
+
+                case VelocityClampingOption.ClampWhenCharacterVelocityIsZero:
+                    if (Mathf.Approximately(currentVel.x, 0))
+                    {
+                        m_velocity.x = 0;
+                    }
+                    if (Mathf.Approximately(currentVel.y, 0))
+                    {
+                        m_velocity.y = 0;
+                    }
+                    if (Mathf.Approximately(currentVel.z, 0))
+                    {
+                        m_velocity.z = 0;
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+
             switch (m_accelerationApplication)
             {
                 case VelocityProcessing.FromRawInput:
@@ -118,7 +169,7 @@ namespace NobunAtelier
                     {
                         if (m_velocity == Vector3.zero)
                         {
-                            return currentVel;
+                            return m_velocity;
                         }
 
                         float previousSqrtMag = m_velocity.sqrMagnitude;
@@ -147,19 +198,20 @@ namespace NobunAtelier
                     break;
             }
 
-            var diffVec = Vector3.one - GetMovementSpace();
-            if (diffVec.x != 0)
-            {
-                m_velocity.x = currentVel.x;
-            }
-            if (diffVec.y != 0)
-            {
-                m_velocity.y = currentVel.y;
-            }
-            if (diffVec.z != 0)
-            {
-                m_velocity.z = currentVel.z;
-            }
+            // What was that for? xD
+            //var diffVec = Vector3.one - GetMovementSpace();
+            //if (diffVec.x != 0)
+            //{
+            //    m_velocity.x = currentVel.x;
+            //}
+            //if (diffVec.y != 0)
+            //{
+            //    m_velocity.y = currentVel.y;
+            //}
+            //if (diffVec.z != 0)
+            //{
+            //    m_velocity.z = currentVel.z;
+            //}
 
             m_movementVector = Vector3.zero;
 

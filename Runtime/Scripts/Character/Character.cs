@@ -132,8 +132,8 @@ namespace NobunAtelier
             }
 #else
             Debug.Assert(m_physicsModule, $"{this} doesn't have a Physics module!");
-            Debug.Assert(m_velocityModules && m_velocityModules.Count > 0, $"{this} doesn't have any Velocity module!");
-            Debug.Assert(m_rotationModules && m_rotationModules.Count > 0, $"{this} doesn't have any Rotation module!");
+            Debug.Assert(m_velocityModules != null && m_velocityModules.Count > 0, $"{this} doesn't have any Velocity module!");
+            Debug.Assert(m_rotationModules != null && m_rotationModules.Count > 0, $"{this} doesn't have any Rotation module!");
 #endif
 
             m_physicsModule.ModuleInit(this);
