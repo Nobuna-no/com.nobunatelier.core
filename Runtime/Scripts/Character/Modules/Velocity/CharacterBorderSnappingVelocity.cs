@@ -1,83 +1,73 @@
-using Cinemachine;
 using NaughtyAttributes;
 using System;
+using UnityEditor;
 using UnityEngine;
 
 namespace NobunAtelier
 {
     /// <summary>
-    /// Velocity module
-    /// When the character is leaving a platform, it will gradually be "snapped" back toward the closest border using a cumulative snap acceleration
-    /// While snapped, when it reaches the border, it will decelerate gradually until stopped (when the snap acceleration reaches zero)
-    /// The goal is to have control over:
+    /// Goal:
+    /// -
+    /// - When the character is leaving a platform, it will gradually be "snapped" back toward the closest border using a cumulative snap acceleration
+    /// - While snapped, when it reaches the border, it will decelerate gradually until stopped (when the snap acceleration reaches zero)
+    /// - The goal is to have control over:
     ///     - MaxBorderDistance: the further the distance, the stronger the SnappingForce is applied. This value is the distance at which the maximum snappingForce is applied
     ///     - SnappingForce: the force at which the character is snapped toward the nearest border
     ///     - SnappingControl: How much control can the player have while being snapped? Not sure if that should be a duration or based on the distance...
-    ///     - DecelerationForce: the force at which the character decelerates after reaching back the platform
+    ///     - DecelerationForce: the force at which the character decelerates afterMag reaching back the platform
     ///     - DecelerationControl: How much control can the player have while decelerating.
     /// </summary>
 
+    // if m_currentControl == 1: convert all the external vel toward the snapping (which is bad as it means that even trying to go back
+    // will lead to increase velocity...
+    // What should happens:
+    //      - the cumulative acceleration should take over the velocity just like gravity would...
+    //          - But then does that mean we have a physically based movement?
+    //          - how about control? How to induce more control over the snapping?
+    //              - I think that control should only be aligned to the snapping
+    //                  - But then that would mean no longer have the option to move to the right and back?
+    // In the end I think that the lerp should be directly affecting snapAcceleration to currentVel...
 
     [AddComponentMenu("NobunAtelier/Character/VelocityModule Border Snapping")]
     public class CharacterBorderSnappingVelocity : CharacterVelocityModuleBase
     {
-        public enum SnappingAccelerationType
-        {
-            Acceleration,
-            Duration
-        }
-
-        [Header("Physics")]
         [SerializeField]
         private LayerMask m_groundLayer;
         [SerializeField]
         private Transform m_castOrigin;
-        [SerializeField, Range(0.01f, 10f)]
-        private float m_rayCastMaxDistance = 1f;
+        [SerializeField]
+        private float m_rayCastMaxDistance = 0.5f;
 
-        [Header("Snap")]
+        [SerializeField, Range(0, 100f)]
+        private float m_maxSpeed = 30f;
+
         [SerializeField]
-        private SnappingAccelerationType m_accelerationType;
-        [SerializeField, Range(0, 100f)]
-        private float m_maxSnapAcceleration = 25f;
-        [SerializeField, Range(0, 100f)]
-        private float m_maxSpeed = 50f;
-        [SerializeField, Range(0, 100f)]
-        private float m_snapForceDecceleration = 10f;
+        private bool m_clampSpeed = true;
+
+        [SerializeField, Range(1f, 100f)]
+        private float m_snapForceAcceleration = 25f;
+
+        [SerializeField, Range(0.1f, 10f)]
+        private float m_snapForceDecceleration = 1;
+
         [SerializeField]
-        private AnimationCurve m_snapAccelerationCurve = AnimationCurve.EaseInOut(0,0,1,1);
+        private AnimationCurve m_snapAccelerationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
         [SerializeField, Range(0, 10f)]
         private float m_maxSnapDistance = 3f;
 
-        [Header("Control")]
-        [SerializeField, Range(0f, 10f)]
-        private float m_snappingAccelerationControlCurveDuration = 1f;
-        [SerializeField]
-        private AnimationCurve m_controlOverSnappingAccelerationCurve = AnimationCurve.EaseInOut(0, 1, 1, 0);
+        [SerializeField, Range(0, 10f)]
+        private float m_maxSnapDuration = 3f;
 
 
-        [SerializeField, Range(0f, 10f)]
-        private float m_snappingDeccelerationControlCurveDuration = 1f;
-        [SerializeField]
-        private AnimationCurve m_controlOverSnappingDeccelerationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-
-
-        [Header("Debug")]
-        [SerializeField, ReadOnly]
         private Collider m_lastHitCollider;
+        private Vector3 m_snapAcceleration = Vector3.zero;
+        private Vector3 m_snapVelocity = Vector3.zero;
+        private Vector3 m_latestClosestPoint = Vector3.zero;
+        private float m_snapDistanceFactor = 0;
 
         [SerializeField, ReadOnly]
-        private Vector3 m_snapAcceleration = Vector3.zero;
-        [SerializeField, ReadOnly]
-        private Vector3 m_snapVelocity = Vector3.zero;
-        [SerializeField, ReadOnly]
-        private float m_currentControlRatio = 0;
-        [SerializeField, ReadOnly]
-        private float m_snappingDuration = 0f;
-        [SerializeField, ReadOnly]
-        private float m_snapDistanceFactor = 0;
-        [SerializeField, ReadOnly]
-        private float m_snapAccelerationMagnitude = 0;
+        private float m_snapDuration = 0;
 
         public override void ModuleInit(Character character)
         {
@@ -89,289 +79,100 @@ namespace NobunAtelier
                 this.enabled = false;
             }
         }
-        [SerializeField, ReadOnly]
-        private Vector3 movementDir;
-        [SerializeField, ReadOnly]
-        private Vector3 m_lastMovementDir;
-        [SerializeField]
-        private bool m_newDecel = true;
-        [SerializeField]
-        private float m_debugTimeScale = 1;
 
-        [SerializeField, Range(0, 1)]
-        private float m_velocityAlignment = 0.98f;
-        public override Vector3 VelocityUpdate(Vector3 currentVel, float deltaTime)
+        public override Vector3 VelocityUpdate(Vector3 externalVelocity, float deltaTime)
         {
             Vector3 position = m_castOrigin.position;
             if (Physics.Raycast(position, Vector3.down, out RaycastHit hitinfo, m_rayCastMaxDistance, m_groundLayer))
             {
                 m_lastHitCollider = hitinfo.collider;
-
-                if (m_snappingDuration > 0)
+                m_snapDuration = 0;
+                if (m_snapAcceleration != Vector3.zero)
                 {
-                    m_snappingDuration = 0;
-                    m_lastMovementDir = m_snapAcceleration.normalized;
-                }
-                else
-                {
-                    m_snappingDuration -= deltaTime;
-                }
+                    m_snapAcceleration = (m_snapVelocity) / deltaTime;
+                    m_snapAcceleration.y = 0;
 
-                if (m_snapAcceleration == Vector3.zero)
-                {
-                    return currentVel;
-                }
+                    var prevMag = m_snapAcceleration.sqrMagnitude;
+                    m_snapAcceleration -= m_snapAcceleration.normalized * m_snapForceDecceleration * m_maxSpeed;
+                    var afterMag = m_snapAcceleration.sqrMagnitude;
 
-                UnityEngine.Time.timeScale = m_debugTimeScale;
-
-
-                if (!m_newDecel)
-                {
-
-                    if (m_accelerationType == SnappingAccelerationType.Acceleration)
-                    {
-                        m_snapAcceleration = Vector3.MoveTowards(m_snapAcceleration, Vector3.zero, m_snapForceDecceleration * deltaTime);
-                    }
-                    else
-                    {
-                        m_snapAcceleration = Vector3.Lerp(m_lastSnapAcell, Vector3.zero, -m_snappingDuration / m_snapForceDecceleration);
-                    }
-
-                    ClampAcceleration();
-
-
-                    if (currentVel.x == 0f && currentVel.z == 0)
-                    {
-                        m_snapVelocity = currentVel + m_lastMovementDir * m_snapAcceleration.magnitude;
-                        ClampVelocity();
-                        return m_snapVelocity;
-                    }
-
-
-                    {
-                        m_snapAccelerationMagnitude = m_snapAcceleration.magnitude;
-                        var orientedDeccel = currentVel.normalized * m_snapAcceleration.magnitude;
-                        m_currentControlRatio = m_controlOverSnappingDeccelerationCurve.Evaluate(-m_snappingDuration / m_snappingDeccelerationControlCurveDuration);
-                        // m_snapVelocity = currentVel + Vector3.Lerp(m_snapAcceleration, orientedDeccel, m_currentControlRatio);
-
-
-                        // var orrientedVelDeccel = m_snapAcceleration.normalized * currentVel.magnitude;
-                        // var velOverrideDecelControl = m_externalVelocitySnappingOverrideCurve.Evaluate(-m_snappingDuration / m_snappingDeccelerationControlCurveDuration);
-                        // m_snapVelocity = Vector3.Lerp(orrientedVelDeccel, currentVel, m_currentControlRatio) + Vector3.Lerp(m_snapAcceleration, orientedDeccel, m_currentControlRatio);
-
-                        var testOrrientedVelDec = m_snapAcceleration.normalized * currentVel.magnitude;
-                        var testControlDec = m_currentControlRatio;
-                        var testVelocityDDec = Vector3.Lerp(testOrrientedVelDec, currentVel, testControlDec);
-
-                        m_snapVelocity = testVelocityDDec + m_snapAcceleration;
-                        m_lastMovementDir = m_snapVelocity.normalized;
-                    }
-
-                    // Debug.DrawRay(ModuleOwner.Position, m_snapVelocity.normalized * 3, Color.green, 0.5f);
-                    // Debug.DrawRay(ModuleOwner.Position, testVelocityDDec.normalized * 3, Color.white, 0.5f);
-                    // Debug.DrawRay(ModuleOwner.Position, currentVel.normalized * 2, Color.cyan, 0.5f);
-                    // Debug.DrawRay(ModuleOwner.Position, testOrrientedVelDec.normalized * 2, Color.yellow, 0.5f);
-
-                    ClampVelocity();
-                }
-                else
-                {
-                    Vector3 workingVelocity = currentVel;
-                    workingVelocity.y = 0;
-
-                    Vector3 decelForce = m_snapAcceleration.normalized * /*m_controlOverSnappingDeccelerationCurve.Evaluate(-m_snappingDuration / m_snappingDeccelerationControlCurveDuration) **/ m_snapForceDecceleration;
-
-                    float initialSquareMag = m_snapAcceleration.sqrMagnitude;
-                    m_snapAcceleration -= decelForce * deltaTime;
-                    if (m_snapAcceleration.sqrMagnitude >= initialSquareMag)
+                    if (afterMag > prevMag)
                     {
                         m_snapAcceleration = Vector3.zero;
-                        return currentVel;
+                        m_latestClosestPoint = Vector3.zero;
                     }
-
-                    ClampAcceleration();
-
-                    if (currentVel.x == 0f && currentVel.z == 0)
-                    {
-                        m_snapVelocity = currentVel + m_snapAcceleration;
-                        ClampVelocity();
-                        return m_snapVelocity;
-                    }
-
-                    m_currentControlRatio = m_controlOverSnappingDeccelerationCurve.Evaluate(-m_snappingDuration / m_snappingDeccelerationControlCurveDuration);
-
-                    //m_snapAccelerationMagnitude = m_snapAcceleration.magnitude;
-
-                    //float movementToSnapDotProduct = Vector3.Dot(workingVelocity, m_snapAcceleration);
-                    //if (movementToSnapDotProduct <= -m_velocityAlignment)
-                    //{
-                    //    float axisDiff = Mathf.Abs(movementDir.x) - Mathf.Abs(movementDir.z);
-                    //    bool isAxisDiffWithinEpsilon = Mathf.Abs(axisDiff) < m_velocityAlignment;
-                    //    workingVelocity.x = isAxisDiffWithinEpsilon ? 0 : (axisDiff > 0 ? workingVelocity.x : 0);
-                    //    workingVelocity.z = isAxisDiffWithinEpsilon ? 0 : (axisDiff > 0 ? 0 : workingVelocity.z);
-                    //}
-
-                    Vector3 orientedInputVelocity = m_snapAcceleration.normalized * workingVelocity.magnitude;
-
-                    // float controlOverSnappingDeceleration = m_currentControlRatio;
-                    // 0 = We orient all the input velocity toward the snap
-                    // 1 = We directly take the working velocity
-                    Vector3 finalControlledVelocity = Vector3.Lerp(orientedInputVelocity, workingVelocity, m_currentControlRatio);
-
-                    // Ok find the issue, only the facing velocity should be added! just like with the borderSlide
-
-                    // The issue here is that we need to add the input to the final velocity
-                    m_snapVelocity = finalControlledVelocity + m_snapAcceleration;
-                    m_snapAcceleration = m_snapVelocity.normalized * m_snapAcceleration.magnitude;
-                    //m_lastMovementDir = m_snapVelocity.normalized;
-                    ClampVelocity();
-
-                    m_snapVelocity.y += currentVel.y;
                 }
-                return m_snapVelocity;
             }
-
-            if (m_snappingDuration < 0)
+            else if (m_lastHitCollider)
             {
-                m_snappingDuration = 0;
-            }
-            m_snappingDuration += deltaTime;
 
-            Vector3 closestPoint = m_lastHitCollider.ClosestPoint(position);
-            Vector3 direction = closestPoint - position;
-            direction.y = 0;
+                m_latestClosestPoint = m_lastHitCollider.ClosestPoint(position);
+                Vector3 direction = m_latestClosestPoint - position;
+                direction.y = 0;
 
-            m_snapDistanceFactor = direction.sqrMagnitude / (m_maxSnapDistance * m_maxSnapDistance);
-            Vector3 snapForce = direction.normalized * m_snapAccelerationCurve.Evaluate(m_snapDistanceFactor) * m_maxSnapAcceleration;
-
-            m_snapAcceleration += snapForce * deltaTime;
-            ClampAcceleration();
-
-
-            // var diff = snapDir + movementDir;
-            // Debug.Log($"movement + snap = {diff} - sqrMagnitude = {diff.sqrMagnitude}");
-            // var slideDir = diff.sqrMagnitude < 0.1f ? Vector3.zero : new Vector3(-snapDir.z, 0, snapDir.x);
-            // Debug.Log($"slideDir = {slideDir}");
-            // slideDir.x *= Sign(movementDir.x);
-            // slideDir.z *= Sign(movementDir.z);
-            // Debug.Log($"slideDir = {slideDir}");
-
-            // slideDir = slideDir.normalized * currentVel.magnitude;
-
-            //if (m_slideTowardMovement)
-            //{
-            //    var snapDir = m_snapAcceleration.normalized;
-            //    movementDir = new Vector3(currentVel.x, 0, currentVel.z);
-            //    // movementDir = RoundDirection(movementDir.normalized, m_epsilonRound);
-
-            //    Vector3 slideDir = movementDir;
-            //    if (slideDir.x != 0 && Mathf.Sign(snapDir.x) != Mathf.Sign(movementDir.x))
-            //    {
-            //        slideDir.x = snapDir.z * Mathf.Sign(movementDir.x);
-            //    }
-
-            //    if (slideDir.z != 0 && Mathf.Sign(snapDir.z) != Mathf.Sign(movementDir.z))
-            //    {
-            //        slideDir.z = -snapDir.x * Mathf.Sign(movementDir.z);
-            //    }
-            //    Debug.Log($"Signs: snap/move X({Mathf.Sign(snapDir.x)} / {Mathf.Sign(movementDir.x)}({movementDir.x})) Z({Mathf.Sign(snapDir.z)} / {Mathf.Sign(movementDir.z)}({movementDir.z}))");
-            //    Debug.Log($"slideDir: {slideDir} / currentVel = {currentVel} ");
-
-
-            //    slideDir.Normalize();
-            //    slideDir.x *= Mathf.Abs(currentVel.x);
-            //    slideDir.y = currentVel.y;
-            //    slideDir.z *= Mathf.Abs(currentVel.z);
-
-            //    Debug.DrawRay(ModuleOwner.Position, slideDir.normalized * 3, Color.white, 0.5f); // Color.Lerp(Color.red, Color.yellow, velOverrideControl)
-            //    Debug.DrawRay(ModuleOwner.Position, movementDir * 2, Color.cyan, 0.5f);
-            //    Debug.DrawRay(ModuleOwner.Position, snapDir * 2, Color.yellow, 0.5f);
-
-            //    return slideDir;
-            //}
-
-            if (currentVel.x == 0f && currentVel.z == 0)
-            {
-                m_snapVelocity = currentVel + m_snapAcceleration;
-                ClampVelocity();
-                return m_snapVelocity;
+                m_snapDistanceFactor = direction.sqrMagnitude / (m_maxSnapDistance * m_maxSnapDistance);
+                // The intention is: the more we are near the maxSnapDistance the more we reach the max duration
+                m_snapDuration += deltaTime + (m_maxSnapDuration * m_snapDistanceFactor);
+                float overflow = m_snapDuration - m_maxSnapDuration;
+                Vector3 snapForce = direction.normalized * m_snapAccelerationCurve.Evaluate(m_snapDuration / m_maxSnapDuration) * m_snapForceAcceleration;
+                m_snapAcceleration += snapForce + (snapForce * overflow * deltaTime);
             }
 
-            m_snapAccelerationMagnitude = m_snapAcceleration.magnitude;
-            // var orientedAccel = currentVel.normalized * m_snapAcceleration.magnitude;
-            m_currentControlRatio = m_controlOverSnappingAccelerationCurve.Evaluate(m_snappingDuration / m_snappingAccelerationControlCurveDuration);
-
-            // Ok c'est cool d'avoir un moyen de dire a quel point le joueur affecte le snap, mais la velocite actuel du joeur a quand
-            // meme un impact sur le movement final, meme avec 0 control. Ici ) control signifie que le joueur n'a aucun control sur le snap,
-            // mais cela veut pas dire que les force exterieur n'ont pas de controle sur le snap.
-            // Pour permettre cela, il faut que la currentVel puissent etre affecter par le snap aussi...
-            // m_snapVelocity = currentVel + Vector3.Lerp(m_snapAcceleration, orientedAccel, m_currentControlRatio);
-
-            var testOrrientedVel = m_snapAcceleration.normalized * currentVel.magnitude;
-            var testControl = m_currentControlRatio;
-            var testVelocity = Vector3.Lerp(testOrrientedVel, currentVel, testControl);
-            m_snapVelocity = testVelocity + m_snapAcceleration;// , orientedAccel, m_currentControlRatio);
-
-            // var orrientedVel = m_snapAcceleration.normalized * currentVel.magnitude;
-            // var velOverrideControl = m_externalVelocitySnappingOverrideCurve.Evaluate(m_snappingDuration / m_snappingAccelerationControlCurveDuration);
-            // var finalExternalVelocity = Vector3.Lerp(orrientedVel, currentVel, velOverrideControl);
-            // m_snapVelocity = finalExternalVelocity  + Vector3.Lerp(orrientedVel, currentVel, velOverrideControl) + Vector3.Lerp(m_snapAcceleration, orientedAccel, m_currentControlRatio);
-
-            Debug.DrawRay(ModuleOwner.Position, testVelocity.normalized * 3, Color.white, 0.5f); // Color.Lerp(Color.red, Color.yellow, velOverrideControl)
-            Debug.DrawRay(ModuleOwner.Position, m_snapVelocity.normalized * 3, Color.green, 0.5f);
-            Debug.DrawRay(ModuleOwner.Position, currentVel.normalized * 2, Color.cyan, 0.5f);
-            Debug.DrawRay(ModuleOwner.Position, testOrrientedVel.normalized * 2, Color.yellow, 0.5f);
-
-            // Debug.Log($"orrientedVel({velOverrideControl}): " + finalExternalVelocity);
-
+            m_snapVelocity = (m_snapAcceleration * deltaTime);
             ClampVelocity();
-            m_lastSnapAcell = m_snapAcceleration;
-            return m_snapVelocity;
-        }
-        [SerializeField, ReadOnly]
-        Vector3 m_lastSnapAcell;
-        public static Vector3 RoundDirection(Vector3 v, float epsilon)
-        {
-            return new Vector3(
-                Mathf.Round(v.x / epsilon) * epsilon,
-                Mathf.Round(v.y / epsilon) * epsilon,
-                Mathf.Round(v.z / epsilon) * epsilon
-            );
-        }
 
+            var final = m_snapVelocity + externalVelocity;
+
+            return final;
+        }
 
         private void ClampVelocity()
         {
+            if (!m_clampSpeed)
+            {
+                return;
+            }
+
             if (m_snapVelocity.sqrMagnitude > m_maxSpeed * m_maxSpeed)
             {
-                Debug.Log("Clamping velocity!");
                 m_snapVelocity = Vector3.ClampMagnitude(m_snapVelocity, m_maxSpeed);
-            }
-        }
-
-        private void ClampAcceleration()
-        {
-            if (m_snapAcceleration.sqrMagnitude > m_maxSnapAcceleration * m_maxSnapAcceleration)
-            {
-                Debug.Log("Clamping acceleration!");
-                m_snapAcceleration = Vector3.ClampMagnitude(m_snapAcceleration, m_maxSnapAcceleration);
             }
         }
 
         public void OnDrawGizmos()
         {
-            if (!Application.isPlaying || !m_lastHitCollider)
+            if (!Application.isPlaying || !m_lastHitCollider || m_latestClosestPoint.sqrMagnitude == 0)
             {
                 return;
             }
 
-            Gizmos.color = Color.Lerp(Color.white, Color.red, m_snapDistanceFactor);
-
-            Vector3 closestPoint = m_lastHitCollider.ClosestPoint(ModuleOwner.Position);
-
+            Gizmos.color = Color.white;
             Gizmos.DrawSphere(ModuleOwner.Position, 0.1f);
-            Gizmos.DrawLine(closestPoint, ModuleOwner.Position);
-            Gizmos.DrawWireSphere(closestPoint, 0.5f);
+
+            Gizmos.color = Color.Lerp(Color.white, Color.red, m_snapDistanceFactor);
+            Gizmos.DrawLine(m_latestClosestPoint, ModuleOwner.Position);
+
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(m_latestClosestPoint, 0.5f);
+        }
+    }
+
+    public static class PhysicsHelper
+    {
+        public static bool GetClosestPointFromPenetration(Collider target_collider, SphereCollider sphere_collider, ref Vector3 closest_point, out Vector3 surface_normal)
+        {
+            surface_normal = Vector3.zero;
+
+            Vector3 sphere_pos = sphere_collider.transform.position;
+            if (Physics.ComputePenetration(target_collider, target_collider.transform.position, target_collider.transform.rotation, sphere_collider, sphere_pos, Quaternion.identity, out surface_normal, out float surface_penetration_depth))
+            {
+                closest_point = sphere_pos + (surface_normal * (sphere_collider.radius - surface_penetration_depth));
+                surface_normal = -surface_normal * surface_penetration_depth;
+
+                return true;
+            }
+
+            return false;
         }
     }
 }
