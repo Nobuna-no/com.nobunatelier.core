@@ -1,4 +1,3 @@
-using Codice.Client.Common.GameUI;
 using UnityEngine;
 
 namespace NobunAtelier

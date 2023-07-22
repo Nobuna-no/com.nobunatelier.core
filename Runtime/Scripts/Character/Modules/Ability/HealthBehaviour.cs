@@ -1,7 +1,7 @@
-using NaughtyAttributes;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
+using NaughtyAttributes;
 using NobunAtelier.Gameplay;
 
 public struct HitInfo
@@ -17,7 +17,7 @@ public class HitEvent : UnityEvent<HitInfo>
 
 namespace NobunAtelier.Gameplay
 {
-    public class HealthBehaviour : MonoBehaviour, ITeamTaggable
+    public class HealthBehaviour : CharacterAbilityModuleBase, ITeamTaggable
     {
         public static HitDefinition KillHit
         {
@@ -31,6 +31,7 @@ namespace NobunAtelier.Gameplay
                 return s_killHit;
             }
         }
+
         private static HitDefinition s_killHit = null;
 
         public TeamPlaceholder Team => m_team;
@@ -70,21 +71,35 @@ namespace NobunAtelier.Gameplay
         [Foldout("Events")]
         public UnityEvent OnResurrection;
 
-#if UNITY_EDITOR
         [SerializeField, Foldout("Debug"), ReadOnly]
-#endif
         private float m_CurrentLifeValue = 0;
-
         private bool m_isDead = false;
 
         private bool m_isVulnerable = true;
 
         private float m_currentInvulnerabilityDuration = 0f;
 
+        public override void ModuleInit(Character character)
+        {
+            base.ModuleInit(character);
+
+            Reset();
+            Debug.Assert(m_definition != null);
+        }
+
+        public override void Reset()
+        {
+            base.Reset();
+
+            m_isDead = false;
+            m_CurrentLifeValue = m_definition.InitialValue;
+        }
+
         public void Heal(float amount)
         {
             if (m_isDead)
             {
+                Debug.LogWarning($"Trying to heal a dead character {this.ModuleOwner.name}. Use Resurrect instead.");
                 return;
             }
 
@@ -138,12 +153,6 @@ namespace NobunAtelier.Gameplay
             }
         }
 
-        public void ResetToDefault()
-        {
-            m_isDead = false;
-            m_CurrentLifeValue = m_definition.InitialValue;
-        }
-
         public void Resurrect(float lifeAmount = -1)
         {
             if (!m_isDead)
@@ -159,12 +168,6 @@ namespace NobunAtelier.Gameplay
             {
                 m_objectToMakeDisappear.SetActive(true);
             }
-        }
-
-        [Button("Resurrect", EButtonEnableMode.Playmode)]
-        private void Resurrect_Debug()
-        {
-            Resurrect();
         }
 
         [Button("Kill", EButtonEnableMode.Playmode)]
@@ -187,10 +190,10 @@ namespace NobunAtelier.Gameplay
             OnDisappearing?.Invoke();
         }
 
-        private void Awake()
+        [Button("Resurrect", EButtonEnableMode.Playmode)]
+        private void Resurrect_Debug()
         {
-            m_CurrentLifeValue = m_definition.InitialValue;
-            Debug.Assert(m_definition != null);
+            Resurrect();
         }
 
         private IEnumerator PoolObjectDeactivateCoroutine()
