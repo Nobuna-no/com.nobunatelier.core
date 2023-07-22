@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Character/VelocityModule 2D Movement")]
+    [AddComponentMenu("NobunAtelier/Character/Velocity/VelocityModule: 2D Movement")]
     public class Character2DMovementVelocity : CharacterVelocityModuleBase
     {
         public enum MovementAxes

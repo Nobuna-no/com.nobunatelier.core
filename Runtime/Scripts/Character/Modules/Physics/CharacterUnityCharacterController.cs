@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Character/PhysicsModule CharacterController")]
+    [AddComponentMenu("NobunAtelier/Character/Physics/PhysicsModule: CharacterController")]
     public class CharacterUnityCharacterController : CharacterPhysicsModule
     {
         [SerializeField]

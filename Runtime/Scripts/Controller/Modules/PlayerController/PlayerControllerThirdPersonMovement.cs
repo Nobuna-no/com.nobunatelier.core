@@ -42,6 +42,16 @@ namespace NobunAtelier
             m_moveAction.canceled -= OnMoveActionCanceled;
         }
 
+        public void SetCameraTarget(ITargetable target)
+        {
+            m_cameraTarget = target.Transform;
+        }
+
+        public void SetCameraTarget(Transform cameraTarget)
+        {
+            m_cameraTarget = cameraTarget;
+        }
+
         private void CharacterMovementUpdate()
         {
             if (m_lastMoveInputValue != Vector2.zero)

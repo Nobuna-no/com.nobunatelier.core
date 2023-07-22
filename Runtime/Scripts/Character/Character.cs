@@ -4,12 +4,12 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    public class Character : MonoBehaviour, ITargetable
+    public class Character : MonoBehaviour
     {
         public virtual CharacterControllerBase Controller { get; private set; }
         public Animator Animator { get; private set; }
-        public virtual bool IsTargetable => true;
-        public virtual Transform Transform => Body.transform;
+        // public virtual bool IsTargetable => true;
+        public Transform Transform => Body.transform;
         public CharacterPhysicsModule Body => m_physicsModule;
         public Vector3 Position => Body.Position;
         public Quaternion Rotation => Body.Rotation;
@@ -216,7 +216,6 @@ namespace NobunAtelier
             m_physicsModule = GetComponent<CharacterPhysicsModule>();
 
             m_abilityModules.Clear();
-            m_abilityModules.AddRange(GetComponents<CharacterAbilityModuleBase>());
             m_abilityModules.AddRange(GetComponentsInChildren<CharacterAbilityModuleBase>());
 
             m_velocityModules.Clear();

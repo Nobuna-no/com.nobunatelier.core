@@ -1,5 +1,4 @@
-using Cinemachine;
-using Cinemachine.Utility;
+using Unity.Cinemachine;
 using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.InputSystem;

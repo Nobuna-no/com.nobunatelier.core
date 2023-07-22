@@ -7,7 +7,7 @@ namespace NobunAtelier
     public class CharacterVelocityDrivenForwardRotation : CharacterRotationModuleBase
     {
         [SerializeField, Tooltip("Set to 0 the velocity axis you want to ignore.\n i.e. y=0 mean not using y velocity to orient the body.")]
-        private Vector3 m_forwardSpace = Vector3.one;
+        protected Vector3 m_forwardSpace = Vector3.one;
 
         [SerializeField, Range(0, 50f)]
         private float m_rotationSpeed = 10f;

@@ -14,13 +14,17 @@ namespace NobunAtelier
         public override void EnableModuleInput(PlayerInput playerInput, InputActionMap activeActionMap)
         {
             m_jumpAction = activeActionMap.FindAction(m_actionName);
+            Debug.Assert(m_jumpAction != null, $"Can't find '{m_actionName}' action");
             m_jumpAction.performed += M_jumpAction_performed;
         }
 
 
         public override void DisableModuleInput(PlayerInput playerInput, InputActionMap activeActionMap)
         {
-
+            if (m_jumpAction != null)
+            {
+                m_jumpAction.performed -= M_jumpAction_performed;
+            }
         }
 
         private void M_jumpAction_performed(InputAction.CallbackContext obj)
