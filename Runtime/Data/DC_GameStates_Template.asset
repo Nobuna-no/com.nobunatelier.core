@@ -1,0 +1,99 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-7406123627082089869
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc7d36851785c7748ba44cf8408fcd2e, type: 3}
+  m_Name: frontend-loop
+  m_EditorClassIdentifier: 
+  m_requiredPriorState: {fileID: 0}
+--- !u!114 &-5279566794588525482
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc7d36851785c7748ba44cf8408fcd2e, type: 3}
+  m_Name: frontend
+  m_EditorClassIdentifier: 
+  m_requiredPriorState: {fileID: 0}
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5485f286a202d984fba4297a3f4d8f18, type: 3}
+  m_Name: DC_GameStates_Template
+  m_EditorClassIdentifier: 
+  m_dataDefinitions:
+  - {fileID: 6954217850896907785}
+  - {fileID: -5279566794588525482}
+  - {fileID: 7857518207980898091}
+  - {fileID: -7406123627082089869}
+  - {fileID: 5499639690697540685}
+  - {fileID: 2974955711177142285}
+--- !u!114 &2974955711177142285
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc7d36851785c7748ba44cf8408fcd2e, type: 3}
+  m_Name: game
+  m_EditorClassIdentifier: 
+  m_requiredPriorState: {fileID: 0}
+--- !u!114 &5499639690697540685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc7d36851785c7748ba44cf8408fcd2e, type: 3}
+  m_Name: frontend-exit
+  m_EditorClassIdentifier: 
+  m_requiredPriorState: {fileID: 0}
+--- !u!114 &6954217850896907785
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc7d36851785c7748ba44cf8408fcd2e, type: 3}
+  m_Name: init
+  m_EditorClassIdentifier: 
+  m_requiredPriorState: {fileID: 0}
+--- !u!114 &7857518207980898091
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc7d36851785c7748ba44cf8408fcd2e, type: 3}
+  m_Name: frontend-loading
+  m_EditorClassIdentifier: 
+  m_requiredPriorState: {fileID: 0}

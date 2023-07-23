@@ -3,7 +3,8 @@
     "rootNamespace": "NobunAtelier",
     "references": [
         "GUID:35d37775fe401ce46ae761273fc212a3",
-        "GUID:776d03a35f1b52c4a9aed9f56d7b4229"
+        "GUID:776d03a35f1b52c4a9aed9f56d7b4229",
+        "GUID:ba8c092d026123a418fb4bfb797a7bd8"
     ],
     "includePlatforms": [
         "Editor"

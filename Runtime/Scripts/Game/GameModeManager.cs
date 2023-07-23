@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 
 namespace NobunAtelier
 {
-    public abstract class GameModeManager : MonoBehaviour
+    public class GameModeManager : MonoBehaviour
     {
         public static GameModeManager Instance { get; private set; }
 
@@ -127,9 +127,9 @@ namespace NobunAtelier
             OnGameModeResume();
         }
 
-        public abstract void OnGameModePause();
+        public virtual void OnGameModePause() { }
 
-        public abstract void OnGameModeResume();
+        public virtual void OnGameModeResume() { }
 
         //public virtual void RefreshPlayerList()
         //{
@@ -182,9 +182,9 @@ namespace NobunAtelier
             var basePlayerController = participant.Controller as LegacyPlayerControllerBase;
             var humanPlayer = participant as Player;
             Debug.Assert(humanPlayer, "LegacyPlayerControllerBase is BasePlayerController but it is not a Human Player!");
-            
+
             basePlayerController.MountPlayerInput(humanPlayer.PlayerInput);
-                
+
             if (m_enableInputOnJoin)
             {
                 basePlayerController.EnableInput();
@@ -209,7 +209,7 @@ namespace NobunAtelier
 
                 Destroy(participant.Controller.gameObject);
             }
-            
+
             m_characterControllers.Remove(participant);
         }
 

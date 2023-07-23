@@ -9,9 +9,6 @@ namespace NobunAtelier
     {
         public bool CanChangeTarget = true;
 
-        [SerializeField]
-        private bool m_gatherTargetOnInit = true;
-
         public TargetChangedEvent OnTargetChanged;
 
         private ITargetable m_currentTarget;

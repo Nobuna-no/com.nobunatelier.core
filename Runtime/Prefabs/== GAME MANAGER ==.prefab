@@ -1,0 +1,502 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &317774131375101112
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 575228954668086572}
+  - component: {fileID: 37866436720156142}
+  m_Layer: 0
+  m_Name: frontend-exit
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &575228954668086572
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 317774131375101112}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2195937222321296151}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &37866436720156142
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 317774131375101112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 232a993dd93d85f44bdc11b1ae8fe8e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Description: On gamemodestop -> Unload scene and set new game state to....
+  m_stateDefinition: {fileID: 5499639690697540685, guid: 7781caee366ce8e419c062a2261da165,
+    type: 2}
+  BreakOnEnter: 0
+  m_transitionToNextState: 0
+  m_nextState: {fileID: 0}
+  m_stateDurationInSeconds: -1
+  OnStateEnter:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: NobunAtelier.PlayerManager, NobunAtelier.Core
+        m_MethodName: DisablePlayerJoining
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  OnStateExit:
+    m_PersistentCalls:
+      m_Calls: []
+  m_nextStateAfterScenesWork: {fileID: 0}
+  m_scenesToLoad: []
+  OnScenesLoaded:
+    m_PersistentCalls:
+      m_Calls: []
+  m_scenesToUnload:
+  - Frontend
+  OnScenesUnloaded:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7645365655469923353}
+        m_TargetAssemblyTypeName: NobunAtelier.StateMachineComponent`1[[NobunAtelier.GameStateDefinition,
+          NobunAtelier.Core
+        m_MethodName: SetState
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: NobunAtelier.GameStateDefinition, NobunAtelier.Core
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_useAnimatorInstantFill: 0
+  m_useAnimatorFadeIn: 1
+  m_useAnimatorFadeOut: 1
+  OnFadeInDone:
+    m_PersistentCalls:
+      m_Calls: []
+  OnFadeOutDone:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!1 &1376056995980994027
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7002435775795220459}
+  - component: {fileID: 3168541846241126432}
+  m_Layer: 0
+  m_Name: frontend-loop
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7002435775795220459
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1376056995980994027}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2195937222321296151}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3168541846241126432
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1376056995980994027}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8caf48462e9ac5b48a49f4618bc5c847, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Description: Waiting for the main menu to stop gamestop...
+  m_stateDefinition: {fileID: -7406123627082089869, guid: 7781caee366ce8e419c062a2261da165,
+    type: 2}
+  BreakOnEnter: 0
+  m_gameModeHandling: -5
+  m_nextStateOnGameModeStop: {fileID: 5499639690697540685, guid: 6f8d8814680dca341a33ce29cece5ba0,
+    type: 2}
+  OnGameModeInitEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  OnGameModeStartEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  OnGameModeStopEvent:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!1 &5600335164621655522
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7502830255963893619}
+  - component: {fileID: 3920509273076298075}
+  m_Layer: 0
+  m_Name: frontend-loading
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7502830255963893619
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5600335164621655522}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2195937222321296151}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3920509273076298075
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5600335164621655522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 232a993dd93d85f44bdc11b1ae8fe8e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Description: Load main menu scene
+  m_stateDefinition: {fileID: 7857518207980898091, guid: 7781caee366ce8e419c062a2261da165,
+    type: 2}
+  BreakOnEnter: 0
+  m_transitionToNextState: 0
+  m_nextState: {fileID: 0}
+  m_stateDurationInSeconds: -1
+  OnStateEnter:
+    m_PersistentCalls:
+      m_Calls: []
+  OnStateExit:
+    m_PersistentCalls:
+      m_Calls: []
+  m_nextStateAfterScenesWork: {fileID: -7406123627082089869, guid: 6f8d8814680dca341a33ce29cece5ba0,
+    type: 2}
+  m_scenesToLoad:
+  - Frontend
+  OnScenesLoaded:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: NobunAtelier.PlayerManager, NobunAtelier.Core
+        m_MethodName: EnablePlayerJoining
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_scenesToUnload: []
+  OnScenesUnloaded:
+    m_PersistentCalls:
+      m_Calls: []
+  m_useAnimatorInstantFill: 0
+  m_useAnimatorFadeIn: 1
+  m_useAnimatorFadeOut: 1
+  OnFadeInDone:
+    m_PersistentCalls:
+      m_Calls: []
+  OnFadeOutDone:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!1 &6370947745889372536
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2769246527866260204}
+  - component: {fileID: 948410886636135033}
+  m_Layer: 0
+  m_Name: state-init
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2769246527866260204
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6370947745889372536}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3711609358899640772}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &948410886636135033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6370947745889372536}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cb38e18e0b03e549ae2f708a1b19a64, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Description: 
+  m_stateDefinition: {fileID: 6954217850896907785, guid: 7781caee366ce8e419c062a2261da165,
+    type: 2}
+  BreakOnEnter: 0
+  m_transitionToNextState: 1
+  m_nextState: {fileID: -5279566794588525482, guid: 6f8d8814680dca341a33ce29cece5ba0,
+    type: 2}
+  m_stateDurationInSeconds: 0.5
+  OnStateEnter:
+    m_PersistentCalls:
+      m_Calls: []
+  OnStateExit:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!1 &7719448971109683364
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3711609358899640772}
+  - component: {fileID: 7645365655469923353}
+  - component: {fileID: 2966304478422877836}
+  m_Layer: 0
+  m_Name: == GAME MANAGER ==
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3711609358899640772
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7719448971109683364}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.6550929, y: 2.7876205, z: 4.3905864}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2769246527866260204}
+  - {fileID: 2822042992878115600}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7645365655469923353
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7719448971109683364}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54457e41d0a8c48428a62f7b31959725, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Description: 
+  m_stateDefinition: {fileID: 6954217850896907785, guid: 6f8d8814680dca341a33ce29cece5ba0,
+    type: 2}
+  BreakOnEnter: 0
+  m_enterInitialStateOnStart: 1
+  m_displayDebug: 0
+--- !u!114 &2966304478422877836
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7719448971109683364}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 843cc4e999db4a345bffd3ea539d880f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_targetFramerate: 60
+  m_forceResolution: 0
+  screenResolution: {x: 640, y: 480}
+--- !u!1 &8157423600814817638
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2195937222321296151}
+  - component: {fileID: 3677948349863553599}
+  m_Layer: 0
+  m_Name: frontend-sm
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2195937222321296151
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8157423600814817638}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 7502830255963893619}
+  - {fileID: 7002435775795220459}
+  - {fileID: 575228954668086572}
+  m_Father: {fileID: 2822042992878115600}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3677948349863553599
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8157423600814817638}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54457e41d0a8c48428a62f7b31959725, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Description: 
+  m_stateDefinition: {fileID: 7857518207980898091, guid: 7781caee366ce8e419c062a2261da165,
+    type: 2}
+  BreakOnEnter: 0
+  m_enterInitialStateOnStart: 0
+  m_displayDebug: 0
+--- !u!1 &8902981617236295595
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2822042992878115600}
+  - component: {fileID: 7281883810444891987}
+  m_Layer: 0
+  m_Name: state-frontend
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2822042992878115600
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8902981617236295595}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2195937222321296151}
+  m_Father: {fileID: 3711609358899640772}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7281883810444891987
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8902981617236295595}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cb38e18e0b03e549ae2f708a1b19a64, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Description: 
+  m_stateDefinition: {fileID: -5279566794588525482, guid: 7781caee366ce8e419c062a2261da165,
+    type: 2}
+  BreakOnEnter: 0
+  m_transitionToNextState: 0
+  m_nextState: {fileID: 0}
+  m_stateDurationInSeconds: 0.5
+  OnStateEnter:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 3677948349863553599}
+        m_TargetAssemblyTypeName: NobunAtelier.StateMachineComponent`1[[NobunAtelier.GameStateDefinition,
+          NobunAtelier.Core
+        m_MethodName: ResetToDefault
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  OnStateExit:
+    m_PersistentCalls:
+      m_Calls: []
