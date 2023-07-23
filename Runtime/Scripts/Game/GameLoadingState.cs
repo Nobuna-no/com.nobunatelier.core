@@ -28,7 +28,7 @@ namespace NobunAtelier
         [Header("Fade Events")]
         [SerializeField]
         public bool m_useAnimatorInstantFill = false;
-        
+
         [SerializeField]
         public bool m_useAnimatorFadeIn = true;
 
@@ -57,7 +57,7 @@ namespace NobunAtelier
         public override void Enter()
         {
             base.Enter();
-                        
+
             if (!AnimatorFader.Instance)
             {
                 // Debug.Log("No AnimatorFader found - no fade in animation played - invoking OnFadeInDone now.");

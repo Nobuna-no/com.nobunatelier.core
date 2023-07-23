@@ -41,6 +41,11 @@ namespace NobunAtelier
             m_statesMap.Add(state.GetStateDefinition(), state);
         }
 
+        public void StartFromScratch()
+        {
+            ResetToDefault();
+        }
+
         public void ResetToDefault()
         {
             this.enabled = true;

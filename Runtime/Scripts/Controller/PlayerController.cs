@@ -18,6 +18,9 @@ namespace NobunAtelier
 
         [SerializeField, ShowIf("IsPlayerInputValid")]
         private bool m_mountInputOnAwake = false;
+        [SerializeField, ShowIf("IsPlayerInputValid")]
+        private bool m_mountInputOnEnable = false;
+
 
         protected InputActionMap ActionMap => m_actionMap;
         protected string ActionMapName => m_actionMapName;
@@ -120,13 +123,21 @@ namespace NobunAtelier
 
         protected override void OnEnable()
         {
-            EnableInput();
+            if (m_mountInputOnEnable)
+            {
+                EnableInput();
+            }
+
             base.OnEnable();
         }
 
         protected override void OnDisable()
         {
-            DisableInput();
+            if (m_mountInputOnEnable)
+            {
+                DisableInput();
+            }
+
             base.OnDisable();
         }
 
@@ -140,7 +151,7 @@ namespace NobunAtelier
             base.OnValidate();
             CapturePlayerInputAndSetBehaviour();
         }
-        
+
         private void CapturePlayerInputAndSetBehaviour()
         {
             if (m_playerInput == null)

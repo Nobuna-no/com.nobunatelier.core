@@ -8,15 +8,15 @@ namespace NobunAtelier
     [DefaultExecutionOrder(10)]
     public class Target : MonoBehaviour, ITargetable
     {
-        [SerializeField, Required]
-        private Renderer m_Renderer;
+        //[SerializeField, Required]
+        //private Renderer m_Renderer;
 
         [SerializeField]
         private bool m_isTargetable = true;
 
-        private bool m_isVisible = false;
+        // private bool m_isVisible = false;
 
-        public bool IsTargetable => m_isTargetable && m_isVisible;
+        public bool IsTargetable => m_isTargetable;
 
         public Transform Transform => transform;
 
@@ -25,7 +25,7 @@ namespace NobunAtelier
 
         public void OnEnable()
         {
-            Debug.Assert(m_Renderer);
+            // Debug.Assert(m_Renderer);
             TargetManager.Instance.Register(this);
         }
 
@@ -34,12 +34,13 @@ namespace NobunAtelier
             TargetManager.Instance.Unregister(this);
         }
 
-        private void LateUpdate()
-        {
-            if (m_Renderer)
-            {
-                m_isVisible = m_Renderer.isVisible;
-            }
-        }
+        // Forget about rendering as if we kill someone and nobody is visible, then we are soft locked...
+        //private void LateUpdate()
+        //{
+        //    if (m_Renderer)
+        //    {
+        //        m_isVisible = m_Renderer.isVisible;
+        //    }
+        //}
     }
 }

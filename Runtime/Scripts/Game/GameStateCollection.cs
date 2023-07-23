@@ -5,7 +5,7 @@ using NobunAtelier;
 
 namespace NobunAtelier
 {
-    [CreateAssetMenu(menuName= "NobunAtelier/Collection/Game States", fileName = "DC_GameStates")]
+    [CreateAssetMenu(menuName= "NobunAtelier/Collection/Game State", fileName = "DC_GameStates")]
     public class GameStateCollection : DataCollection<GameStateDefinition>
     { }
 }

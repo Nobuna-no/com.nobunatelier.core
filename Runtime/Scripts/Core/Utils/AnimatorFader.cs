@@ -31,6 +31,12 @@ public class AnimatorFader : SingletonManager<AnimatorFader>
     private Animator m_animator;
     private bool m_isFadeIn = false;
 
+#if UNITY_EDITOR
+    [Header("Debug")]
+    [SerializeField]
+    private bool m_logDebug = false;
+#endif
+
     protected override AnimatorFader GetInstance()
     {
         return this;
@@ -51,6 +57,13 @@ public class AnimatorFader : SingletonManager<AnimatorFader>
     // Instantly fill the screen
     public void Fill()
     {
+#if UNITY_EDITOR
+        if (m_logDebug)
+        {
+            Debug.Log($"[{Time.frameCount}] - Filling");
+        }
+#endif
+
         if (!m_animator || m_filledTrigger.Length == 0)
         {
             return;
@@ -63,6 +76,13 @@ public class AnimatorFader : SingletonManager<AnimatorFader>
 
     public void FadeIn(UnityAction actionToRaiseOnEnd = null)
     {
+#if UNITY_EDITOR
+        if (m_logDebug)
+        {
+            Debug.Log($"[{Time.frameCount}] - Fading in");
+        }
+#endif
+
         if (!m_animator || m_fadeInTrigger.Length == 0)
         {
             return;
@@ -85,6 +105,13 @@ public class AnimatorFader : SingletonManager<AnimatorFader>
 
     public void FadeOut(UnityAction actionToRaiseOnEnd = null)
     {
+#if UNITY_EDITOR
+        if (m_logDebug)
+        {
+            Debug.Log($"[{Time.frameCount}] - Fading out");
+        }
+#endif
+
         if (!m_animator || m_fadeOutTrigger.Length == 0)
         {
             return;

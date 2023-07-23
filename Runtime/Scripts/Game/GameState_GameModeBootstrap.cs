@@ -21,7 +21,11 @@ namespace NobunAtelier
         [SerializeField, ShowIf("IsTransitioningOnGameModeStop")]
         private GameStateDefinition m_nextStateOnGameModeStop;
 
+
         [Header("Events")]
+        [SerializeField]
+        [ShowIf("IsInitializingGameMode")]
+        private bool m_addPlayersToGameModeOnInit = false;
         [ShowIf("IsInitializingGameMode")]
         public UnityEvent OnGameModeInitEvent;
 
@@ -45,6 +49,11 @@ namespace NobunAtelier
             {
                 gamemode.GameModeInit();
                 OnGameModeInitEvent?.Invoke();
+
+                if (m_addPlayersToGameModeOnInit)
+                {
+                    PlayerManager.Instance.AddPlayersToGameMode();
+                }
             }
             if (IsTransitioningOnGameModeStop())
             {
