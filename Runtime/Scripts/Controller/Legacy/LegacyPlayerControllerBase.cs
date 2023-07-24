@@ -64,10 +64,8 @@ namespace NobunAtelier
             IsInputReady = false;
         }
 
-        protected override void Awake()
+        protected virtual void Awake()
         {
-            base.Awake();
-
             if (m_playerInput && m_mountInputOnAwake)
             {
                 EnableInput();

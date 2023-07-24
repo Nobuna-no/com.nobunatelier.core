@@ -12,8 +12,6 @@ namespace NobunAtelier
     public class AttributeBase<T>
     {
         public delegate void OnAttributeValueChangeDelegate(T value);
-        public event OnAttributeValueChangeDelegate OnValueChangeEvent;
-
-
+        // public event OnAttributeValueChangeDelegate OnValueChangeEvent;
     }
 }
