@@ -167,7 +167,7 @@ namespace NobunAtelier
                     break;
             }
 
-            ModuleOwner.SetState(m_nextStateAfterScenesWork);
+            ModuleOwner.SetState(m_nextStateAfterScenesWork.GetType(), m_nextStateAfterScenesWork);
         }
 
         private void FadeInEnd()

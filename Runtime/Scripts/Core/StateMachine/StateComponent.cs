@@ -1,8 +1,16 @@
+using NUnit.Framework.Internal;
+using System;
 using UnityEngine;
 
 namespace NobunAtelier
 {
-    public class StateComponent<T> : MonoBehaviour, NobunAtelier.IState<T>
+    public abstract class StateComponent : MonoBehaviour
+    {
+        // Reflection SetState, required to work with state module.
+        public abstract void SetState(Type newState, StateDefinition stateDefinition);
+    }
+
+    public class StateComponent<T> : StateComponent, NobunAtelier.IState<T>
         where T : StateDefinition
     {
         [Header("State")]
@@ -17,13 +25,17 @@ namespace NobunAtelier
         private StateModuleBase[] m_stateModules;
 
 #if UNITY_EDITOR
-
         [Header("Debug")]
         public bool BreakOnEnter = false;
 
 #endif
         private NobunAtelier.StateMachineComponent<T> m_parentStateMachine = null;
         public NobunAtelier.StateMachineComponent<T> ParentStateMachine => m_parentStateMachine;
+
+        private bool HasStateModule => m_stateModules != null && m_stateModules.Length > 0;
+        private Type m_genericState;
+        private Type m_stateDefinitionType;
+        private System.Reflection.MethodInfo m_setStateMethod;
 
         // Return the definition defining the component.
         public T GetStateDefinition()
@@ -40,13 +52,43 @@ namespace NobunAtelier
                 Debug.Log($"{this}: Debug Break!");
             }
 #endif
+
+            if (!HasStateModule)
+            {
+                return;
+            }
+
+            for (int i = 0, c = m_stateModules.Length; i < c; i++)
+            {
+                m_stateModules[i].Enter();
+            }
         }
 
         public virtual void Tick(float deltaTime)
-        { }
+        {
+            if (!HasStateModule)
+            {
+                return;
+            }
+
+            for (int i = 0, c = m_stateModules.Length; i < c; i++)
+            {
+                m_stateModules[i].Tick(deltaTime);
+            }
+        }
 
         public virtual void Exit()
-        { }
+        {
+            if (!HasStateModule)
+            {
+                return;
+            }
+
+            for (int i = 0, c = m_stateModules.Length; i < c; i++)
+            {
+                m_stateModules[i].Exit();
+            }
+        }
 
         public virtual void SetState(T newState)
         {
@@ -59,8 +101,34 @@ namespace NobunAtelier
             m_parentStateMachine.SetState(newState);
         }
 
+        public sealed override void SetState(Type newStateType, StateDefinition stateDefinition)
+        {
+            // Check if the specified newStateType matches the StateDefinition type
+            if (m_stateDefinitionType != newStateType)
+            {
+                Debug.LogError($"Types mismatched! StateDefinition[{m_stateDefinitionType}] is different from {newStateType}!");
+                return;
+            }
+
+            // Check if the specified newStateType matches the StateDefinition type
+            if (m_setStateMethod != null && m_setStateMethod.GetParameters().Length == 1 && m_setStateMethod.GetParameters()[0].ParameterType == typeof(T))
+            {
+                // Call SetState(T newState) on the found StateComponent<T> using reflection
+                m_setStateMethod.Invoke(this, new object[] { stateDefinition });
+            }
+            else
+            {
+                Debug.LogWarning($"Specified StateDefinition [{newStateType}] does not match the StateComponent type.");
+            }
+        }
+
         protected virtual void Awake()
         {
+            if (!this.enabled)
+            {
+                return;
+            }
+
             m_parentStateMachine = GetComponentInParent<NobunAtelier.StateMachineComponent<T>>();
 
             if (this != m_parentStateMachine)
@@ -70,13 +138,39 @@ namespace NobunAtelier
                 m_parentStateMachine.RegisterStateComponent(this);
             }
 
-            if (m_stateModules != null)
+            if (!HasStateModule)
             {
-                for (int i = 0, c = m_stateModules.Length; i < c; i++)
+                return;
+            }
+
+            InitializeReflectionFields();
+            for (int i = 0, c = m_stateModules.Length; i < c; i++)
+            {
+                m_stateModules[i].Init(this);
+            }
+        }
+
+        private void InitializeReflectionFields()
+        {
+            m_genericState = GetType();
+            while (m_genericState != null)
+            {
+                if (m_genericState.BaseType == null)
                 {
-                    m_stateModules[i].Init(this);
+                    return;
+                }
+
+                m_genericState = m_genericState.BaseType;
+                if (m_genericState.IsGenericType)
+                {
+                    break;
                 }
             }
+
+            m_stateDefinitionType = m_genericState.GetGenericArguments()[0];
+
+            // Get the SetState method of the StateComponent<T>
+            m_setStateMethod = GetType().GetMethod("SetState", new Type[] { m_stateDefinitionType });
         }
 
         // Called by StateMachine.OnGUI
