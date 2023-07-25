@@ -16,32 +16,27 @@ namespace NobunAtelier
             m_controlledCharacter?.ResetCharacter(position, rotation);
         }
 
-        protected virtual void Awake()
-        {
-            Debug.Assert(m_controlledCharacter != null, $"[{Time.frameCount}] {this}: ModuleOwner is required");
-        }
-
         protected virtual void Start()
         {
             m_controlledCharacter?.Mount(this);
         }
 
-        public virtual void SetCharacterMovementReference(LegacyCharacterBase movement)
+        public virtual void SetCharacterMovementReference(LegacyCharacterBase character)
         {
-            m_controlledCharacter = movement;
+            m_controlledCharacter = character;
             m_controlledCharacter?.Mount(this);
         }
 
         // Update is called once per frame
-        //private void Update()
-        //{
-        //    UpdateController();
-        //}
+        private void Update()
+        {
+            ControllerUpdate();
+        }
 
-        //private void FixedUpdate()
-        //{
-        //    ControllerFixedUpdate();
-        //}
+        private void FixedUpdate()
+        {
+            ControllerFixedUpdate();
+        }
 
         protected virtual void ControllerUpdate()
         { }
