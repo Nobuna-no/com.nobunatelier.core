@@ -1,11 +1,19 @@
-using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.Events;
+using NaughtyAttributes;
 
 namespace NobunAtelier
 {
     public class GameModeLoadingState : GameModeState
     {
+        [InfoBox("On scene loading: Fade In then Fade Out\nOn scene unloading: Fade In only")]
+        // Could be improved with the use of a BlackBoard - Get the scene to load from the blackboard...
+        [SerializeField, NaughtyAttributes.Scene]
+        private string[] m_scenesToLoad;
+
+        [SerializeField, NaughtyAttributes.Scene]
+        private string[] m_scenesToUnload;
+
         [Header("Fading")]
         [SerializeField]
         private GameModeStateDefinition m_nextStateAfterFade;

@@ -13,6 +13,9 @@ namespace NobunAtelier
         [SerializeField]
         private T m_stateDefinition;
 
+        [SerializeField]
+        private StateModuleBase[] m_stateModules;
+
 #if UNITY_EDITOR
 
         [Header("Debug")]
@@ -65,6 +68,14 @@ namespace NobunAtelier
                 Debug.Assert(m_parentStateMachine, $"{this} doesn't have a parent StateMachine.");
                 Debug.Assert(m_stateDefinition, $"{this} doesn't have a StateDefinition.");
                 m_parentStateMachine.RegisterStateComponent(this);
+            }
+
+            if (m_stateModules != null)
+            {
+                for (int i = 0, c = m_stateModules.Length; i < c; i++)
+                {
+                    m_stateModules[i].Init(this);
+                }
             }
         }
 
