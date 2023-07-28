@@ -10,7 +10,6 @@ using UnityEditor.SceneManagement;
 
 namespace NobunAtelier
 {
-
     public class LevelManager : SingletonManager<LevelManager>
     {
         [Header("Level Manager")]
