@@ -6,8 +6,28 @@ namespace NobunAtelier
     // Use cases: Players, AIs, Spectators, ...
     public class GameModeParticipant : MonoBehaviour
     {
+        [SerializeField]
+        private LegacyCharacterControllerBase m_controllerPrefab;
+        [SerializeField]
+        private LegacyCharacterBase m_characterMovementPrefab;
+        [SerializeField]
+        private bool m_isAI = false;
+
         public LegacyCharacterControllerBase Controller { get; private set; }
         public LegacyCharacterBase CharacterMovement { get; private set; }
+        public bool IsAI => m_isAI;
+
+        protected virtual void Awake()
+        {
+            if (m_characterMovementPrefab != null)
+            {
+                InstantiateCharacter(m_characterMovementPrefab);
+            }
+            if (m_controllerPrefab != null)
+            {
+                InstantiateController(m_controllerPrefab);
+            }
+        }
 
         public virtual void InstantiateCharacter(LegacyCharacterBase characterPrefab)
         {

@@ -1,6 +1,7 @@
 using NaughtyAttributes;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
 namespace NobunAtelier
@@ -11,8 +12,14 @@ namespace NobunAtelier
         public static PlayerManager Instance { get; private set; }
 
         [Header("Player Manager")]
+        [SerializeField, InfoBox("Maximum number of player + bot combined.")]
+        private int m_playerLimit = 4;
+
         [SerializeField, Required, InfoBox("This prefab will override the PlayerInputManager `Player Prefab`")]
         private Player m_playerPrefab;
+
+        [SerializeField]
+        private AIPlayer m_botPrefab;
 
         [SerializeField]
         private bool m_enablePlayerJoiningByDefault = true;
@@ -23,11 +30,18 @@ namespace NobunAtelier
         [SerializeField]
         private bool m_addToGameModeOnPlayerJoin = true;
 
-        private bool m_currentAddToGameModeOnPlayerJoin;
+        [Header("Events")]
+        public UnityEvent OnPlayerJoinedEvent;
+
+        public UnityEvent OnPlayerLeftEvent;
+
+        private bool m_addPlayerToGameModeOnPlayerJoin;
 
         private PlayerInputManager m_manager;
         private GameModeManager m_gamemode;
         private List<Player> m_players = new List<Player>();
+        private List<AIPlayer> m_bots = new List<AIPlayer>();
+        private List<GameModeParticipant> m_pendingPlayers = new List<GameModeParticipant>();
 
         public virtual void EnablePlayerJoining()
         {
@@ -37,7 +51,7 @@ namespace NobunAtelier
         public virtual void EnablePlayerJoining(bool addToGameModeOnPlayerJoining)
         {
             m_manager.EnableJoining();
-            m_currentAddToGameModeOnPlayerJoin = addToGameModeOnPlayerJoining;
+            m_addPlayerToGameModeOnPlayerJoin = addToGameModeOnPlayerJoining;
         }
 
         public virtual void DisablePlayerJoining()
@@ -51,7 +65,7 @@ namespace NobunAtelier
 
             if (resetAddToGameModeOnPlayerJoining)
             {
-                m_currentAddToGameModeOnPlayerJoin = m_addToGameModeOnPlayerJoin;
+                m_addPlayerToGameModeOnPlayerJoin = m_addToGameModeOnPlayerJoin;
             }
         }
 
@@ -70,6 +84,74 @@ namespace NobunAtelier
             }
         }
 
+        public virtual void SetActiveAIPlayer(bool enable)
+        {
+            foreach (var p in m_bots)
+            {
+                if (enable)
+                {
+                    p.AIController.EnableAI();
+                }
+                else
+                {
+                    p.AIController.DisableAI();
+                }
+            }
+        }
+
+        [Button(enabledMode: EButtonEnableMode.Playmode)]
+        public virtual void AddAIPlayer()
+        {
+            if (!CanNewPlayerJoin())
+            {
+                return;
+            }
+
+            var bot = Instantiate(m_botPrefab, transform);
+            m_pendingPlayers.Add(bot);
+
+            this.enabled = true;
+        }
+
+        [Button(enabledMode: EButtonEnableMode.Playmode)]
+        public virtual void RemoveAIPlayer(AIPlayer botToRemove = null, bool removeFromGameMode = true)
+        {
+            if (botToRemove == null)
+            {
+                if (m_bots.Count > 0)
+                {
+                    botToRemove = m_bots[m_bots.Count - 1];
+                }
+                else
+                {
+                    return;
+                }
+            }
+
+            if (removeFromGameMode)
+            {
+                m_gamemode = FindFirstObjectByType<GameModeManager>();
+                if (m_gamemode)
+                {
+                    m_gamemode.RemoveAIPlayer(botToRemove);
+                }
+            }
+
+            m_bots.Remove(botToRemove);
+        }
+
+        private bool CanNewPlayerJoin()
+        {
+            int currentNumberOfPlayers = m_players.Count + m_bots.Count;
+            if (currentNumberOfPlayers >= m_playerLimit)
+            {
+                Debug.LogWarning($"PlayerManager: Cannot add anymore player, maximum player count ({m_playerLimit}) reached!");
+                return false;
+            }
+
+            return true;
+        }
+
         [Button(enabledMode: EButtonEnableMode.Playmode)]
         public virtual void AddPlayersToGameMode()
         {
@@ -79,9 +161,33 @@ namespace NobunAtelier
                 return;
             }
 
-            foreach (var p in m_players)
+            for (int i = m_players.Count - 1; i >= 0; --i)
             {
-                m_gamemode.AddPlayer(p);
+                if (m_gamemode.IsParticipantAlreadyInGameMode(m_players[i]))
+                {
+                    continue;
+                }
+
+                if (!m_gamemode.AddPlayer(m_players[i]))
+                {
+                    Debug.LogWarning($"{this}: failed to add {m_players[i].name} to the game mode. Disabling player.");
+                    m_players[i].gameObject.SetActive(false);
+                    m_players.RemoveAt(i);
+                }
+            }
+            for (int i = m_bots.Count - 1; i >= 0; --i)
+            {
+                if (m_gamemode.IsParticipantAlreadyInGameMode(m_bots[i]))
+                {
+                    continue;
+                }
+
+                if (!m_gamemode.AddAIPlayer(m_bots[i]))
+                {
+                    Debug.LogWarning($"{this}: failed to add {m_bots[i].name} to the game mode. Disabling bot.");
+                    m_bots[i].gameObject.SetActive(false);
+                    m_bots.RemoveAt(i);
+                }
             }
         }
 
@@ -98,29 +204,47 @@ namespace NobunAtelier
             {
                 m_gamemode.RemovePlayer(p);
             }
+            foreach (var p in m_bots)
+            {
+                m_gamemode.RemoveAIPlayer(p);
+            }
+        }
+
+        protected virtual void OnHumanPlayerLeft(PlayerInput obj)
+        {
+            m_players.Remove(obj.GetComponent<Player>());
+            OnPlayerLeftEvent?.Invoke();
+        }
+
+        protected virtual void OnHumanPlayerJoined(PlayerInput obj)
+        {
+            if (!CanNewPlayerJoin())
+            {
+                return;
+            }
+            m_pendingPlayers.Add(obj.GetComponent<Player>());
+
+            this.enabled = true;
         }
 
         private void Awake()
         {
             var manager = GetComponent<PlayerInputManager>();
-            if (m_playerPrefab == null)
+            if (m_playerPrefab != null)
             {
-                return;
+                manager.playerPrefab = m_playerPrefab.gameObject;
             }
 
-            manager.playerPrefab = m_playerPrefab.gameObject;
-            m_currentAddToGameModeOnPlayerJoin = m_addToGameModeOnPlayerJoin;
+            m_addPlayerToGameModeOnPlayerJoin = m_addToGameModeOnPlayerJoin;
         }
 
         private void OnValidate()
         {
             var manager = GetComponent<PlayerInputManager>();
-            if (m_playerPrefab == null)
+            if (m_playerPrefab != null)
             {
-                return;
+                manager.playerPrefab = m_playerPrefab.gameObject;
             }
-
-            manager.playerPrefab = m_playerPrefab.gameObject;
         }
 
         private void Start()
@@ -133,8 +257,8 @@ namespace NobunAtelier
             Instance = this;
 
             m_manager = GetComponent<PlayerInputManager>();
-            m_manager.onPlayerJoined += OnPlayerJoined;
-            m_manager.onPlayerLeft += OnPlayerLeft;
+            m_manager.onPlayerJoined += OnHumanPlayerJoined;
+            m_manager.onPlayerLeft += OnHumanPlayerLeft;
 
             if (m_enablePlayerJoiningByDefault)
             {
@@ -144,23 +268,48 @@ namespace NobunAtelier
             {
                 DisablePlayerJoining();
             }
+
+            this.enabled = false;
         }
 
-        protected virtual void OnPlayerLeft(PlayerInput obj)
+        private void FixedUpdate()
         {
-            m_players.Remove(obj.GetComponent<Player>());
-        }
+            if (m_pendingPlayers == null || m_pendingPlayers.Count == 0)
+            {
+                this.enabled = false;
+            }
 
-        protected virtual void OnPlayerJoined(PlayerInput obj)
-        {
-            m_players.Add(obj.GetComponent<Player>());
-            obj.gameObject.name = obj.gameObject.name.Replace("(Clone)", $"#{m_players.Count}");
-            obj.gameObject.transform.parent = this.transform;
+            for (int i = 0, c = m_pendingPlayers.Count; i < c; ++i)
+            {
+                m_pendingPlayers[i].gameObject.transform.parent = this.transform;
 
-            if (m_currentAddToGameModeOnPlayerJoin)
+                if (m_pendingPlayers[i].IsAI)
+                {
+                    m_pendingPlayers[i].gameObject.name = m_pendingPlayers[i].gameObject.name.Replace("(Clone)", $"#{m_bots.Count}");
+                    AIPlayer newBotPlayer = m_pendingPlayers[i] as AIPlayer;
+                    Debug.Assert(newBotPlayer, $"{this.name}: player '{m_pendingPlayers[i].name}' is not am AI player.");
+                    m_bots.Add(newBotPlayer);
+                }
+                else
+                {
+                    m_pendingPlayers[i].gameObject.name = m_pendingPlayers[i].gameObject.name.Replace("(Clone)", $"#{m_players.Count}");
+                    Player newHumanPlayer = m_pendingPlayers[i] as Player;
+                    Debug.Assert(newHumanPlayer, $"{this.name}: player '{m_pendingPlayers[i].name}' is not a human player.");
+                    m_players.Add(newHumanPlayer);
+
+                    OnHumanPlayerJoined(newHumanPlayer.PlayerInput);
+                }
+            }
+            m_pendingPlayers.Clear();
+
+            if (m_addPlayerToGameModeOnPlayerJoin)
             {
                 AddPlayersToGameMode();
             }
+
+            OnPlayerJoinedEvent?.Invoke();
+
+            this.enabled = false;
         }
     }
 }

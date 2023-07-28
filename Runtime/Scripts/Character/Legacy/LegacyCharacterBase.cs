@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 // Can be improved by splitting the logic:
 // - ModuleOwner -> handle mounting, animation and any character behaviour such as ModuleOwner...
@@ -21,6 +22,8 @@ namespace NobunAtelier
         public abstract float GetMoveSpeed();
 
         public abstract float GetNormalizedMoveSpeed();
+
+        public NavMeshAgent NavMeshAgent;
 
         public virtual void Mount(LegacyCharacterControllerBase controller)
         {
@@ -74,6 +77,7 @@ namespace NobunAtelier
         {
             m_initialPosition = transform.localPosition;
             Animator = GetComponentInChildren<Animator>();
+            NavMeshAgent = GetComponent<NavMeshAgent>();
         }
     }
 }

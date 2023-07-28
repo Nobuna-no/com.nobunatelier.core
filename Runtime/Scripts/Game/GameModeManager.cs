@@ -2,7 +2,6 @@ using NaughtyAttributes;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.InputSystem;
 
 namespace NobunAtelier
 {
@@ -10,9 +9,9 @@ namespace NobunAtelier
     {
         public static GameModeManager Instance { get; private set; }
 
-        public IReadOnlyList<GameModeParticipant> PlayersController => m_characterControllers;
+        public IReadOnlyList<GameModeParticipant> PlayersController => m_participants;
         public LegacyPlayerControllerBase PlayerControllerPrefab => m_playerControllerPrefab;
-        public LegacyAIControlerBase AIControllerPrefab => m_aiControllerPrefab;
+        public LegacyAIControllerBase AIControllerPrefab => m_aiControllerPrefab;
         public LegacyCharacterBase CharacterMovementPrefab => m_characterMovementPrefab;
 
         [Header("GameMode")]
@@ -40,7 +39,7 @@ namespace NobunAtelier
         private LegacyPlayerControllerBase m_playerControllerPrefab;
 
         [SerializeField, ShowIf("m_instantiateController")]
-        private LegacyAIControlerBase m_aiControllerPrefab;
+        private LegacyAIControllerBase m_aiControllerPrefab;
 
         [SerializeField, ShowIf("m_instantiateController")]
         private bool m_enableInputOnJoin = true;
@@ -51,7 +50,8 @@ namespace NobunAtelier
         [SerializeField, ShowIf("m_instantiateCharacterMovement")]
         private LegacyCharacterBase m_characterMovementPrefab;
 
-        private List<GameModeParticipant> m_characterControllers = new List<GameModeParticipant>();
+        public IList<GameModeParticipant> Participants => m_participants;
+        private List<GameModeParticipant> m_participants = new List<GameModeParticipant>();
 
         public UnityEvent OnGameModeEnd;
 
@@ -65,7 +65,6 @@ namespace NobunAtelier
             Instance = this;
 
             m_isInitialized = true;
-            //RefreshPlayerList();
         }
 
         public virtual void GameModeStart()
@@ -78,29 +77,28 @@ namespace NobunAtelier
 
         public virtual void GameModeStop()
         {
-            for (int i = m_characterControllers.Count - 1; i >= 0; --i)
+            for (int i = m_participants.Count - 1; i >= 0; --i)
             {
-                if (m_characterControllers[i].Controller.IsAI)
+                if (m_participants[i].Controller == null)
                 {
-                    var ai = m_characterControllers[i].Controller as LegacyAIControlerBase;
+                    RemovePlayerWithoutController(m_participants[i]);
+                    continue;
+                }
 
-                    if (!ai)
-                    {
-                        continue;
-                    }
-
-                    // RemoveAI(ai, true);
+                if (m_participants[i].Controller.IsAI)
+                {
+                    RemoveAIPlayer(m_participants[i], true);
                 }
                 else
                 {
-                    var controller = m_characterControllers[i].Controller as LegacyPlayerControllerBase;
+                    var controller = m_participants[i].Controller as LegacyPlayerControllerBase;
 
                     if (!controller || !controller.PlayerInput)
                     {
                         continue;
                     }
 
-                    RemovePlayer(m_characterControllers[i], true);
+                    RemovePlayer(m_participants[i], true);
                 }
             }
 
@@ -127,46 +125,22 @@ namespace NobunAtelier
             OnGameModeResume();
         }
 
-        public virtual void OnGameModePause() { }
+        public virtual void OnGameModePause()
+        { }
 
-        public virtual void OnGameModeResume() { }
+        public virtual void OnGameModeResume()
+        { }
 
-        //public virtual void RefreshPlayerList()
-        //{
-        //    m_characterControllers.Clear();
-        //    var allController = FindObjectsByType<BaseCharacterController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-
-        //    foreach (var c in allController)
-        //    {
-        //        AddCharacterController(c);
-        //    }
-        //}
-
-        //public virtual void AddCharacterController(BaseCharacterController controller)
-        //{
-        //    if (m_characterControllers.Contains(controller))
-        //    {
-        //        return;
-        //    }
-
-        //    m_characterControllers.Add(controller);
-        //}
-
-        //public virtual void RemoveCharacterController(BaseCharacterController controller)
-        //{
-        //    if (!m_characterControllers.Contains(controller))
-        //    {
-        //        return;
-        //    }
-
-        //    m_characterControllers.Remove(controller);
-        //}
-
-        public virtual void AddPlayer(GameModeParticipant participant)
+        public virtual bool IsParticipantAlreadyInGameMode(GameModeParticipant participant)
         {
-            if (m_characterControllers.Contains(participant))
+            return m_participants != null && m_participants.Contains(participant);
+        }
+
+        public virtual bool AddPlayer(GameModeParticipant participant)
+        {
+            if (m_participants.Contains(participant))
             {
-                return;
+                return false;
             }
 
             if (m_instantiateCharacterMovement)
@@ -183,21 +157,24 @@ namespace NobunAtelier
             var humanPlayer = participant as Player;
             Debug.Assert(humanPlayer, "LegacyPlayerControllerBase is BasePlayerController but it is not a Human Player!");
 
-            basePlayerController.MountPlayerInput(humanPlayer.PlayerInput);
+            // Pretty sure this is not needed anymore - TO REMOVE
+            // basePlayerController.MountPlayerInput(humanPlayer.PlayerInput);
 
             if (m_enableInputOnJoin)
             {
                 basePlayerController.EnableInput();
             }
 
-            m_characterControllers.Add(participant);
+            m_participants.Add(participant);
+
+            return true;
         }
 
-        public virtual void RemovePlayer(GameModeParticipant participant, bool destroyChildrenPrefab = true)
+        public virtual bool RemovePlayer(GameModeParticipant participant, bool destroyChildrenPrefab = true)
         {
-            if (!m_characterControllers.Contains(participant))
+            if (!m_participants.Contains(participant))
             {
-                return;
+                return false;
             }
 
             if (destroyChildrenPrefab)
@@ -210,17 +187,81 @@ namespace NobunAtelier
                 Destroy(participant.Controller.gameObject);
             }
 
-            m_characterControllers.Remove(participant);
+            m_participants.Remove(participant);
+            return true;
         }
 
-        public virtual void AIAdd(PlayerInput player)
+        public virtual bool AddAIPlayer(GameModeParticipant bot)
         {
-            throw new System.NotImplementedException();
+            if (m_participants.Contains(bot))
+            {
+                return false;
+            }
+
+            if (m_instantiateCharacterMovement)
+            {
+                bot.InstantiateCharacter(m_characterMovementPrefab);
+            }
+
+            if (m_instantiateController)
+            {
+                bot.InstantiateController(m_aiControllerPrefab);
+            }
+
+            // Do we need to mount the input on the AI controller ?
+            var basePlayerController = bot.Controller as LegacyAIControllerBase;
+            var botPlayer = bot as AIPlayer;
+            Debug.Assert(botPlayer, $"{this.name}: {bot.name} is not an AIPlayer!");
+
+            if (m_enableInputOnJoin)
+            {
+                if (basePlayerController == null)
+                {
+                    Debug.LogWarning($"{this}: Trying to enable {bot.name}'s AI, but controller is null. Have you set a valid AIControllerPrefab on the game mode?");
+                    return false;
+                }
+                else
+                {
+                    basePlayerController.EnableAI();
+                }
+            }
+
+            m_participants.Add(bot);
+
+            return true;
         }
 
-        public virtual void AIRemove(PlayerInput player)
+        public virtual bool RemoveAIPlayer(GameModeParticipant bot, bool destroyChildrenPrefab = true)
         {
-            throw new System.NotImplementedException();
+            if (!m_participants.Contains(bot))
+            {
+                return false;
+            }
+
+            if (destroyChildrenPrefab)
+            {
+                if (bot.CharacterMovement)
+                {
+                    Destroy(bot.CharacterMovement.gameObject);
+                }
+
+                Destroy(bot.Controller.gameObject);
+            }
+
+            m_participants.Remove(bot);
+            return true;
+        }
+
+        // Used when a player without a controller is remove from the game mode.
+        public virtual bool RemovePlayerWithoutController(GameModeParticipant participant)
+        {
+            if (!m_participants.Contains(participant))
+            {
+                return false;
+            }
+
+            m_participants.Remove(participant);
+            return true;
         }
 
         protected virtual void Awake()
