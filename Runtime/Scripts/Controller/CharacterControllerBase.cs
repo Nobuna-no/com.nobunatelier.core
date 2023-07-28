@@ -40,7 +40,7 @@ namespace NobunAtelier
 
         public abstract bool IsAI { get; }
 
-        public bool TryGetModule<T>(out T outModule) where T : CharacterControllerModuleBase
+        public bool TryGetModule<ModuleType>(out ModuleType outModule) where ModuleType : CharacterControllerModuleBase
         {
             outModule = null;
             for (int i = 0, c = m_modules.Length; i < c; ++i)
@@ -48,7 +48,7 @@ namespace NobunAtelier
                 var module = m_modules[i];
                 if (module.GetType() == typeof(T))
                 {
-                    outModule = module as T;
+                    outModule = module as ModuleType;
                     return true;
                 }
             }
