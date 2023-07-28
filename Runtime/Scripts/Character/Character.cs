@@ -92,9 +92,9 @@ namespace NobunAtelier
             return m_physicsModule.Velocity.magnitude;
         }
 
-        public float GetNormalizedMoveSpeed()
+        public Vector3 GetNormalizedMoveSpeed()
         {
-            return 0;
+            return Vector3.Normalize(m_physicsModule.Velocity);
         }
 
         public void Move(Vector3 direction)

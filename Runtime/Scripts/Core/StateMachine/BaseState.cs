@@ -20,11 +20,6 @@ namespace NobunAtelier
 
         private float m_timeBeforeNextState = -1f;
 
-        [Header("Events")]
-        public UnityEvent OnStateEnter;
-
-        public UnityEvent OnStateExit;
-
         public override void Enter()
         {
             base.Enter();
@@ -32,7 +27,6 @@ namespace NobunAtelier
             {
                 m_timeBeforeNextState = m_stateDurationInSeconds;
             }
-            OnStateEnter?.Invoke();
         }
 
         public override void Tick(float deltaTime)
@@ -47,12 +41,6 @@ namespace NobunAtelier
             {
                 SetState(m_nextState);
             }
-        }
-
-        public override void Exit()
-        {
-            base.Exit();
-            OnStateExit?.Invoke();
         }
     }
 }

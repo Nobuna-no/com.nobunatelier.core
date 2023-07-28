@@ -13,6 +13,7 @@ namespace NobunAtelier
 
         private InputAction m_moveAction;
         private Vector2 m_lastMoveInputValue;
+        public Vector2 LastMoveInput => m_lastMoveInputValue;
 
 #if UNITY_EDITOR
         [Header("Debug")]

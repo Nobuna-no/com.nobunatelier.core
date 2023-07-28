@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using NaughtyAttributes;
 using NobunAtelier.Gameplay;
+using UnityEngine.UI;
 
 public struct HitInfo
 {
@@ -73,11 +74,18 @@ namespace NobunAtelier.Gameplay
 
         [SerializeField, Foldout("Debug"), ReadOnly]
         private float m_CurrentLifeValue = 0;
+
+        [SerializeField, Foldout("Debug")]
+        private HitDefinition m_debugHitDefinition;
+
         private bool m_isDead = false;
 
         private bool m_isVulnerable = true;
 
         private float m_currentInvulnerabilityDuration = 0f;
+
+        public delegate void OnHealthChangedDelegate(float currentHealth, float maxHealth);
+        public event OnHealthChangedDelegate OnHealthChanged;
 
         public override void ModuleInit(Character character)
         {
@@ -89,6 +97,11 @@ namespace NobunAtelier.Gameplay
 
         public override void Reset()
         {
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
             base.Reset();
 
             m_isDead = false;
@@ -111,6 +124,7 @@ namespace NobunAtelier.Gameplay
 
             m_CurrentLifeValue = Mathf.Min(m_CurrentLifeValue + amount, m_definition.MaxValue);
 
+            OnHealthChanged?.Invoke(m_CurrentLifeValue, m_definition.MaxValue);
             OnHeal?.Invoke();
         }
 
@@ -128,6 +142,7 @@ namespace NobunAtelier.Gameplay
             }
 
             m_CurrentLifeValue = Mathf.Max(m_CurrentLifeValue - hit.DamageAmount, 0);
+            OnHealthChanged?.Invoke(m_CurrentLifeValue, m_definition.MaxValue);
 
             HitInfo info = new HitInfo { Origin = origin, ImpactLocation = impactOrigin, Hit = hit };
 
@@ -162,6 +177,7 @@ namespace NobunAtelier.Gameplay
 
             m_isDead = false;
             m_CurrentLifeValue = lifeAmount > 0 ? lifeAmount : m_definition.InitialValue;
+            OnHealthChanged?.Invoke(m_CurrentLifeValue, m_definition.MaxValue);
             OnResurrection?.Invoke();
 
             if (m_objectToMakeDisappear)
@@ -196,8 +212,22 @@ namespace NobunAtelier.Gameplay
             Resurrect();
         }
 
+        [Button("Apply Debug Hit Damage", EButtonEnableMode.Playmode)]
+        private void ApplyDebugDamage_Debug()
+        {
+            if (m_debugHitDefinition)
+            {
+                ApplyDamage(m_debugHitDefinition, transform.position, this.gameObject);
+            }
+        }
+
         private IEnumerator PoolObjectDeactivateCoroutine()
         {
+            if (m_definition.Burial == HealthDefinition.BurialType.None)
+            {
+                yield break;
+            }
+
             float value = Random.Range(m_definition.BurialDelay.x, m_definition.BurialDelay.y);
             yield return new WaitForSecondsRealtime(value);
 

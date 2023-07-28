@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    public class StateModuleBase : MonoBehaviour
+    public class StateComponentModule : MonoBehaviour
     {
         private StateComponent m_moduleOwner;
         public StateComponent ModuleOwner => m_moduleOwner;
@@ -12,7 +12,6 @@ namespace NobunAtelier
         public virtual void Init(StateComponent moduleOwner)
         {
             m_moduleOwner = moduleOwner;
-            Debug.Log($"m_moduleOwner<{m_moduleOwner.GetType().ToString()}> is null? " + (m_moduleOwner != null).ToString());
         }
 
         public virtual void Enter() { }

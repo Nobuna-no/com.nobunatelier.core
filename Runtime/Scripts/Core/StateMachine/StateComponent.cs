@@ -1,3 +1,4 @@
+using NaughtyAttributes;
 using NUnit.Framework.Internal;
 using System;
 using UnityEngine;
@@ -22,7 +23,9 @@ namespace NobunAtelier
         private T m_stateDefinition;
 
         [SerializeField]
-        private StateModuleBase[] m_stateModules;
+        private StateComponentModule[] m_stateModules;
+        [SerializeField]
+        private bool m_autoCaptureStateModule = true;
 
 #if UNITY_EDITOR
         [Header("Debug")]
@@ -138,12 +141,24 @@ namespace NobunAtelier
                 m_parentStateMachine.RegisterStateComponent(this);
             }
 
+
+            if (m_autoCaptureStateModule)
+            {
+                CaptureStateModule();
+            }
+
             if (!HasStateModule)
             {
+                var availableSM = GetComponents<StateComponentModule>();
+                if (availableSM != null && availableSM.Length > 0)
+                {
+                    Debug.LogWarning($"{this.name}: Doesn't have any of the {availableSM.Length} available state module(s).");
+                }
                 return;
             }
 
             InitializeReflectionFields();
+
             for (int i = 0, c = m_stateModules.Length; i < c; i++)
             {
                 m_stateModules[i].Init(this);
@@ -171,6 +186,12 @@ namespace NobunAtelier
 
             // Get the SetState method of the StateComponent<T>
             m_setStateMethod = GetType().GetMethod("SetState", new Type[] { m_stateDefinitionType });
+        }
+
+        [Button(enabledMode: EButtonEnableMode.Editor)]
+        private void CaptureStateModule()
+        {
+            m_stateModules = GetComponents<StateComponentModule>();
         }
 
         // Called by StateMachine.OnGUI

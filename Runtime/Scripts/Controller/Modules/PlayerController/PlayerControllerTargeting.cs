@@ -15,7 +15,6 @@ namespace NobunAtelier
 
         public override void EnableModuleInput(PlayerInput playerInput, InputActionMap activeActionMap)
         {
-            Debug.Log("EnableModuleInput");
             m_nextTargetAction = activeActionMap.FindAction(m_actionName);
             Debug.Assert(m_nextTargetAction != null, $"Can't find '{m_actionName}' action");
             m_nextTargetAction.performed += NextTargetAction_performed;

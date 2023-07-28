@@ -60,6 +60,7 @@ namespace NobunAtelier
             m_playerInput = null;
         }
 
+        [Button(enabledMode: EButtonEnableMode.Playmode)]
         /// <summary>
         /// Activate PlayerInput and switch action map to <cref="m_actionMapName">m_actionMapName</cref>
         /// Access the active action map using <cref="ActiveActionMap">ActiveActionMap</cref>.
@@ -81,6 +82,7 @@ namespace NobunAtelier
             }
         }
 
+        [Button(enabledMode: EButtonEnableMode.Playmode)]
         public virtual void DisableInput()
         {
             m_playerInput.DeactivateInput();

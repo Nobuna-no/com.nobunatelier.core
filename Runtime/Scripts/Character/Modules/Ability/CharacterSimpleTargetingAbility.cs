@@ -12,6 +12,7 @@ namespace NobunAtelier
         public TargetChangedEvent OnTargetChanged;
 
         private ITargetable m_currentTarget;
+        public ITargetable CurrentTarget => m_currentTarget;
 
         public void NextTarget()
         {

@@ -40,6 +40,22 @@ namespace NobunAtelier
 
         public abstract bool IsAI { get; }
 
+        public bool TryGetModule<T>(out T outModule) where T : CharacterControllerModuleBase
+        {
+            outModule = null;
+            for (int i = 0, c = m_modules.Length; i < c; ++i)
+            {
+                var module = m_modules[i];
+                if (module.GetType() == typeof(T))
+                {
+                    outModule = module as T;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         protected virtual void Awake()
         {
             if (!m_controlledCharacter)

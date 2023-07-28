@@ -109,6 +109,17 @@ namespace NobunAtelier
             m_isFadeIn = false;
         }
 
+        // Assumes that fade animation last 1 second.
+        public void SetFaderDuration(float durationInSeconds)
+        {
+            m_animator.speed = 1f / durationInSeconds;
+        }
+
+        public void ResetFaderDuration()
+        {
+            m_animator.speed = 1f;
+        }
+
         public void FadeIn(UnityAction actionToRaiseOnEnd = null)
         {
 #if UNITY_EDITOR

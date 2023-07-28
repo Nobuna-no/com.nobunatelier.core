@@ -1,4 +1,5 @@
 using NaughtyAttributes;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -19,7 +20,7 @@ public interface ITeamTaggable
 
 namespace NobunAtelier.Gameplay
 {
-    [RequireComponent(typeof(Collider))]
+    [RequireComponent(typeof(Collider), typeof(Rigidbody))]
     public class HitboxBehaviour : MonoBehaviour
     {
         [SerializeField, Header("Hitbox")]
@@ -28,7 +29,7 @@ namespace NobunAtelier.Gameplay
         [SerializeField]
         private Transform m_impactOriginSocket;
 
-        [SerializeField, Required]
+        [SerializeField]
         private HitDefinition m_hitDefinition;
 
         protected Collider OwnCollider => m_collider;
@@ -39,6 +40,11 @@ namespace NobunAtelier.Gameplay
         public void SetTargetTeam(TeamPlaceholder targetTeam)
         {
             m_targetTeam = targetTeam;
+        }
+
+        public void SetHitDefinition(HitDefinition hit)
+        {
+            m_hitDefinition = hit;
         }
 
         public virtual void HitBegin()
@@ -66,14 +72,15 @@ namespace NobunAtelier.Gameplay
 
         private void Awake()
         {
-            Debug.Assert(m_hitDefinition != null, $"{this} from {this.gameObject} doesn't have a HitDefinition.");
+            // Debug.Assert(m_hitDefinition != null, $"{this} from {this.gameObject} doesn't have a HitDefinition.");
             m_collider = GetComponent<Collider>();
+            m_collider.isTrigger = true;
             HitEnd();
         }
 
         protected bool TryDamageApply(Collider other)
         {
-            if(other == null)
+            if(other == null || m_hitDefinition == null)
             {
                 return false;
             }
@@ -89,7 +96,26 @@ namespace NobunAtelier.Gameplay
             return false;
         }
 
+
 #if UNITY_EDITOR
+        private bool m_isDebugAttackRunning = false;
+        [Button(enabledMode:EButtonEnableMode.Playmode)]
+        private void DebugAttack()
+        {
+            if (!m_isDebugAttackRunning)
+            {
+                StartCoroutine(DebugAttack_Coroutine());
+            }
+        }
+
+        private IEnumerator DebugAttack_Coroutine()
+        {
+            m_isDebugAttackRunning = true;
+            HitBegin();
+            yield return new WaitForSeconds(0.2f);
+            HitEnd();
+            m_isDebugAttackRunning = false;
+        }
 
         private void OnDrawGizmos()
         {

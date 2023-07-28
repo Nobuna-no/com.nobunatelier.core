@@ -9,9 +9,10 @@ namespace NobunAtelier.Gameplay
         [System.Serializable]
         public enum BurialType
         {
+            None,
             Resurect,
             Disappear,
-            Destroy,
+            Destroy
         }
 
         public float InitialValue => m_InitialValue;
