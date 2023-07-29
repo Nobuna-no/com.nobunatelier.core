@@ -46,7 +46,7 @@ namespace NobunAtelier
             for (int i = 0, c = m_modules.Length; i < c; ++i)
             {
                 var module = m_modules[i];
-                if (module.GetType() == typeof(T))
+                if (module.GetType() == typeof(ModuleType))
                 {
                     outModule = module as ModuleType;
                     return true;

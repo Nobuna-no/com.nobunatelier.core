@@ -294,5 +294,14 @@ namespace NobunAtelier
                 GameModeStop();
             }
         }
+
+        // TODO: Add a common Enable Input to the game agents
+        // public void SetActiveGameAgentInput(bool enable)
+        // {
+        //     for (int i = 0; i < m_participants.Count; ++i)
+        //     {
+        //         // m_participants[i].Controller.ena
+        //     }
+        // }
     }
 }
