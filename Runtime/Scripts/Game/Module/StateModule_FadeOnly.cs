@@ -43,13 +43,17 @@ namespace NobunAtelier
         [SerializeField, ShowIf("IsNormalFadeIn")]
         private float m_fadeInDurationInSecond = 1.0f;
 
-        [SerializeField]
+	    public UnityEvent OnFadeInDone;
+
+		[SerializeField]
         private FadingMode m_fadingOutMode = FadingMode.Normal;
 
         [SerializeField, ShowIf("IsNormalFadeOut")]
         private float m_fadeOutDurationInSecond = 1.0f;
 
-        private bool IsNormalFadeIn => m_fadingInMode == FadingMode.Normal;
+		public UnityEvent OnFadeOutDone;
+
+		private bool IsNormalFadeIn => m_fadingInMode == FadingMode.Normal;
         private bool IsNormalFadeOut => m_fadingOutMode == FadingMode.Normal;
 
         private bool IsStateChangeTriggerActive => m_stateChangeTrigger != StateChangeTrigger.None;
@@ -124,13 +128,14 @@ namespace NobunAtelier
         private void FadeInEnd()
         {
             AnimatorFader.Instance.ResetFaderDuration();
+			OnFadeInDone?.Invoke();
 
-            if (m_stateChangeTrigger == StateChangeTrigger.OnFadeInEnd && m_nextStateAfterFadeIn != null)
+			if (m_stateChangeTrigger == StateChangeTrigger.OnFadeInEnd && m_nextStateAfterFadeIn != null)
             {
                 ModuleOwner.SetState(m_nextStateAfterFadeIn.GetType(), m_nextStateAfterFadeIn);
-            }
+			}
 
-            if (m_delayBetweenFadeInAndOutInSecond > 0)
+			if (m_delayBetweenFadeInAndOutInSecond > 0)
             {
                 StartCoroutine(FadeMinimumDelay_Coroutine());
             }
@@ -143,13 +148,15 @@ namespace NobunAtelier
         private void FadeOutEnd()
         {
             AnimatorFader.Instance.ResetFaderDuration();
-            if (m_stateChangeTrigger == StateChangeTrigger.OnFadeOutEnd && m_nextStateAfterFadeIn != null)
+			OnFadeOutDone?.Invoke();
+
+			if (m_stateChangeTrigger == StateChangeTrigger.OnFadeOutEnd && m_nextStateAfterFadeIn != null)
             {
                 ModuleOwner.SetState(m_nextStateAfterFadeIn.GetType(), m_nextStateAfterFadeIn);
             }
-        }
+		}
 
-        private IEnumerator FadeMinimumDelay_Coroutine()
+		private IEnumerator FadeMinimumDelay_Coroutine()
         {
             yield return new WaitForSeconds(m_delayBetweenFadeInAndOutInSecond);
 
