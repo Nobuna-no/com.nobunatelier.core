@@ -28,6 +28,16 @@ namespace NobunAtelier
         protected UnityEngine.CharacterController m_movement;
         private float m_lastMoveSpeed;
 
+        public void SetSpeed(float speed)
+        {
+            m_moveSpeed = speed;
+        }
+
+        public void SetRotationSpeed(float speed)
+        {
+            m_rotationSpeed = speed;
+        }
+
         public override Vector3 GetMoveVector()
         {
             return m_lastMoveVector;
@@ -72,17 +82,17 @@ namespace NobunAtelier
             m_movement = GetComponent<UnityEngine.CharacterController>();
         }
 
-        protected virtual void Update()
+        protected virtual void FixedUpdate()
         {
-            float deltaTime = Time.deltaTime;
-            m_lastMoveSpeed = m_lastMoveVector.magnitude / deltaTime;
+            float deltaTime = Time.fixedDeltaTime;
+            m_lastMoveSpeed = (m_lastMoveVector.magnitude * m_moveSpeed) / deltaTime;
             m_movement.Move(m_lastMoveVector * m_moveSpeed * deltaTime);
             m_movement.Move(Physics.gravity * deltaTime);
             SetForward(m_lastMoveVector, m_rotationSpeed);
 
             if (Animator != null)
             {
-                Animator.SetFloat(m_moveSpeedFloatName, GetMoveSpeed());
+                Animator.SetFloat(m_moveSpeedFloatName, m_lastMoveSpeed);
             }
 
             m_lastMoveVector = Vector2.zero;

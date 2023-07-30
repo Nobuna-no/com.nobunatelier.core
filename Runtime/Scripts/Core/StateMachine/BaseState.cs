@@ -31,6 +31,8 @@ namespace NobunAtelier
 
         public override void Tick(float deltaTime)
         {
+            base.Tick(deltaTime);
+
             if (!m_transitionToNextState)
             {
                 return;
