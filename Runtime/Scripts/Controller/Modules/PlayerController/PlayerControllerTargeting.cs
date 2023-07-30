@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Controller/PlayerModule Targeting")]
+    [AddComponentMenu("NobunAtelier/Controller/PlayerModule: Targeting")]
     public class PlayerControllerTargeting : PlayerControllerModuleBase
     {
         [SerializeField]
