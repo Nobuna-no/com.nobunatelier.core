@@ -95,9 +95,9 @@ namespace NobunAtelier
 
         public virtual void SetState(T newState)
         {
-            if (m_parentStateMachine == null)
+            if (m_parentStateMachine == null || this == m_parentStateMachine)
             {
-                Debug.LogWarning($"Failed to set new state [{newState}].");
+                Debug.LogError($"Failed to set new state [{newState}].");
                 return;
             }
 
