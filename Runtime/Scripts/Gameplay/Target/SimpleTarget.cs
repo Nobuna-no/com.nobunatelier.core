@@ -16,7 +16,7 @@ namespace NobunAtelier
 
         // private bool m_isVisible = false;
 
-        public bool IsTargetable => m_isTargetable;
+        public bool IsTargetable => m_isTargetable && this.enabled;
 
         public Transform Transform => transform;
 

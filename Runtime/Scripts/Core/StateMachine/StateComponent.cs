@@ -23,7 +23,7 @@ namespace NobunAtelier
         private T m_stateDefinition;
 
         [SerializeField]
-        private StateComponentModule[] m_stateModules;
+        protected StateComponentModule[] m_stateModules;
         [SerializeField]
         private bool m_autoCaptureStateModule = true;
 
@@ -35,7 +35,7 @@ namespace NobunAtelier
         private NobunAtelier.StateMachineComponent<T> m_parentStateMachine = null;
         public NobunAtelier.StateMachineComponent<T> ParentStateMachine => m_parentStateMachine;
 
-        private bool HasStateModule => m_stateModules != null && m_stateModules.Length > 0;
+        protected bool HasStateModule => m_stateModules != null && m_stateModules.Length > 0;
         private Type m_genericState;
         private Type m_stateDefinitionType;
         private System.Reflection.MethodInfo m_setStateMethod;

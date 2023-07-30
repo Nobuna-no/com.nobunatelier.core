@@ -36,6 +36,16 @@ namespace NobunAtelier
         [SerializeField, AnimatorParam("m_animator")]
         private string m_fadeOutTrigger;
 
+        [Header("Audio")]
+        [SerializeField]
+        private float m_audioStartDelayInSecond = 0.2f;
+        [SerializeField]
+        private AudioSource m_FillAudioSource;
+        [SerializeField]
+        private AudioSource m_fadeInAudioSource;
+        [SerializeField]
+        private AudioSource m_fadeOutAudioSource;
+
         [Header("Events")]
         public UnityEvent OnFadeInEnd;
 
@@ -78,7 +88,6 @@ namespace NobunAtelier
                 Debug.Log($"[{Time.frameCount}] - Filling");
             }
 #endif
-
             if (!m_animator || m_filledTrigger.Length == 0)
             {
                 return;
@@ -87,6 +96,11 @@ namespace NobunAtelier
             m_animator.SetTrigger(m_filledTrigger);
 
             m_isFadeIn = true;
+
+            if (m_FillAudioSource)
+            {
+                m_FillAudioSource.PlayScheduled(AudioSettings.dspTime + m_audioStartDelayInSecond);
+            }
         }
 
         // Instantly fill the screen
@@ -140,6 +154,11 @@ namespace NobunAtelier
                 return;
             }
 
+            if (m_fadeInAudioSource)
+            {
+                m_fadeInAudioSource.PlayScheduled(AudioSettings.dspTime + m_audioStartDelayInSecond);
+            }
+
             m_animator.SetTrigger(m_fadeInTrigger);
             if (actionToRaiseOnEnd == null)
             {
@@ -167,6 +186,11 @@ namespace NobunAtelier
             {
                 actionToRaiseOnEnd?.Invoke();
                 return;
+            }
+
+            if (m_fadeOutAudioSource)
+            {
+                m_fadeOutAudioSource.PlayScheduled(AudioSettings.dspTime + m_audioStartDelayInSecond);
             }
 
             m_animator.SetTrigger(m_fadeOutTrigger);

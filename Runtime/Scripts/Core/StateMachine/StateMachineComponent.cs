@@ -50,7 +50,8 @@ namespace NobunAtelier
         {
             this.enabled = true;
             IsPaused = false;
-            SetState(GetStateDefinition());
+            m_activeStateDefinition = GetStateDefinition();
+            Enter();
         }
 
         public void Sleep()
@@ -92,6 +93,18 @@ namespace NobunAtelier
                 return;
             }
 
+            Debug.Log($"{this.name}: Entering state machine - HasStateModule[{HasStateModule}] - {m_stateModules.Length}");
+
+            if (HasStateModule)
+            {
+                Debug.Log($"{this.name}: Entering state machine state modules");
+
+                for (int i = 0, c = m_stateModules.Length; i < c; i++)
+                {
+                    m_stateModules[i].Enter();
+                }
+            }
+
             if (GetStateDefinition() != null)
             {
                 m_activeStateDefinition = GetStateDefinition();
@@ -115,6 +128,14 @@ namespace NobunAtelier
             if (!this.enabled)
             {
                 return;
+            }
+
+            if (HasStateModule)
+            {
+                for (int i = 0, c = m_stateModules.Length; i < c; i++)
+                {
+                    m_stateModules[i].Exit();
+                }
             }
 
             if (m_activeStateDefinition != null)

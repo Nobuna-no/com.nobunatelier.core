@@ -14,6 +14,19 @@ namespace NobunAtelier
         private ITargetable m_currentTarget;
         public ITargetable CurrentTarget => m_currentTarget;
 
+        public void RefreshTarget()
+        {
+            if (m_currentTarget == null)
+            {
+                return;
+            }
+
+            if (!m_currentTarget.IsTargetable)
+            {
+                NextTarget();
+            }
+        }
+
         public void NextTarget()
         {
             if (TargetManager.Instance == null)

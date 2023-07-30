@@ -119,7 +119,7 @@ namespace NobunAtelier.Gameplay
 
         private void OnDrawGizmos()
         {
-            if (!Application.isPlaying || !m_collider.enabled) { return; }
+            if (!Application.isPlaying || !m_collider || !m_collider.enabled) { return; }
 
             BoxCollider boxCollider = m_collider as BoxCollider;
             SphereCollider sphereCollider = m_collider as SphereCollider;

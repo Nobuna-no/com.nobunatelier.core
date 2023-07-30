@@ -48,6 +48,10 @@ namespace NobunAtelier.Gameplay
         [SerializeField, Header("Death")]
         private GameObject m_objectToMakeDisappear;
 
+        // Debug while the transition to ability moduble
+        [SerializeField]
+        private bool m_isModule = false;
+
         [Foldout("Events")]
         public HitEvent OnHit;
 
@@ -62,6 +66,9 @@ namespace NobunAtelier.Gameplay
 
         [Foldout("Events")]
         public HitEvent OnDeath;
+
+        [Foldout("Events")]
+        public UnityEvent OnBurial;
 
         [Foldout("Events")]
         public UnityEvent OnDestroy;
@@ -87,6 +94,14 @@ namespace NobunAtelier.Gameplay
         public delegate void OnHealthChangedDelegate(float currentHealth, float maxHealth);
         public event OnHealthChangedDelegate OnHealthChanged;
 
+        private void Start()
+        {
+            if (!m_isModule)
+            {
+                Reset();
+            }
+        }
+
         public override void ModuleInit(Character character)
         {
             base.ModuleInit(character);
@@ -106,6 +121,7 @@ namespace NobunAtelier.Gameplay
 
             m_isDead = false;
             m_CurrentLifeValue = m_definition.InitialValue;
+            OnHealthChanged?.Invoke(m_CurrentLifeValue, m_definition.MaxValue);
         }
 
         public void Heal(float amount)
@@ -230,6 +246,8 @@ namespace NobunAtelier.Gameplay
 
             float value = Random.Range(m_definition.BurialDelay.x, m_definition.BurialDelay.y);
             yield return new WaitForSecondsRealtime(value);
+
+            OnBurial?.Invoke();
 
             switch (m_definition.Burial)
             {

@@ -23,8 +23,6 @@ namespace NobunAtelier
 
         public abstract float GetNormalizedMoveSpeed();
 
-        public NavMeshAgent NavMeshAgent;
-
         public virtual void Mount(LegacyCharacterControllerBase controller)
         {
             Controller = controller;
@@ -77,7 +75,6 @@ namespace NobunAtelier
         {
             m_initialPosition = transform.localPosition;
             Animator = GetComponentInChildren<Animator>();
-            NavMeshAgent = GetComponent<NavMeshAgent>();
         }
     }
 }
