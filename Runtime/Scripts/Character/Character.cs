@@ -120,12 +120,14 @@ namespace NobunAtelier
         {
             Body.Position = position;
             Body.Rotation = rotation;
+            Physics.SyncTransforms();
         }
 
         public void ResetCharacter(Transform transform)
         {
             Body.Position = transform.position;
             Body.Rotation = transform.rotation;
+            Physics.SyncTransforms();
         }
 
         protected void Awake()

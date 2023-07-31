@@ -25,12 +25,10 @@ namespace NobunAtelier
             m_subStateMachine.StartFromScratch();
         }
 
-#if UNITY_EDITOR
         [Button(enabledMode: EButtonEnableMode.Editor)]
         private void CaptureSubStateMachine()
         {
             m_subStateMachine = GetComponentInChildren<GameStateMachine>();
         }
-#endif
     }
 }

@@ -9,6 +9,7 @@ namespace NobunAtelier
     {
         public bool CanChangeTarget = true;
 
+        public TargetChangedEvent OnTargetRefreshed;
         public TargetChangedEvent OnTargetChanged;
 
         private ITargetable m_currentTarget;
@@ -16,15 +17,12 @@ namespace NobunAtelier
 
         public void RefreshTarget()
         {
-            if (m_currentTarget == null)
-            {
-                return;
-            }
-
-            if (!m_currentTarget.IsTargetable)
+            if (m_currentTarget != null && !m_currentTarget.IsTargetable)
             {
                 NextTarget();
             }
+
+            OnTargetRefreshed?.Invoke(m_currentTarget);
         }
 
         public void NextTarget()
