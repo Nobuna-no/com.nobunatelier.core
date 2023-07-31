@@ -16,6 +16,8 @@ namespace NobunAtelier
         public virtual Quaternion Rotation => transform.rotation;
 
         protected Vector3 m_initialPosition;
+        protected Vector3 m_initialWorldPosition;
+        protected Quaternion m_initialWorldRotation;
 
         public abstract Vector3 GetMoveVector();
 
@@ -57,6 +59,14 @@ namespace NobunAtelier
         public virtual void ResetLocalPosition()
         {
             transform.localPosition = m_initialPosition;
+            Physics.SyncTransforms();
+        }
+
+        public virtual void ResetInitialWorldTransform()
+        {
+            transform.position = m_initialWorldPosition;
+            transform.rotation = m_initialWorldRotation;
+            Physics.SyncTransforms();
         }
 
         public virtual void ResetCharacter(Vector3 position, Quaternion rotation)
@@ -73,6 +83,9 @@ namespace NobunAtelier
 
         protected virtual void Awake()
         {
+            m_initialWorldPosition = transform.position;
+            m_initialWorldRotation = transform.rotation;
+
             m_initialPosition = transform.localPosition;
             Animator = GetComponentInChildren<Animator>();
         }

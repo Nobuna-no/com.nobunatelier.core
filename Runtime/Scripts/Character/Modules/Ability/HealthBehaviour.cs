@@ -71,13 +71,16 @@ namespace NobunAtelier.Gameplay
         public UnityEvent OnBurial;
 
         [Foldout("Events")]
+        public UnityEvent OnResurrection;
+
+        [Foldout("Events")]
         public UnityEvent OnDestroy;
 
         [Foldout("Events")]
         public UnityEvent OnDisappearing;
 
         [Foldout("Events")]
-        public UnityEvent OnResurrection;
+        public UnityEvent OnReset;
 
         [SerializeField, Foldout("Debug"), ReadOnly]
         private float m_CurrentLifeValue = 0;
@@ -119,9 +122,17 @@ namespace NobunAtelier.Gameplay
 
             base.Reset();
 
-            m_isDead = false;
-            m_CurrentLifeValue = m_definition.InitialValue;
-            OnHealthChanged?.Invoke(m_CurrentLifeValue, m_definition.MaxValue);
+            OnReset?.Invoke();
+
+            if (m_isDead)
+            {
+                Resurrect();
+            }
+            else
+            {
+                m_CurrentLifeValue = m_definition.InitialValue;
+                OnHealthChanged?.Invoke(m_CurrentLifeValue, m_definition.MaxValue);
+            }
         }
 
         public void Heal(float amount)
@@ -239,15 +250,15 @@ namespace NobunAtelier.Gameplay
 
         private IEnumerator PoolObjectDeactivateCoroutine()
         {
-            if (m_definition.Burial == HealthDefinition.BurialType.None)
-            {
-                yield break;
-            }
-
             float value = Random.Range(m_definition.BurialDelay.x, m_definition.BurialDelay.y);
             yield return new WaitForSecondsRealtime(value);
 
             OnBurial?.Invoke();
+
+            if (m_definition.Burial == HealthDefinition.BurialType.None)
+            {
+                yield break;
+            }
 
             switch (m_definition.Burial)
             {
