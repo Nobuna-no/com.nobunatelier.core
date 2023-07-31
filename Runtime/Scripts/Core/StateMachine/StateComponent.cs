@@ -15,10 +15,10 @@ namespace NobunAtelier
         where T : StateDefinition
     {
         [Header("State")]
-#if UNITY_EDITOR
-        [SerializeField, TextArea, Tooltip("EDITOR ONLY")]
+
+        [SerializeField, TextArea]
         private string m_Description;
-#endif
+
         [SerializeField]
         private T m_stateDefinition;
 
@@ -27,11 +27,11 @@ namespace NobunAtelier
         [SerializeField]
         private bool m_autoCaptureStateModule = true;
 
-#if UNITY_EDITOR
-        [Header("Debug")]
-        public bool BreakOnEnter = false;
+//#if UNITY_EDITOR
+//        [Header("Debug")]
+//        public bool BreakOnEnter = false;
+//#endif
 
-#endif
         private NobunAtelier.StateMachineComponent<T> m_parentStateMachine = null;
         public NobunAtelier.StateMachineComponent<T> ParentStateMachine => m_parentStateMachine;
 
@@ -48,13 +48,14 @@ namespace NobunAtelier
 
         public virtual void Enter()
         {
-#if UNITY_EDITOR
-            if (BreakOnEnter)
-            {
-                Debug.Break();
-                Debug.Log($"{this}: Debug Break!");
-            }
-#endif
+//#if UNITY_EDITOR
+//            if (BreakOnEnter)
+//            {
+//                Debug.Break();
+//                Debug.Log($"{this}: Debug Break!");
+//            }
+//#endif
+            Debug.Log($"Enter {this.name}");
 
             if (!HasStateModule)
             {
@@ -82,6 +83,8 @@ namespace NobunAtelier
 
         public virtual void Exit()
         {
+            Debug.Log($"Exit {this.name}");
+
             if (!HasStateModule)
             {
                 return;

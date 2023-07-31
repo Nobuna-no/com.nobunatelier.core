@@ -37,6 +37,8 @@ namespace NobunAtelier
     {
         [SerializeField]
         protected T[] m_modules;
+        [SerializeField]
+        private bool m_autoRefreshModule = true;
 
         public abstract bool IsAI { get; }
 
@@ -65,7 +67,10 @@ namespace NobunAtelier
                 Debug.Assert(m_controlledCharacter, $"No Character found for {this.transform.parent.gameObject.name}/{this}");
             }
 
-            CaptureCharacterControllerModules();
+            if (m_autoRefreshModule)
+            {
+                CaptureCharacterControllerModules();
+            }
 
             foreach (var extension in m_modules)
             {
@@ -110,7 +115,10 @@ namespace NobunAtelier
 
         protected virtual void OnValidate()
         {
-            CaptureCharacterControllerModules();
+            if (m_autoRefreshModule)
+            {
+                CaptureCharacterControllerModules();
+            }
         }
 
         [NaughtyAttributes.Button("Refresh modules")]
