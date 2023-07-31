@@ -14,6 +14,7 @@ public abstract class SingletonManager<T> : MonoBehaviour
     [SerializeField]
     private bool m_dontDestroyOnLoad = false;
 
+#if UNITY_EDITOR
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void Init()
     {
@@ -23,6 +24,7 @@ public abstract class SingletonManager<T> : MonoBehaviour
             Instance = null;
         }
     }
+#endif
 
     protected virtual void Awake()
     {
