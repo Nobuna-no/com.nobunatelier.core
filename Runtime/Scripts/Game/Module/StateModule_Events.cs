@@ -5,7 +5,7 @@ using UnityEngine.Events;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/States/Modules/StateModule: Events")]
+    [AddComponentMenu("NobunAtelier/States/Modules/StateModule: State Events")]
     public class StateModule_Events : StateComponentModule
     {
         public UnityEvent OnStateEnter;

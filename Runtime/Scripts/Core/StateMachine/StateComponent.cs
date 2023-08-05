@@ -1,6 +1,7 @@
 using NaughtyAttributes;
 using NUnit.Framework.Internal;
 using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace NobunAtelier
@@ -27,10 +28,10 @@ namespace NobunAtelier
         [SerializeField]
         private bool m_autoCaptureStateModule = true;
 
-//#if UNITY_EDITOR
-//        [Header("Debug")]
-//        public bool BreakOnEnter = false;
-//#endif
+
+        [Header("Debug")]
+        [SerializeField]
+        protected bool m_logDebug = false;
 
         private NobunAtelier.StateMachineComponent<T> m_parentStateMachine = null;
         public NobunAtelier.StateMachineComponent<T> ParentStateMachine => m_parentStateMachine;
@@ -48,18 +49,18 @@ namespace NobunAtelier
 
         public virtual void Enter()
         {
-//#if UNITY_EDITOR
-//            if (BreakOnEnter)
-//            {
-//                Debug.Break();
-//                Debug.Log($"{this}: Debug Break!");
-//            }
-//#endif
-            Debug.Log($"Enter {this.name}");
+            if (m_logDebug)
+            {
+                Debug.Log($"{this.name}.Enter");
+            }
 
             if (!HasStateModule)
             {
                 return;
+            }
+            else if (m_logDebug)
+            {
+                Debug.Log($"{this.name}.Enter: Has {m_stateModules.Length} state module(s).");
             }
 
             for (int i = 0, c = m_stateModules.Length; i < c; i++)
@@ -83,7 +84,10 @@ namespace NobunAtelier
 
         public virtual void Exit()
         {
-            Debug.Log($"Exit {this.name}");
+            if (m_logDebug)
+            {
+                Debug.Log($"{this.name}.Exit");
+            }
 
             if (!HasStateModule)
             {
@@ -98,7 +102,7 @@ namespace NobunAtelier
 
         public virtual void SetState(T newState)
         {
-            if (m_parentStateMachine == null || this == m_parentStateMachine)
+            if (m_parentStateMachine == null)
             {
                 Debug.LogError($"Failed to set new state [{newState}].");
                 return;
@@ -135,11 +139,13 @@ namespace NobunAtelier
                 return;
             }
 
-            m_parentStateMachine = GetComponentInParent<NobunAtelier.StateMachineComponent<T>>();
-
-            if (this != m_parentStateMachine)
+            if (transform.parent != null)
             {
-                Debug.Assert(m_parentStateMachine, $"{this} doesn't have a parent StateMachine.");
+                m_parentStateMachine = transform.parent.GetComponentInParent<NobunAtelier.StateMachineComponent<T>>(true);
+            }
+
+            if (m_parentStateMachine != null)
+            {
                 Debug.Assert(m_stateDefinition, $"{this} doesn't have a StateDefinition.");
                 m_parentStateMachine.RegisterStateComponent(this);
             }
@@ -165,6 +171,19 @@ namespace NobunAtelier
             for (int i = 0, c = m_stateModules.Length; i < c; i++)
             {
                 m_stateModules[i].Init(this);
+            }
+        }
+
+        protected virtual void OnValidate()
+        {
+            if (transform.parent != null)
+            {
+                m_parentStateMachine = transform.parent.GetComponentInParent<NobunAtelier.StateMachineComponent<T>>(true);
+            }
+
+            if (m_stateDefinition != null)
+            {
+                gameObject.name = $"state-{m_stateDefinition.name}";
             }
         }
 
