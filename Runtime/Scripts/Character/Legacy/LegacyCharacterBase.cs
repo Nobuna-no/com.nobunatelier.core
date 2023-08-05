@@ -19,6 +19,8 @@ namespace NobunAtelier
         protected Vector3 m_initialWorldPosition;
         protected Quaternion m_initialWorldRotation;
 
+        private NavMeshAgent m_navMeshAgent = null;
+
         public abstract Vector3 GetMoveVector();
 
         public abstract float GetMoveSpeed();
@@ -58,27 +60,59 @@ namespace NobunAtelier
 
         public virtual void ResetLocalPosition()
         {
+            if (m_navMeshAgent)
+            {
+                m_navMeshAgent.enabled = false;
+            }
             transform.localPosition = m_initialPosition;
             Physics.SyncTransforms();
+            if (m_navMeshAgent)
+            {
+                m_navMeshAgent.enabled = true;
+            }
         }
 
         public virtual void ResetInitialWorldTransform()
         {
+            if (m_navMeshAgent)
+            {
+                m_navMeshAgent.enabled = false;
+            }
             transform.position = m_initialWorldPosition;
             transform.rotation = m_initialWorldRotation;
             Physics.SyncTransforms();
+            if (m_navMeshAgent)
+            {
+                m_navMeshAgent.enabled = true;
+            }
         }
 
         public virtual void ResetCharacter(Vector3 position, Quaternion rotation)
         {
+            if (m_navMeshAgent)
+            {
+                m_navMeshAgent.enabled = false;
+            }
             transform.SetPositionAndRotation(position, rotation);
             Physics.SyncTransforms();
+            if (m_navMeshAgent)
+            {
+                m_navMeshAgent.enabled = true;
+            }
         }
 
         public virtual void ResetCharacter(Transform transform)
         {
+            if (m_navMeshAgent)
+            {
+                m_navMeshAgent.enabled = false;
+            }
             this.transform.SetPositionAndRotation(transform.position, transform.rotation);
             Physics.SyncTransforms();
+            if (m_navMeshAgent)
+            {
+                m_navMeshAgent.enabled = true;
+            }
         }
 
         protected virtual void Awake()
@@ -88,6 +122,7 @@ namespace NobunAtelier
 
             m_initialPosition = transform.localPosition;
             Animator = GetComponentInChildren<Animator>();
+            m_navMeshAgent = GetComponent<NavMeshAgent>();
         }
     }
 }

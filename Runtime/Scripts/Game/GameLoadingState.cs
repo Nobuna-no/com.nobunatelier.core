@@ -5,6 +5,7 @@ using UnityEngine.Events;
 
 namespace NobunAtelier
 {
+    [AddComponentMenu("NobunAtelier/States/Game/Game State: Loading")]
     public class GameLoadingState : BaseState<GameStateDefinition>
     {
         [Header("Loading")]

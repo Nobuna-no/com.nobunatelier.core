@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
@@ -18,20 +19,22 @@ namespace NobunAtelier
 
         [Header("State")]
         [SerializeField]
-        private Trigger m_trigger = Trigger.OnStateEnter;
-
-        [SerializeField]
         private StateDefinition m_nextStateAfterScenesWork;
 
         [Header("Fade Events")]
+        [FormerlySerializedAs("m_trigger")]
         [SerializeField]
-        private float m_delayBetweenFadeInAndOutInSecond = 0.5f;
+        private Trigger m_fadeTrigger = Trigger.OnStateEnter;
 
         [SerializeField]
         private FadingMode m_fadingInMode = FadingMode.Normal;
 
         [SerializeField, ShowIf("IsNormalFadeIn")]
         private float m_fadeInDurationInSecond = 1.0f;
+
+        [FormerlySerializedAs("m_delayBetweenFadeInAndOutInSecond")]
+        [SerializeField, Range(0, 5f)]
+        private float m_minimalLoadingDuration = 0.5f;
 
         // Is it really useful?
         // public UnityEvent OnFadeInDone;
@@ -56,6 +59,8 @@ namespace NobunAtelier
 
         public UnityEvent OnScenesWorkDone;
 
+        private float m_fadeBeginTime = 0;
+
         private List<string> m_loadingScenes = new List<string>();
         private List<string> m_unloadingScenes = new List<string>();
 
@@ -64,7 +69,7 @@ namespace NobunAtelier
 
         public override void Enter()
         {
-            if (m_trigger == Trigger.OnStateEnter)
+            if (m_fadeTrigger == Trigger.OnStateEnter)
             {
                 StartFading();
             }
@@ -72,7 +77,7 @@ namespace NobunAtelier
 
         public override void Exit()
         {
-            if (m_trigger == Trigger.OnStateExit)
+            if (m_fadeTrigger == Trigger.OnStateExit)
             {
                 StartFading();
             }
@@ -80,6 +85,7 @@ namespace NobunAtelier
 
         public void StartFading()
         {
+            m_fadeBeginTime = Time.realtimeSinceStartup;
             if (!AnimatorFader.Instance)
             {
                 FadeInEnd();
@@ -177,7 +183,15 @@ namespace NobunAtelier
 
             if (IsSceneWorkDone())
             {
-                OnAllScenesLoaded();
+                float currentLoadingDuration = Time.realtimeSinceStartup - m_fadeBeginTime;
+                if (m_minimalLoadingDuration > 0 && m_minimalLoadingDuration > currentLoadingDuration)
+                {
+                    StartCoroutine(FadeMinimumDelay_Coroutine(m_minimalLoadingDuration - currentLoadingDuration));
+                }
+                else
+                {
+                    OnAllScenesLoaded();
+                }
             }
         }
 
@@ -226,9 +240,10 @@ namespace NobunAtelier
                 return;
             }
 
-            if (m_delayBetweenFadeInAndOutInSecond > 0)
+            float currentLoadingDuration = Time.realtimeSinceStartup - m_fadeBeginTime;
+            if (m_minimalLoadingDuration > 0 && m_minimalLoadingDuration > currentLoadingDuration)
             {
-                StartCoroutine(FadeMinimumDelay_Coroutine());
+                StartCoroutine(FadeMinimumDelay_Coroutine(m_minimalLoadingDuration - currentLoadingDuration));
             }
             else if (IsSceneWorkDone())
             {
@@ -242,9 +257,9 @@ namespace NobunAtelier
             // OnFadeOutDone?.Invoke();
         }
 
-        private IEnumerator FadeMinimumDelay_Coroutine()
+        private IEnumerator FadeMinimumDelay_Coroutine(float delay)
         {
-            yield return new WaitForSeconds(m_delayBetweenFadeInAndOutInSecond);
+            yield return new WaitForSeconds(delay);
 
             if (IsSceneWorkDone())
             {

@@ -1,29 +1,37 @@
 using NaughtyAttributes;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace NobunAtelier
 {
     public class BaseState<T> : StateComponent<T>
         where T : NobunAtelier.StateDefinition
     {
-        // To improve by creating an intermediate that have only UnityEvent and one with timed transition
-        [Header("Base State")]
-        [SerializeField]
-        private bool m_transitionToNextState = false;
+        private enum NextStateTransitionType
+        {
+            Delay,
+            Manual,
+        }
 
-        [SerializeField, ShowIf("m_transitionToNextState")]
+        // To improve by creating an intermediate that have only UnityEvent and one with timed transition
+        [Header("Next State")]
+        [SerializeField]
+        NextStateTransitionType TransitionType = NextStateTransitionType.Manual;
+
+        [SerializeField, ShowIf("DisplayNextState")]
         private T m_nextState;
 
-        [SerializeField, ShowIf("m_transitionToNextState")]
+        [SerializeField, ShowIf("DisplayDelay")]
         private float m_stateDurationInSeconds = -1f;
 
         private float m_timeBeforeNextState = -1f;
 
+        private bool DisplayDelay => TransitionType == NextStateTransitionType.Delay;
+        private bool DisplayNextState => TransitionType != NextStateTransitionType.Manual;
+
         public override void Enter()
         {
             base.Enter();
-            if (m_transitionToNextState)
+            if (TransitionType == NextStateTransitionType.Delay)
             {
                 m_timeBeforeNextState = m_stateDurationInSeconds;
             }
@@ -33,7 +41,7 @@ namespace NobunAtelier
         {
             base.Tick(deltaTime);
 
-            if (!m_transitionToNextState)
+            if (TransitionType != NextStateTransitionType.Delay)
             {
                 return;
             }

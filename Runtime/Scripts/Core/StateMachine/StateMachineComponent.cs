@@ -1,3 +1,5 @@
+using NaughtyAttributes;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,7 +14,11 @@ namespace NobunAtelier
 
         [Header("State Machine")]
         [SerializeField]
+        private T m_initialStateDefinition;
+        [SerializeField, ShowIf("IsMainStateMachine")]
         private bool m_enterInitialStateOnStart = true;
+        [SerializeField, ShowIf("HasParentStateMachine")]
+        private T m_nextStateOnStateMachineExit;
 
         [Header("Debug")]
         [SerializeField]
@@ -23,8 +29,13 @@ namespace NobunAtelier
         private T m_activeDebugState = null;
         private Vector2 m_debugStateScrollPosition = Vector2.zero;
 
+        private bool HasParentStateMachine => ParentStateMachine != null;
+        private bool IsMainStateMachine => ParentStateMachine == null;
+
         protected virtual void Start()
         {
+            this.enabled = ParentStateMachine == null;
+
             if (m_enterInitialStateOnStart)
             {
                 Enter();
@@ -48,15 +59,21 @@ namespace NobunAtelier
 
         public void ResetToDefault()
         {
-            this.enabled = true;
+            // this.enabled = true;
             IsPaused = false;
-            m_activeStateDefinition = GetStateDefinition();
+            m_activeStateDefinition = GetInitialStateDefinition();
             Enter();
+        }
+
+        public T GetInitialStateDefinition()
+        {
+            return m_initialStateDefinition;
         }
 
         public void Sleep()
         {
-            this.enabled = false;
+            // this.enabled = false;
+            IsPaused = true;
         }
 
         public override void SetState(T newState)
@@ -87,16 +104,24 @@ namespace NobunAtelier
         }
 
         public override void Enter()
-        {
-            if (!this.enabled)
+        {   
+            if (m_logDebug)
             {
-                return;
+                Debug.Log($"{this.name}.Enter");
             }
 
+            if (ParentStateMachine != null)
+            {
+                // this.enabled = true;
+                IsPaused = false;
+            }
 
             if (HasStateModule)
             {
-                Debug.Log($"{this.name}: Entering state machine state modules");
+                if (m_logDebug)
+                {
+                    Debug.Log($"{this.name}.Enter: Starting {m_stateModules.Length} state module(s).");
+                }
 
                 for (int i = 0, c = m_stateModules.Length; i < c; i++)
                 {
@@ -104,9 +129,9 @@ namespace NobunAtelier
                 }
             }
 
-            if (GetStateDefinition() != null)
+            if (GetInitialStateDefinition() != null)
             {
-                m_activeStateDefinition = GetStateDefinition();
+                m_activeStateDefinition = GetInitialStateDefinition();
                 while (m_activeStateDefinition.RequiredPriorState != null)
                 {
                     Debug.LogWarning($"Required condition <b>{m_activeStateDefinition.RequiredPriorState.name}</b> for state <b>{m_activeStateDefinition.name}</b>. " +
@@ -124,10 +149,10 @@ namespace NobunAtelier
 
         public override void Exit()
         {
-            if (!this.enabled)
-            {
-                return;
-            }
+            //if (ParentStateMachine != null)
+            //{
+            //    this.enabled = false;
+            //}
 
             if (HasStateModule)
             {
@@ -143,10 +168,30 @@ namespace NobunAtelier
             }
         }
 
+        public virtual void ExitStateMachine()
+        {
+            if (ParentStateMachine != null)
+            {
+                ParentStateMachine.SetState(m_nextStateOnStateMachineExit);
+            }
+            else
+            {
+                Debug.LogError($"{this.name}: Cannot stop main state machine");
+            }
+        }
+
         public override void Tick(float deltaTime)
         {
-            if (!this.enabled || m_activeStateDefinition == null || !m_statesMap[m_activeStateDefinition].isActiveAndEnabled)
+            if (IsPaused || ParentStateMachine != null && ParentStateMachine.IsPaused)
             {
+                return;
+            }
+
+            base.Tick(deltaTime);
+
+            if (m_activeStateDefinition == null)
+            {
+                Debug.Log($"{this.name}.Tick - Cannot");
                 return;
             }
 
@@ -155,7 +200,7 @@ namespace NobunAtelier
 
         protected virtual void OnGUI()
         {
-            if (!Application.isPlaying || !m_displayDebug || !this.enabled)
+            if (!Application.isPlaying || !m_displayDebug)
             {
                 return;
             }

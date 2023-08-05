@@ -5,9 +5,9 @@ namespace NobunAtelier
     public class BaseStateMachine<T> : StateMachineComponent<T>
         where T : StateDefinition
     {
-        protected virtual void Update()
+        protected virtual void FixedUpdate()
         {
-            Tick(Time.deltaTime);
+            Tick(Time.fixedDeltaTime);
         }
     }
 }
