@@ -6,17 +6,17 @@ using UnityEngine.Events;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/States/Modules/StateModule: Timed Events")]
-    public class StateModule_TimedEvents : StateComponentModule
+    [AddComponentMenu("NobunAtelier/States/Modules/StateModule: Scheduled Actions")]
+    public class StateModule_ScheduledActions : StateComponentModule
     {
         [SerializeField]
-        private TimedAction[] m_delayedActions;
+        private TimedAction[] m_actions;
 
         public override void Enter()
         {
             base.Enter();
 
-            foreach (var act in m_delayedActions)
+            foreach (var act in m_actions)
             {
                 act.Init();
             }
@@ -26,7 +26,7 @@ namespace NobunAtelier
         {
             base.Tick(deltaTime);
 
-            foreach (var act in m_delayedActions)
+            foreach (var act in m_actions)
             {
                 act.Tick(deltaTime);
             }

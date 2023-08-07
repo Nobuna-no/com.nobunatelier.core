@@ -4,6 +4,7 @@ using UnityEngine.Events;
 
 namespace NobunAtelier
 {
+    [AddComponentMenu("NobunAtelier/States/Game/Game State: Game Mode Bootstrap")]
     public class GameState_GameModeBootstrap : StateComponent<GameStateDefinition>
     {
         [System.Flags]
@@ -86,7 +87,10 @@ namespace NobunAtelier
             OnGameModeStopEvent?.Invoke();
             if (!m_nextStateOnGameModeStop)
             {
-                Debug.LogWarning($"{this}: Game mode ended but no state to follow");
+                if (m_logDebug)
+                {
+                    Debug.LogWarning($"{this}: Game mode ended but no state to follow");
+                }
                 return;
             }
 

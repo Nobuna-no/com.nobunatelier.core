@@ -20,14 +20,13 @@ namespace NobunAtelier
         [SerializeField, TextArea]
         private string m_Description;
 
-        [SerializeField]
+        [SerializeField, ShowIf("HasParentStateMachine")]
         private T m_stateDefinition;
 
         [SerializeField]
         protected StateComponentModule[] m_stateModules;
         [SerializeField]
         private bool m_autoCaptureStateModule = true;
-
 
         [Header("Debug")]
         [SerializeField]
@@ -40,6 +39,8 @@ namespace NobunAtelier
         private Type m_genericState;
         private Type m_stateDefinitionType;
         private System.Reflection.MethodInfo m_setStateMethod;
+
+        private bool HasParentStateMachine => m_parentStateMachine != null;
 
         // Return the definition defining the component.
         public T GetStateDefinition()
