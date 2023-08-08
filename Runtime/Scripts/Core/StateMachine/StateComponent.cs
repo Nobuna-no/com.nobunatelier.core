@@ -185,6 +185,11 @@ namespace NobunAtelier
             if (m_stateDefinition != null)
             {
                 gameObject.name = $"state-{m_stateDefinition.name}";
+
+                if (m_stateDefinition.Description != string.Empty)
+                {
+                    m_Description = m_stateDefinition.Description;
+                }
             }
         }
 

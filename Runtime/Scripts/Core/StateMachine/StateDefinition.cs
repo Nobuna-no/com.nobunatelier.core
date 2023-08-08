@@ -8,6 +8,11 @@ namespace NobunAtelier
     {
         public StateDefinition RequiredPriorState => m_requiredPriorState;
 
+        public string Description => m_description;
+
+        [SerializeField, TextArea]
+        private string m_description;
+
         [SerializeField]
         private StateDefinition m_requiredPriorState;
     }
