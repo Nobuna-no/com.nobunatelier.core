@@ -16,28 +16,23 @@ namespace NobunAtelier
 
         private DataCollection m_collection;
         public ReorderableList list = null;
-        private string[] m_names;
 
+        private DataDefinition m_currentElement;
+        private Editor m_currentEditor;
         private int m_workingIndex = -1;
         private bool m_showBasicData = false;
 
         private void OnEnable()
         {
             m_collection = target as DataCollection;
-            s_CollectionType = m_collection.GetType().ToString().Replace("Collection", " Collection");
-            m_names = new string[m_collection.DataDefinitions.Length];
-
-            for (int i = 0; i < m_names.Length; i++)
-            {
-                m_names[i] = m_collection.DataDefinitions[i].name;
-            }
-
+            s_CollectionType = m_collection.GetType().Name.Replace("Collection", " Collection");
+            m_workingIndex = -1;
             GenerateReorderableList();
         }
 
         private void GenerateReorderableList()
         {
-            list = new ReorderableList(m_collection.DataDefinitions, typeof(DataDefinition), false, true, true, true);
+            list = new ReorderableList(m_collection.DataDefinitions, typeof(DataDefinition), true, true, true, true);
 
             list.drawHeaderCallback =
                 (Rect rect) =>
@@ -66,32 +61,23 @@ namespace NobunAtelier
 
                     var element = m_collection.DataDefinitions[index];
 
-                    Rect r1 = rect;
-                    r1.width = 16f;
-                    r1.height = 16f;
-                    r1.x = rect.x;
-                    r1.y = rect.y + 2f;
-                    //if (m_showData)
-                    //{
-                    //    r1.height *= 0.5f;
-                    //}
-
-                    bool isWorkingOnCurrentElement = index == m_workingIndex;
-                    if (EditorGUI.ToggleLeft(r1, "", isWorkingOnCurrentElement))
-                    {
-                        m_workingIndex = index;
-                    }
-                    else if (isWorkingOnCurrentElement)
-                    {
-                        m_workingIndex = -1;
-                    }
-
                     Rect r2 = rect;
-                    r2.x += 16f;
-                    r2.width -= 16f;
-                    r2.height *= m_showBasicData ? 0.5f : 1f;
+                    // r2.x += 16f;
+                    r2.y += 1.75f;
+                    // r2.width -= 16f;
+                    r2.height = EditorGUIUtility.singleLineHeight;
+                    // r2.height *= m_showBasicData ? 0.5f : 1f;
 
-                    if (index == m_workingIndex)
+                    if (m_showBasicData)
+                    {
+                        EditorGUI.BeginChangeCheck();
+                        var newObject = EditorGUI.ObjectField(r2, element, typeof(DataDefinition), false) as DataDefinition;
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            m_collection.ForceSetDataDefinition(index, newObject);
+                        }
+                    }
+                    else if (element)
                     {
                         EditorGUI.BeginChangeCheck();
                         string newName = EditorGUI.TextField(r2, element.name);
@@ -100,39 +86,13 @@ namespace NobunAtelier
                             m_collection.RenameDefinition(index, newName);
                         }
                     }
-                    else
-                    {
-                        EditorGUI.BeginDisabledGroup(true);
-                        EditorGUI.ObjectField(r2, element, typeof(DataDefinition), false);
-                        EditorGUI.EndDisabledGroup();
-                    }
-
-                    if (m_showBasicData)
-                    {
-
-                        Rect r3 = rect;
-                        float tabWidth = r3.width * .05f;
-                        r3.x += tabWidth;
-                        r3.height *= 0.5f;
-                        r3.y += r3.height;
-                        r3.width -= tabWidth;
-
-                        SerializedProperty p = new SerializedObject(element).FindProperty("m_data");
-                        if (p == null)
-                        {
-                            EditorGUI.LabelField(r3, NoBasicDataAvailableMessage);
-                        }
-                        else
-                        {
-                            EditorGUI.PropertyField(r3, p);
-                        }
-                    }
                 };
 
             list.onAddCallback =
                 (ReorderableList list) =>
                 {
                     m_collection.CreateDefinition();
+                    m_workingIndex = -1;
                     s_DirtyList = true;
                 };
 
@@ -142,12 +102,29 @@ namespace NobunAtelier
                     int index = list.index;
                     var data = list.list[index] as DataDefinition;
                     m_collection.DeleteDefinition(index, data.name);
+                    m_workingIndex = -1;
                     s_DirtyList = true;
                 };
+
+            list.onSelectCallback =
+                (ReorderableList list) =>
+                {
+                    m_workingIndex = list.index;
+                    m_currentElement = m_collection.DataDefinitions[m_workingIndex];
+                    m_currentEditor = Editor.CreateEditor(m_currentElement);
+                };
+
+
+            list.onReorderCallbackWithDetails = (ReorderableList list, int oldIndex, int newIndex) =>
+            {
+                m_collection.MoveDefinition(oldIndex, newIndex);
+                m_workingIndex = -1;
+            };
 
             s_DirtyList = false;
         }
 
+        private bool m_titleBarExpand = true;
         public override void OnInspectorGUI()
         {
             if (m_collection == null)
@@ -165,6 +142,25 @@ namespace NobunAtelier
             else
             {
                 list.DoLayoutList();
+            }
+
+            if (m_workingIndex != -1)
+            {
+                if (m_currentEditor != null)
+                {
+                    using (new EditorGUILayout.VerticalScope(GUI.skin.box))
+                    {
+                        m_titleBarExpand = EditorGUILayout.InspectorTitlebar(m_titleBarExpand, m_currentEditor);
+
+                        if (m_titleBarExpand)
+                        {
+                            if (m_currentEditor.DrawDefaultInspector())
+                            {
+                                m_currentEditor.serializedObject.ApplyModifiedProperties();
+                            }
+                        }
+                    }
+                }
             }
         }
     }
