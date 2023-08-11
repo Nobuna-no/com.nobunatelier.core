@@ -7,7 +7,7 @@ using NaughtyAttributes;
 namespace NobunAtelier
 {
     [AddComponentMenu("NobunAtelier/States/Game Mode/Game Mode State: Timed Actions")]
-    public class GameModeState_DelayedAction : BaseState<GameModeStateDefinition>
+    public class GameModeState_DelayedAction : BaseState<GameModeStateDefinition, GameModeStateCollection>
     {
         [SerializeField]
         private DelayedAction[] m_delayedActions;

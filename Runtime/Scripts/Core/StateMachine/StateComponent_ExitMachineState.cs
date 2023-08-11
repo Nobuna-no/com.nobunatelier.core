@@ -4,8 +4,9 @@ using UnityEngine.Events;
 
 namespace NobunAtelier
 {
-    public class StateComponent_ExitMachineState<T> : StateComponent<T>
+    public class StateComponent_ExitMachineState<T, TCollection> : StateComponent<T, TCollection>
         where T : NobunAtelier.StateDefinition
+        where TCollection : DataCollection
     {
         private enum ExitStateMachineTrigger
         {

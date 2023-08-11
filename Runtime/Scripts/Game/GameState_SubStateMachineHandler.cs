@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    public class GameState_SubStateMachineHandler : BaseState<GameStateDefinition>
+    public class GameState_SubStateMachineHandler : BaseState<GameStateDefinition, GameStateCollection>
     {
         [SerializeField]
         private GameStateMachine m_subStateMachine;

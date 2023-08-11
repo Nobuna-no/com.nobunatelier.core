@@ -12,8 +12,9 @@ namespace NobunAtelier
         public abstract void SetState(Type newState, StateDefinition stateDefinition);
     }
 
-    public class StateComponent<T> : StateComponent, NobunAtelier.IState<T>
+    public class StateComponent<T, TCollection> : StateComponent, NobunAtelier.IState<T>
         where T : StateDefinition
+        where TCollection : DataCollection
     {
         [Header("State")]
 
@@ -32,8 +33,8 @@ namespace NobunAtelier
         [SerializeField]
         protected bool m_logDebug = false;
 
-        private NobunAtelier.StateMachineComponent<T> m_parentStateMachine = null;
-        public NobunAtelier.StateMachineComponent<T> ParentStateMachine => m_parentStateMachine;
+        private NobunAtelier.StateMachineComponent<T, TCollection> m_parentStateMachine = null;
+        public NobunAtelier.StateMachineComponent<T, TCollection> ParentStateMachine => m_parentStateMachine;
 
         protected bool HasStateModule => m_stateModules != null && m_stateModules.Length > 0;
         private Type m_genericState;
@@ -142,7 +143,7 @@ namespace NobunAtelier
 
             if (transform.parent != null)
             {
-                m_parentStateMachine = transform.parent.GetComponentInParent<NobunAtelier.StateMachineComponent<T>>(true);
+                m_parentStateMachine = transform.parent.GetComponentInParent<NobunAtelier.StateMachineComponent<T, TCollection>>(true);
             }
 
             if (m_parentStateMachine != null)
@@ -179,7 +180,7 @@ namespace NobunAtelier
         {
             if (transform.parent != null)
             {
-                m_parentStateMachine = transform.parent.GetComponentInParent<NobunAtelier.StateMachineComponent<T>>(true);
+                m_parentStateMachine = transform.parent.GetComponentInParent<NobunAtelier.StateMachineComponent<T, TCollection>>(true);
             }
 
             if (m_stateDefinition != null)

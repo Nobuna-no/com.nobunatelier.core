@@ -3,8 +3,9 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    public class BaseState<T> : StateComponent<T>
+    public class BaseState<T, TCollection> : StateComponent<T, TCollection>
         where T : NobunAtelier.StateDefinition
+        where TCollection : DataCollection
     {
         private enum NextStateTransitionType
         {

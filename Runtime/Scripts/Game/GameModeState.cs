@@ -7,6 +7,6 @@ using NaughtyAttributes;
 namespace NobunAtelier
 {
     [AddComponentMenu("NobunAtelier/States/Game Mode/Game Mode State")]
-    public class GameModeState : BaseState<GameModeStateDefinition>
+    public class GameModeState : BaseState<GameModeStateDefinition, GameModeStateCollection>
     { }
 }

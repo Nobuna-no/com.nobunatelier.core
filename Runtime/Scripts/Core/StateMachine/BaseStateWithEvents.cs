@@ -4,8 +4,9 @@ using UnityEngine.Events;
 
 namespace NobunAtelier
 {
-    public class BaseStateWithEvents<T> : BaseState<T>
+    public class BaseStateWithEvents<T, TCollection> : BaseState<T, TCollection>
         where T : NobunAtelier.StateDefinition
+        where TCollection : DataCollection
     {
         // To improve by creating an intermediate that have only UnityEvent and one with timed transition
         [Header("Base State Events")]

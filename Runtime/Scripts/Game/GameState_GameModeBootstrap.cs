@@ -5,7 +5,7 @@ using UnityEngine.Events;
 namespace NobunAtelier
 {
     [AddComponentMenu("NobunAtelier/States/Game/Game State: Game Mode Bootstrap")]
-    public class GameState_GameModeBootstrap : StateComponent<GameStateDefinition>
+    public class GameState_GameModeBootstrap : StateComponent<GameStateDefinition, GameStateCollection>
     {
         [System.Flags]
         private enum BootstrapTypes

@@ -1,18 +1,83 @@
 using NaughtyAttributes;
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 namespace NobunAtelier
 {
     [DefaultExecutionOrder(100)]
-    public class StateMachineComponent<T> : StateComponent<T>
+    public class StateMachineComponent<T, TCollection> : StateComponent<T, TCollection>
         where T : StateDefinition
+        where TCollection : DataCollection
     {
         public T CurrentStateDefinition => m_activeStateDefinition;
         public bool IsPaused { get; set; } = false;
 
         [Header("State Machine")]
+#if UNITY_EDITOR
+        [SerializeField, ShowIf("IsMainStateMachine")]
+        private TCollection m_referenceStateCollection;
+        public TCollection ReferenceStateCollection
+        {
+            get
+            {
+                if (IsMainStateMachine)
+                {
+                    return m_referenceStateCollection;
+                }
+                else
+                {
+                    return ParentStateMachine.ReferenceStateCollection;
+                }
+            }
+        }
+
+        // very slow and not optimized, but whatever ;D
+        public int GetStateDefinitionRefCount(StateComponent<T, TCollection> source, T definition)
+        {
+            int useCount = 0;
+            var children = transform.GetComponentsInChildren<StateComponent<T, TCollection>>();
+
+            for (int i = 0, c = children.Length; i < c; ++i)
+            {
+                if (children[i].GetStateDefinition() == definition)
+                {
+                    ++useCount;
+                }
+            }
+
+            return useCount;
+        }
+
+        // very slow and not optimized, but whatever ;D
+        public void PingStateDefinitionRef(T definition, int objectApparitionOrder)
+        {
+            var children = transform.GetComponentsInChildren<StateComponent<T, TCollection>>();
+
+            if (objectApparitionOrder < 0 || objectApparitionOrder >= children.Length)
+            {
+                return;
+            }
+
+
+            int apparitionCount = 0;
+            for (int i = 0, c = children.Length; i < c; ++i)
+            {
+                if (children[i].GetStateDefinition() == definition)
+                {
+                    if (apparitionCount == objectApparitionOrder)
+                    {
+                        EditorGUIUtility.PingObject(children[i].gameObject);
+                        break;
+                    }
+
+                    ++apparitionCount;
+                }
+            }
+        }
+#endif
+
         [SerializeField]
         private T m_initialStateDefinition;
         [SerializeField, ShowIf("IsMainStateMachine")]
@@ -24,7 +89,7 @@ namespace NobunAtelier
         [SerializeField]
         protected bool m_displayDebug = false;
 
-        private Dictionary<T, StateComponent<T>> m_statesMap = new Dictionary<T, StateComponent<T>>();
+        private Dictionary<T, StateComponent<T, TCollection>> m_statesMap = new Dictionary<T, StateComponent<T, TCollection>>();
         private T m_activeStateDefinition = null;
         private T m_activeDebugState = null;
         private Vector2 m_debugStateScrollPosition = Vector2.zero;
@@ -47,7 +112,7 @@ namespace NobunAtelier
             m_displayDebug = !m_displayDebug;
         }
 
-        public void RegisterStateComponent(StateComponent<T> state)
+        public void RegisterStateComponent(StateComponent<T, TCollection> state)
         {
             m_statesMap.Add(state.GetStateDefinition(), state);
         }
@@ -104,7 +169,7 @@ namespace NobunAtelier
         }
 
         public override void Enter()
-        {   
+        {
             if (m_logDebug)
             {
                 Debug.Log($"{this.name}.Enter");

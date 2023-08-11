@@ -19,13 +19,17 @@ namespace NobunAtelier
 
         public abstract void CreateDefinition();
 
+        public abstract DataDefinition GetDefinition(string name);
+
+        public abstract DataDefinition GetOrCreateDefinition(string name);
+
         public abstract void DeleteDefinition(int index, string name);
 
         public abstract void RenameDefinition(int index, string name);
 
         public abstract void MoveDefinition(int oldIndex, int newIndex);
 
-        public abstract void ForceSetDataDefinition(int indexm, DataDefinition data);
+        public abstract void ForceSetDataDefinition(int index, DataDefinition data);
 #endif
     }
 
@@ -66,6 +70,41 @@ namespace NobunAtelier
             AssetDatabase.SaveAssets();
         }
 
+        public override sealed DataDefinition GetDefinition(string name)
+        {
+            foreach (var dataDefinition in m_dataDefinitions)
+            {
+                if (dataDefinition.name == name)
+                {
+                    return dataDefinition;
+                }
+            }
+
+            return null;
+        }
+
+        public override sealed DataDefinition GetOrCreateDefinition(string name)
+        {
+            int containerCount = m_dataDefinitions.Count;
+
+            foreach(var dataDefinition in m_dataDefinitions)
+            {
+                if (dataDefinition.name == name)
+                {
+                    return dataDefinition;
+                }
+            }
+
+            T data = ScriptableObject.CreateInstance<T>();
+            data.name = name;
+            m_dataDefinitions.Add(data);
+
+            AssetDatabase.AddObjectToAsset(data, this);
+            AssetDatabase.SaveAssets();
+
+            return data;
+        }
+
         public override sealed void DeleteDefinition(int index, string name)
         {
             if (m_dataDefinitions.Count <= index || m_dataDefinitions[index].name != name)
@@ -98,6 +137,8 @@ namespace NobunAtelier
             var dataToMove = m_dataDefinitions[previousIndex];
             m_dataDefinitions.RemoveAt(previousIndex);
             m_dataDefinitions.Insert(newIndex, dataToMove);
+
+            EditorUtility.SetDirty(this);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }

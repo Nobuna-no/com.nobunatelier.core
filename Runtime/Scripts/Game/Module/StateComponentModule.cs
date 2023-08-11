@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace NobunAtelier
@@ -14,8 +12,13 @@ namespace NobunAtelier
             m_moduleOwner = moduleOwner;
         }
 
-        public virtual void Enter() { }
-        public virtual void Tick(float deltaTime) { }
-        public virtual void Exit() { }
+        public virtual void Enter()
+        { }
+
+        public virtual void Tick(float deltaTime)
+        { }
+
+        public virtual void Exit()
+        { }
     }
 }
