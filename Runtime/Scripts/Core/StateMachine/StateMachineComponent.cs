@@ -214,11 +214,6 @@ namespace NobunAtelier
 
         public override void Exit()
         {
-            //if (ParentStateMachine != null)
-            //{
-            //    this.enabled = false;
-            //}
-
             if (HasStateModule)
             {
                 for (int i = 0, c = m_stateModules.Length; i < c; i++)

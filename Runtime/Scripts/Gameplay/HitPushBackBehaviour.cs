@@ -11,6 +11,8 @@ namespace NobunAtelier
     {
         [SerializeField]
         private bool m_ForwardZ = true;
+        [SerializeField]
+        private bool m_useAttackerPositionInsteadOfImpactPosition = false;
 
         private LegacyCharacterBase m_characterMovement;
         private HealthBehaviour m_healthComponent;
@@ -33,7 +35,8 @@ namespace NobunAtelier
             m_origin = m_characterMovement.Position;
             m_pushBack = info.Hit.PushBackDefinition;
             m_currentTime = 0;
-            Vector3 coord1 = (m_origin - info.ImpactLocation);
+            Debug.Log("info.Origin = " + info.Origin.name);
+            Vector3 coord1 = (m_origin - (m_useAttackerPositionInsteadOfImpactPosition ? info.Origin.transform.position : info.ImpactLocation));
             coord1.y = 0;
             coord1.Normalize();
             Vector3 coord2 = new Vector3(-coord1.z, 0, coord1.x);
