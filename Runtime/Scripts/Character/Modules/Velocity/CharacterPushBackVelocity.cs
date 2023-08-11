@@ -31,7 +31,6 @@ namespace NobunAtelier
         private Vector3 m_origin = Vector3.zero;
 
         private bool m_isPushingBack = false;
-        private bool m_isFirstFrame = false;
 
         [SerializeField, ReadOnly]
         private Vector3 m_velocity;
@@ -58,7 +57,7 @@ namespace NobunAtelier
 
             m_destination = ModuleOwner.Position + totalMovement;
             m_isPushingBack = true;
-
+            m_velocity = Vector3.zero;
             // Debug.DrawLine(info.ImpactLocation, transform.position, Color.green, 1f);
             Debug.DrawLine(m_origin, m_destination, Color.red, m_pushBack.DurationInSeconds);
         }
@@ -82,16 +81,6 @@ namespace NobunAtelier
 
         public override Vector3 VelocityUpdate(Vector3 currentVel, float deltaTime)
         {
-            // float progression = m_pushBack.MovementAnimationCurve.Evaluate(m_currentTime / m_pushBack.DurationInSeconds);
-            // Vector3 dest = Vector3.Lerp(m_origin, m_destination, progression);
-            // var deltaMove = dest - ModuleOwner.Position;
-
-            if (m_isFirstFrame)
-            {
-                m_isFirstFrame = false;
-                currentVel = Vector3.zero;
-            }
-
             m_currentTime += deltaTime;
             currentVel -= m_velocity;
             if (m_currentTime > m_pushBack.DurationInSeconds)
@@ -110,6 +99,7 @@ namespace NobunAtelier
             if (m_currentTime > 1f)
             {
                 m_isPushingBack = false;
+                currentVel = Vector3.zero;
             }
 
             return currentVel;
