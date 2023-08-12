@@ -55,29 +55,31 @@ namespace NobunAtelier
 
         private void CharacterMovementUpdate()
         {
-            if (m_lastMoveInputValue != Vector2.zero)
+            if (m_lastMoveInputValue == Vector2.zero)
             {
-                Vector3 inputDir = new Vector3(m_lastMoveInputValue.x, 0, m_lastMoveInputValue.y);
+                return;
+            }
 
-                Vector3 forward = m_cameraTarget.forward;
-                Vector3 right = m_cameraTarget.right;
-                forward.y = 0;
-                right.y = 0;
+            Vector3 inputDir = new Vector3(m_lastMoveInputValue.x, 0, m_lastMoveInputValue.y);
 
-                // Move inputDirection to camera space: https://www.youtube.com/watch?v=7j5yW5QDC2U
-                Vector3 dest = right * inputDir.x + forward * inputDir.z;
-                ControlledCharacter.Move(dest);
+            Vector3 forward = m_cameraTarget.forward;
+            Vector3 right = m_cameraTarget.right;
+            forward.y = 0;
+            right.y = 0;
+
+            // Move inputDirection to camera space: https://www.youtube.com/watch?v=7j5yW5QDC2U
+            Vector3 dest = right * inputDir.x + forward * inputDir.z;
+            ControlledCharacter.Move(dest);
 
 #if UNITY_EDITOR
-                if (m_debugEnabled)
-                {
-                    Debug.DrawRay(transform.position, forward * m_debugDrawDistance, Color.blue);
-                    Debug.DrawRay(transform.position, right * m_debugDrawDistance, Color.red);
-                    Debug.DrawRay(transform.position, inputDir * m_debugDrawDistance, Color.grey);
-                    Debug.DrawRay(transform.position, dest * m_debugDrawDistance, Color.yellow);
-                }
-#endif
+            if (m_debugEnabled)
+            {
+                Debug.DrawRay(transform.position, forward * m_debugDrawDistance, Color.blue);
+                Debug.DrawRay(transform.position, right * m_debugDrawDistance, Color.red);
+                Debug.DrawRay(transform.position, inputDir * m_debugDrawDistance, Color.grey);
+                Debug.DrawRay(transform.position, dest * m_debugDrawDistance, Color.yellow);
             }
+#endif
         }
 
         private void OnMoveActionPerformed(InputAction.CallbackContext obj)

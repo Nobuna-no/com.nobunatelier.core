@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 using System.IO;
@@ -32,7 +31,7 @@ namespace NobunAtelier
         private string m_collectionEditorScriptPath;
         private bool m_isPreviewReady;
         private Vector2 m_scrollviewPosition = Vector2.zero;
-        
+
         private bool IsSavePathReady => !string.IsNullOrEmpty(m_savePath);
 
         [MenuItem("NobunAtelier/Script Generator")]
@@ -56,7 +55,7 @@ namespace NobunAtelier
         private void OnGUI()
         {
             EditorGUILayout.LabelField("Data Definition Generator", EditorStyles.boldLabel);
-            
+
             EditorGUI.BeginChangeCheck();
             {
                 m_className = EditorGUILayout.TextField("Class Name", m_className);
@@ -107,7 +106,7 @@ namespace NobunAtelier
 
                         EditorGUILayout.LabelField(m_collectionScriptPath, EditorStyles.boldLabel);
                         m_collectionScriptContent = EditorGUILayout.TextArea(m_collectionScriptContent);
-                    
+
                         GUILayout.Space(10);
                         EditorGUILayout.LabelField(m_collectionEditorScriptPath, EditorStyles.boldLabel);
                         m_collectionEditorScriptContent = EditorGUILayout.TextArea(m_collectionEditorScriptContent);
