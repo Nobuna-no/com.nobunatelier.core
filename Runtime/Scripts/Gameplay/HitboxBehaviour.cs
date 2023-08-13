@@ -86,7 +86,7 @@ namespace NobunAtelier.Gameplay
             }
 
             var hpComp = other.GetComponent<HealthBehaviour>();
-            if (hpComp && (hpComp.Team & m_targetTeam) != 0)
+            if (hpComp && !hpComp.IsDead && (hpComp.Team & m_targetTeam) != 0)
             {
                 hpComp.ApplyDamage(m_hitDefinition, m_impactOriginSocket ? m_impactOriginSocket.position : transform.position, this.gameObject);
                 OnHit?.Invoke();

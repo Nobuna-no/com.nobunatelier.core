@@ -35,7 +35,6 @@ namespace NobunAtelier
             m_origin = m_characterMovement.Position;
             m_pushBack = info.Hit.PushBackDefinition;
             m_currentTime = 0;
-            Debug.Log("info.Origin = " + info.Origin.name);
             Vector3 coord1 = (m_origin - (m_useAttackerPositionInsteadOfImpactPosition ? info.Origin.transform.position : info.ImpactLocation));
             coord1.y = 0;
             coord1.Normalize();
@@ -43,7 +42,6 @@ namespace NobunAtelier
             Vector3 xCord = (m_ForwardZ ? m_pushBack.MovementUnit.z : m_pushBack.MovementUnit.x) * coord1;
             Vector3 zCord = (m_ForwardZ ? m_pushBack.MovementUnit.x : m_pushBack.MovementUnit.z) * coord2;
             Vector3 totalMovement = xCord + zCord;
-            Debug.Log($"Push back of {totalMovement}");
 
             m_destination = m_characterMovement.Position + totalMovement;
             this.enabled = true;

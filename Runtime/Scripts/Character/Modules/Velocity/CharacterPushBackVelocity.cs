@@ -53,7 +53,6 @@ namespace NobunAtelier
             Vector3 xCord = (m_ForwardZ ? m_pushBack.MovementUnit.z : m_pushBack.MovementUnit.x) * coord1;
             Vector3 zCord = (m_ForwardZ ? m_pushBack.MovementUnit.x : m_pushBack.MovementUnit.z) * coord2;
             Vector3 totalMovement = xCord + zCord;
-            Debug.Log($"Push back of {totalMovement}");
 
             m_destination = ModuleOwner.Position + totalMovement;
             m_isPushingBack = true;
