@@ -139,7 +139,7 @@ namespace NobunAtelier
 #if UNITY_EDITOR
             if (m_logDebug)
             {
-                Debug.Log($"[{Time.frameCount}] - Fading in");
+                Debug.Log($"[{Time.frameCount}] - Fading in", this);
             }
 #endif
 

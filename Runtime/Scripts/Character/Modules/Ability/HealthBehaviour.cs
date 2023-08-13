@@ -88,6 +88,7 @@ namespace NobunAtelier.Gameplay
         [SerializeField, Foldout("Debug")]
         private HitDefinition m_debugHitDefinition;
 
+        public bool IsDead => m_isDead;
         private bool m_isDead = false;
 
         private bool m_isVulnerable = true;
