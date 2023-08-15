@@ -81,7 +81,7 @@ namespace NobunAtelier
         [SerializeField]
         private T m_initialStateDefinition;
         [SerializeField, ShowIf("IsMainStateMachine")]
-        private bool m_enterInitialStateOnStart = true;
+        private bool m_enterInitialStateOnStart = false;
         [SerializeField, ShowIf("HasParentStateMachine")]
         private T m_nextStateOnStateMachineExit;
 
