@@ -49,8 +49,8 @@ namespace NobunAtelier.Gameplay
         private GameObject m_objectToMakeDisappear;
 
         // Debug while the transition to ability moduble
-        [SerializeField]
-        private bool m_isModule = false;
+        // [SerializeField]
+        // private bool m_isModule = false;
 
         [Foldout("Events")]
         public HitEvent OnHit;
@@ -98,13 +98,13 @@ namespace NobunAtelier.Gameplay
         public delegate void OnHealthChangedDelegate(float currentHealth, float maxHealth);
         public event OnHealthChangedDelegate OnHealthChanged;
 
-        private void Start()
-        {
-            if (!m_isModule)
-            {
-                Reset();
-            }
-        }
+        //private void Start()
+        //{
+        //    if (!m_isModule)
+        //    {
+        //        Reset();
+        //    }
+        //}
 
         public override void ModuleInit(Character character)
         {

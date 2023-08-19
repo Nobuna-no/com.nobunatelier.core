@@ -32,7 +32,7 @@ namespace NobunAtelier
 
         public override bool CanBeExecuted()
         {
-            return m_target != null;
+            return this.isActiveAndEnabled && m_target != null;
         }
     }
 }

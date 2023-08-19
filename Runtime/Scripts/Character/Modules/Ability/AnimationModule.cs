@@ -33,5 +33,15 @@ namespace NobunAtelier
 
             m_animator = Instantiate(animator.gameObject, this.transform).GetComponent<Animator>();
         }
+
+        public virtual void SetAnimationSpeed(float speed)
+        {
+            m_animator.speed = speed;
+        }
+
+        public virtual void ResetAnimationSpeed()
+        {
+            m_animator.speed = 1;
+        }
     }
 }

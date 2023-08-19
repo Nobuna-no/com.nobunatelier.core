@@ -84,12 +84,12 @@ namespace NobunAtelier
 
         public Vector3 GetMoveVector()
         {
-            return m_physicsModule.Velocity;
+            return currentVel;
         }
 
         public float GetMoveSpeed()
         {
-            return m_physicsModule.Velocity.magnitude;
+            return currentVel.magnitude;
         }
 
         public Vector3 GetNormalizedMoveSpeed()

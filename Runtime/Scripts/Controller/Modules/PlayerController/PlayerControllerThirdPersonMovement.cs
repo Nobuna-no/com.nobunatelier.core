@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Controller/PlayerModule Third Person Movement")]
+    [AddComponentMenu("NobunAtelier/Controller/PlayerModule: Third Person Movement")]
     public class PlayerControllerThirdPersonMovement : PlayerControllerModuleBase
     {
         [Header("Third Person Movement")]
