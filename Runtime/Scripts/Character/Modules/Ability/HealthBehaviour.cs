@@ -1,8 +1,8 @@
+using NaughtyAttributes;
+using NobunAtelier.Gameplay;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
-using NaughtyAttributes;
-using NobunAtelier.Gameplay;
 using UnityEngine.UI;
 
 public struct HitInfo
@@ -48,10 +48,6 @@ namespace NobunAtelier.Gameplay
         [SerializeField, Header("Death")]
         private GameObject m_objectToMakeDisappear;
 
-        // Debug while the transition to ability moduble
-        // [SerializeField]
-        // private bool m_isModule = false;
-
         [Foldout("Events")]
         public HitEvent OnHit;
 
@@ -96,15 +92,8 @@ namespace NobunAtelier.Gameplay
         private float m_currentInvulnerabilityDuration = 0f;
 
         public delegate void OnHealthChangedDelegate(float currentHealth, float maxHealth);
-        public event OnHealthChangedDelegate OnHealthChanged;
 
-        //private void Start()
-        //{
-        //    if (!m_isModule)
-        //    {
-        //        Reset();
-        //    }
-        //}
+        public event OnHealthChangedDelegate OnHealthChanged;
 
         public override void ModuleInit(Character character)
         {
