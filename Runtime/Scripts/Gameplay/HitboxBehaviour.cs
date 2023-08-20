@@ -1,30 +1,29 @@
 using NaughtyAttributes;
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 
-[System.Serializable, System.Flags]
-public enum TeamPlaceholder
-{
-    Player = 1 << 1,
-    Flowers = 1 << 2,
-    Moles = 1 << 3,
-    Seeds = 1 << 4
-}
-
-public interface ITeamTaggable
-{
-    TeamPlaceholder Team { get; }
-}
+//[System.Serializable, System.Flags]
+//public enum TeamPlaceholder
+//{
+//    Player = 1 << 1,
+//    Flowers = 1 << 2,
+//    Moles = 1 << 3,
+//    Seeds = 1 << 4
+//}
 
 namespace NobunAtelier.Gameplay
 {
     [RequireComponent(typeof(Collider), typeof(Rigidbody))]
     public class HitboxBehaviour : MonoBehaviour
     {
+        // [SerializeField, Header("Hitbox")]
+        // private TeamPlaceholder m_targetTeam;
+
         [SerializeField, Header("Hitbox")]
-        private TeamPlaceholder m_targetTeam;
+        private List<TeamDefinition> m_targetTeam = new List<TeamDefinition>();
 
         [SerializeField]
         private Transform m_impactOriginSocket;
@@ -37,9 +36,14 @@ namespace NobunAtelier.Gameplay
 
         public UnityEvent OnHit;
 
-        public void SetTargetTeam(TeamPlaceholder targetTeam)
+        public void AddTargetTeam(TeamDefinition targetTeam)
         {
-            m_targetTeam = targetTeam;
+            if(m_targetTeam.Contains(targetTeam))
+            {
+                return;
+            }
+
+            m_targetTeam.Add(targetTeam);
         }
 
         public void SetHitDefinition(HitDefinition hit)
@@ -85,10 +89,10 @@ namespace NobunAtelier.Gameplay
                 return false;
             }
 
-            var hpComp = other.GetComponent<HealthBehaviour>();
-            if (hpComp && !hpComp.IsDead && (hpComp.Team & m_targetTeam) != 0)
+            var hpBehaviour = other.GetComponent<HealthBehaviour>();
+            if (hpBehaviour && !hpBehaviour.IsDead && m_targetTeam.Contains(hpBehaviour.Team))
             {
-                hpComp.ApplyDamage(m_hitDefinition, m_impactOriginSocket ? m_impactOriginSocket.position : transform.position, this.gameObject);
+                hpBehaviour.ApplyDamage(m_hitDefinition, m_impactOriginSocket ? m_impactOriginSocket.position : transform.position, this.gameObject);
                 OnHit?.Invoke();
                 return true;
             }
@@ -124,7 +128,7 @@ namespace NobunAtelier.Gameplay
             BoxCollider boxCollider = m_collider as BoxCollider;
             SphereCollider sphereCollider = m_collider as SphereCollider;
 
-            Gizmos.color = (m_targetTeam & TeamPlaceholder.Player) != 0 ? Color.red : Color.cyan;
+            Gizmos.color = Color.yellow;
 
             if (boxCollider)
             {

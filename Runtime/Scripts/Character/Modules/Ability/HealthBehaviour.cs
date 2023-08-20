@@ -18,7 +18,7 @@ public class HitEvent : UnityEvent<HitInfo>
 
 namespace NobunAtelier.Gameplay
 {
-    public class HealthBehaviour : CharacterAbilityModuleBase, ITeamTaggable
+    public class HealthBehaviour : CharacterAbilityModuleBase
     {
         public static HitDefinition KillHit
         {
@@ -35,12 +35,12 @@ namespace NobunAtelier.Gameplay
 
         private static HitDefinition s_killHit = null;
 
-        public TeamPlaceholder Team => m_team;
+        public TeamDefinition Team => m_team;
         public bool IsVulnerable => IsVulnerable;
 
         [Header("Definition")]
         [SerializeField]
-        private TeamPlaceholder m_team;
+        private TeamDefinition m_team;
 
         [SerializeField, Required]
         private HealthDefinition m_definition;
