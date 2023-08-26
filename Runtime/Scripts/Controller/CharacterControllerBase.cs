@@ -24,8 +24,8 @@ namespace NobunAtelier
 
         public Character ControlledCharacter => m_controlledCharacter;
 
-        [SerializeField]
-        protected bool m_mountCharacterOnStart = true;
+        // [SerializeField]
+        // protected bool m_mountCharacterOnStart = true;
 
         [SerializeField]
         private EnableInputBehaviour m_enableInputBehaviour = EnableInputBehaviour.OnAwake;
@@ -49,12 +49,12 @@ namespace NobunAtelier
 
         protected virtual void Start()
         {
-            if (!m_mountCharacterOnStart)
-            {
-                return;
-            }
+            // if (!m_mountCharacterOnStart)
+            // {
+            //     return;
+            // }
 
-            m_controlledCharacter?.Mount(this);
+            m_controlledCharacter?.SetController(this);
         }
 
         protected virtual void UpdateController(float deltaTime)

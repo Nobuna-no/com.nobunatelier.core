@@ -114,7 +114,6 @@ namespace NobunAtelier
                     m_currentEditor = Editor.CreateEditor(m_currentElement);
                 };
 
-
             list.onReorderCallbackWithDetails = (ReorderableList list, int oldIndex, int newIndex) =>
             {
                 m_collection.MoveDefinition(oldIndex, newIndex);
@@ -125,6 +124,7 @@ namespace NobunAtelier
         }
 
         private bool m_titleBarExpand = true;
+
         public override void OnInspectorGUI()
         {
             if (m_collection == null)
@@ -148,16 +148,15 @@ namespace NobunAtelier
             {
                 if (m_currentEditor != null)
                 {
-                    using (new EditorGUILayout.VerticalScope(GUI.skin.box))
+                    using (new EditorGUILayout.VerticalScope(GUI.skin.window))
                     {
                         m_titleBarExpand = EditorGUILayout.InspectorTitlebar(m_titleBarExpand, m_currentEditor);
 
                         if (m_titleBarExpand)
                         {
-                            if (m_currentEditor.DrawDefaultInspector())
-                            {
-                                m_currentEditor.serializedObject.ApplyModifiedProperties();
-                            }
+                            EditorGUI.indentLevel++;
+                            m_currentEditor.OnInspectorGUI();
+                            EditorGUI.indentLevel--;
                         }
                     }
                 }

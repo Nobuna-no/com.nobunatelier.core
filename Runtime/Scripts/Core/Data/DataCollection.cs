@@ -19,6 +19,8 @@ namespace NobunAtelier
 
         public abstract void CreateDefinition();
 
+        public abstract void SaveCollection();
+
         public abstract DataDefinition GetDefinition(string name);
 
         public abstract DataDefinition GetOrCreateDefinition(string name);
@@ -138,6 +140,13 @@ namespace NobunAtelier
             m_dataDefinitions.RemoveAt(previousIndex);
             m_dataDefinitions.Insert(newIndex, dataToMove);
 
+            EditorUtility.SetDirty(this);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        public override void SaveCollection()
+        {
             EditorUtility.SetDirty(this);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();

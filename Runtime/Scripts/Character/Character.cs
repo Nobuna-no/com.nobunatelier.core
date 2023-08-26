@@ -77,7 +77,7 @@ namespace NobunAtelier
             return false;
         }
 
-        public virtual void Mount(CharacterControllerBase controller)
+        public virtual void SetController(CharacterControllerBase controller)
         {
             Controller = controller;
         }
