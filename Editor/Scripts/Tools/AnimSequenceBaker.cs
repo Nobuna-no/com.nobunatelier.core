@@ -234,15 +234,20 @@ namespace NobunAtelier
             def.stateName = state.name;
 
             def.segments = new AnimSequenceDefinition.Segment[currentAnimData.animSegmentsData.Count];
+            SerializedObject serializedObject = new SerializedObject(def);
             for (int i = currentAnimData.animSegmentsData.Count - 1; i >= 0; --i)
             {
                 var segment = currentAnimData.animSegmentsData[i];
                 def.segments[i] = new AnimSequenceDefinition.Segment();
                 def.segments[i].segmentDefinition = segment.definition;
-                def.segments[i].duration = segment.duration;
+                // def.segments[i].duration = segment.duration;
                 def.segments[i].segmentNewDuration = segment.duration;
                 def.segments[i].segmentAnimatorSpeed = 1f;
+
+                var durationProperty = serializedObject.FindProperty("m_duration");
+                durationProperty.floatValue = segment.duration;
             }
+            serializedObject.ApplyModifiedProperties();
         }
 
         private static void RefreshAnimSegmentsData(AnimationClip clip, AnimMontageDataToBake currentAnimData)

@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
+using System;
+using System.IO;
+using static UnityEngine.Analytics.IAnalytic;
 
 #if UNITY_EDITOR
 
@@ -16,8 +19,11 @@ namespace NobunAtelier
         public abstract DataDefinition GetRandomDefinition();
 
 #if UNITY_EDITOR
+        public abstract Type GetDefinitionType();
 
-        public abstract void CreateDefinition();
+        public abstract void AddDefinitionAssetToCollection(DataDefinition asset);
+
+        public abstract void CreateDefinition(bool duplicateFromLastData = true);
 
         public abstract void SaveCollection();
 
@@ -55,21 +61,96 @@ namespace NobunAtelier
                 return null;
             }
 
-            return m_dataDefinitions[Random.Range(0, m_dataDefinitions.Count)];
+            return m_dataDefinitions[UnityEngine.Random.Range(0, m_dataDefinitions.Count)];
         }
 
 #if UNITY_EDITOR
+        public override Type GetDefinitionType()
+        {
+            return typeof(T);
+        }
 
-        public override sealed void CreateDefinition()
+        public override void AddDefinitionAssetToCollection(DataDefinition asset)
+        {
+            if (!asset.GetType().IsAssignableFrom(typeof(T)))
+            {
+                Debug.LogWarning($"Trying to add '{asset.name}'({typeof(T).Name}) to '{this.name}'({this.GetType().Name}), but an the types are not compatibles.", this);
+                return;
+            }
+
+            foreach (var dataDefinition in m_dataDefinitions)
+            {
+                if (dataDefinition.name == asset.name)
+                {
+                    Debug.LogWarning($"Trying to add '{asset.name}'({typeof(T).Name}) to '{this.name}'({this.GetType().Name}), but an asset with the same name already exist.", this);
+                    return;
+                }
+            }
+
+            CloneAsset(asset, asset.name);
+
+            Selection.activeObject = null;
+            var assetPath = AssetDatabase.GetAssetPath(asset);
+            AssetDatabase.MoveAssetToTrash(assetPath);
+            EditorUtility.SetDirty(this);
+            AssetDatabase.SaveAssetIfDirty(this);
+            AssetDatabase.Refresh();
+            Selection.activeObject = this;
+        }
+
+        private void CloneAsset(DataDefinition sourceAsset, string name)
+        {
+            T newAsset = ScriptableObject.CreateInstance<T>();
+            newAsset.name = name;
+
+            SerializedObject sourceSerializedObject = new SerializedObject(sourceAsset);
+            SerializedObject newSerializedObject = new SerializedObject(newAsset);
+
+            SerializedProperty sourceProperty = sourceSerializedObject.GetIterator();
+
+            // Iterate through the properties and copy values
+            while (sourceProperty.NextVisible(true))
+            {
+                if (sourceProperty.name == "m_Script")
+                {
+                    continue;
+                }
+
+                newSerializedObject.CopyFromSerializedProperty(sourceProperty);
+            }
+
+            // Apply changes and save the new asset
+            newSerializedObject.ApplyModifiedProperties();
+
+            m_dataDefinitions.Add(newAsset);
+
+            AssetDatabase.AddObjectToAsset(newAsset, this);
+            EditorUtility.SetDirty(newAsset);
+            AssetDatabase.SaveAssetIfDirty(newAsset);
+        }
+
+        public override sealed void CreateDefinition(bool duplicateFromLastData = true)
         {
             int containerCount = m_dataDefinitions.Count;
 
-            T data = ScriptableObject.CreateInstance<T>();
-            data.name = $"{this.name}_data_{containerCount}";
-            m_dataDefinitions.Add(data);
+            if (!duplicateFromLastData || containerCount == 0)
+            {
+                T data = ScriptableObject.CreateInstance<T>();
+                data.name = $"{this.name}_data_{containerCount}";
+                m_dataDefinitions.Add(data);
+                AssetDatabase.AddObjectToAsset(data, this);
+                EditorUtility.SetDirty(data);
+                AssetDatabase.SaveAssetIfDirty(data);
+            }
+            else
+            {
+                var latestData = m_dataDefinitions[containerCount - 1];
+                CloneAsset(latestData, $"{latestData.name.Split("_$")[0]}_${GUID.Generate().ToString()}");
+            }
 
-            AssetDatabase.AddObjectToAsset(data, this);
-            AssetDatabase.SaveAssets();
+            EditorUtility.SetDirty(this);
+            AssetDatabase.SaveAssetIfDirty(this);
+            AssetDatabase.Refresh();
         }
 
         public override sealed DataDefinition GetDefinition(string name)
@@ -87,8 +168,6 @@ namespace NobunAtelier
 
         public override sealed DataDefinition GetOrCreateDefinition(string name)
         {
-            int containerCount = m_dataDefinitions.Count;
-
             foreach(var dataDefinition in m_dataDefinitions)
             {
                 if (dataDefinition.name == name)
@@ -102,7 +181,11 @@ namespace NobunAtelier
             m_dataDefinitions.Add(data);
 
             AssetDatabase.AddObjectToAsset(data, this);
-            AssetDatabase.SaveAssets();
+            EditorUtility.SetDirty(data);
+            EditorUtility.SetDirty(this);
+            AssetDatabase.SaveAssetIfDirty(data);
+            AssetDatabase.SaveAssetIfDirty(this);
+            AssetDatabase.Refresh();
 
             return data;
         }
@@ -117,7 +200,9 @@ namespace NobunAtelier
             AssetDatabase.RemoveObjectFromAsset(m_dataDefinitions[index]);
             m_dataDefinitions.RemoveAt(index);
 
-            AssetDatabase.SaveAssets();
+            EditorUtility.SetDirty(this);
+            AssetDatabase.SaveAssetIfDirty(this);
+            AssetDatabase.Refresh();
         }
 
         public override sealed void RenameDefinition(int index, string name)
@@ -128,7 +213,9 @@ namespace NobunAtelier
             }
 
             m_dataDefinitions[index].name = name;
-            AssetDatabase.SaveAssets();
+
+            EditorUtility.SetDirty(m_dataDefinitions[index]);
+            AssetDatabase.SaveAssetIfDirty(m_dataDefinitions[index]);
             AssetDatabase.Refresh();
         }
 
@@ -141,14 +228,14 @@ namespace NobunAtelier
             m_dataDefinitions.Insert(newIndex, dataToMove);
 
             EditorUtility.SetDirty(this);
-            AssetDatabase.SaveAssets();
+            AssetDatabase.SaveAssetIfDirty(this);
             AssetDatabase.Refresh();
         }
 
         public override void SaveCollection()
         {
             EditorUtility.SetDirty(this);
-            AssetDatabase.SaveAssets();
+            AssetDatabase.SaveAssetIfDirty(this);
             AssetDatabase.Refresh();
         }
 

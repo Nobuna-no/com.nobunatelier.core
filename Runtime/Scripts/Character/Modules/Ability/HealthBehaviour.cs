@@ -3,6 +3,7 @@ using NobunAtelier.Gameplay;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.InputSystem.HID;
 using UnityEngine.UI;
 
 public struct HitInfo
@@ -145,35 +146,33 @@ namespace NobunAtelier.Gameplay
             OnHeal?.Invoke();
         }
 
-        public void ApplyDamage(HitDefinition hit, Vector3 impactOrigin, GameObject origin, bool ignoreIframe = false)
+        public void ApplyDamage(HitInfo hitInfo, bool ignoreIframe = false)
         {
             if (m_isDead || (!m_isVulnerable && !ignoreIframe))
             {
                 return;
             }
 
-            if (hit.DamageAmount < 0)
+            if (hitInfo.Hit.DamageAmount < 0)
             {
                 Debug.Log($"Trying to heal life using `ApplyDamage` on {this.gameObject}. Use `Heal` instead");
                 return;
             }
 
-            m_CurrentLifeValue = Mathf.Max(m_CurrentLifeValue - hit.DamageAmount, 0);
+            m_CurrentLifeValue = Mathf.Max(m_CurrentLifeValue - hitInfo.Hit.DamageAmount, 0);
             OnHealthChanged?.Invoke(m_CurrentLifeValue, m_definition.MaxValue);
-
-            HitInfo info = new HitInfo { Origin = origin, ImpactLocation = impactOrigin, Hit = hit };
 
             if (m_CurrentLifeValue <= 0)
             {
                 m_isDead = true;
-                OnDeath?.Invoke(info);
+                OnDeath?.Invoke(hitInfo);
                 StartCoroutine(PoolObjectDeactivateCoroutine());
             }
             else
             {
-                OnHit?.Invoke(info);
+                OnHit?.Invoke(hitInfo);
 
-                if (hit.DamageAmount > 0)
+                if (hitInfo.Hit.DamageAmount > 0)
                 {
                     m_currentInvulnerabilityDuration = m_definition.InvulnerabilityDuration;
                     if (m_isVulnerable)
@@ -183,6 +182,46 @@ namespace NobunAtelier.Gameplay
                     }
                 }
             }
+        }
+
+        public void ApplyDamage(HitDefinition hit, Vector3 impactOrigin, GameObject origin, bool ignoreIframe = false)
+        {
+            //if (m_isDead || (!m_isVulnerable && !ignoreIframe))
+            //{
+            //    return;
+            //}
+
+            //if (hit.DamageAmount < 0)
+            //{
+            //    Debug.Log($"Trying to heal life using `ApplyDamage` on {this.gameObject}. Use `Heal` instead");
+            //    return;
+            //}
+
+            //m_CurrentLifeValue = Mathf.Max(m_CurrentLifeValue - hit.DamageAmount, 0);
+            //OnHealthChanged?.Invoke(m_CurrentLifeValue, m_definition.MaxValue);
+
+            HitInfo info = new HitInfo { Origin = origin, ImpactLocation = impactOrigin, Hit = hit };
+            ApplyDamage(info, ignoreIframe);
+            //if (m_CurrentLifeValue <= 0)
+            //{
+            //    m_isDead = true;
+            //    OnDeath?.Invoke(info);
+            //    StartCoroutine(PoolObjectDeactivateCoroutine());
+            //}
+            //else
+            //{
+            //    OnHit?.Invoke(info);
+
+            //    if (hit.DamageAmount > 0)
+            //    {
+            //        m_currentInvulnerabilityDuration = m_definition.InvulnerabilityDuration;
+            //        if (m_isVulnerable)
+            //        {
+            //            m_isVulnerable = false;
+            //            StartCoroutine(InvulnerabilityCoroutine());
+            //        }
+            //    }
+            //}
         }
 
         public void Resurrect(float lifeAmount = -1)

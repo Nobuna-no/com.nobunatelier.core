@@ -1,7 +1,6 @@
 using NaughtyAttributes;
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -19,10 +18,15 @@ namespace NobunAtelier.Gameplay
     [RequireComponent(typeof(Collider), typeof(Rigidbody))]
     public class HitboxBehaviour : MonoBehaviour
     {
+        public List<TeamDefinition> TargetTeam => m_targetTeam;
+
         // [SerializeField, Header("Hitbox")]
         // private TeamPlaceholder m_targetTeam;
+        [Header("Hitbox")]
+        [SerializeField, Tooltip("The owner of the hit. Can be use by the hit receiver to track the origin of the attack.")]
+        private GameObject m_hitOrigin;
 
-        [SerializeField, Header("Hitbox")]
+        [SerializeField]
         private List<TeamDefinition> m_targetTeam = new List<TeamDefinition>();
 
         [SerializeField]
@@ -34,17 +38,9 @@ namespace NobunAtelier.Gameplay
         protected Collider OwnCollider => m_collider;
         private Collider m_collider;
 
-        public UnityEvent OnHit;
-
-        public void AddTargetTeam(TeamDefinition targetTeam)
-        {
-            if(m_targetTeam.Contains(targetTeam))
-            {
-                return;
-            }
-
-            m_targetTeam.Add(targetTeam);
-        }
+        public UnityEvent OnHitboxEnabled;
+        public UnityEvent OnHitboxDisabled;
+        public HitEvent OnHit;
 
         public void SetHitDefinition(HitDefinition hit)
         {
@@ -54,16 +50,17 @@ namespace NobunAtelier.Gameplay
         public virtual void HitBegin()
         {
             m_collider.enabled = true;
+            OnHitboxEnabled?.Invoke();
         }
 
         public virtual void HitEnd()
         {
             m_collider.enabled = false;
+            OnHitboxDisabled?.Invoke();
         }
 
         protected virtual void OnTargetHit()
         {
-
         }
 
         private void OnTriggerEnter(Collider other)
@@ -74,9 +71,8 @@ namespace NobunAtelier.Gameplay
             }
         }
 
-        private void Awake()
+        protected virtual void Awake()
         {
-            // Debug.Assert(m_hitDefinition != null, $"{this} from {this.gameObject} doesn't have a HitDefinition.");
             m_collider = GetComponent<Collider>();
             m_collider.isTrigger = true;
             HitEnd();
@@ -84,7 +80,7 @@ namespace NobunAtelier.Gameplay
 
         protected bool TryDamageApply(Collider other)
         {
-            if(other == null || m_hitDefinition == null)
+            if (other == null || m_hitDefinition == null)
             {
                 return false;
             }
@@ -92,18 +88,25 @@ namespace NobunAtelier.Gameplay
             var hpBehaviour = other.GetComponent<HealthBehaviour>();
             if (hpBehaviour && !hpBehaviour.IsDead && m_targetTeam.Contains(hpBehaviour.Team))
             {
-                hpBehaviour.ApplyDamage(m_hitDefinition, m_impactOriginSocket ? m_impactOriginSocket.position : transform.position, this.gameObject);
-                OnHit?.Invoke();
+                HitInfo info = new HitInfo
+                {
+                    Origin = m_hitOrigin ? m_hitOrigin : this.gameObject,
+                    ImpactLocation = m_impactOriginSocket ? m_impactOriginSocket.position : transform.position,
+                    Hit = m_hitDefinition
+                };
+                hpBehaviour.ApplyDamage(info);
+
+                OnHit?.Invoke(info);
                 return true;
             }
 
             return false;
         }
 
-
 #if UNITY_EDITOR
         private bool m_isDebugAttackRunning = false;
-        [Button(enabledMode:EButtonEnableMode.Playmode)]
+
+        [Button(enabledMode: EButtonEnableMode.Playmode)]
         private void DebugAttack()
         {
             if (!m_isDebugAttackRunning)
