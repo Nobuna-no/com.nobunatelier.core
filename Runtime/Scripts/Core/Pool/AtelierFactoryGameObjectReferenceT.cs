@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -15,7 +14,7 @@ namespace NobunAtelier
         public override bool ValidateAsset(string mainAssetPath)
         {
 #if UNITY_EDITOR
-            var gao = AssetDatabase.LoadAssetAtPath<GameObject>(mainAssetPath);
+            var gao = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(mainAssetPath);
             if (gao == null)
             {
                 return false;
@@ -40,7 +39,7 @@ namespace NobunAtelier
         where AssetRefT : AssetReferenceGameObjectComponentT<T>
         where AtelierFactoryT : AtelierFactoryGameObjectReferenceT<T, AssetRefT>
     {
-        private static Dictionary<string, AtelierFactoryT> s_addressableFactoriesMap;
+        private static Dictionary<string, AtelierFactoryT> s_addressableFactoriesMap = null;
         private static GameObject s_atelierFactoryGao;
 
         [SerializeField]
@@ -109,19 +108,14 @@ namespace NobunAtelier
             objectPoolPrefab = assetReference;
         }
 
-        //public override void ResetPool()
-        //{
-        //    base.ResetPool();
-
-        //    // Force to create a first object as the first instantiate async can take a while.
-        //    ObjectPool.Get(out T obj);
-        //    ObjectPool.Release(obj);
-        //}
-
         // invoked when creating an item to populate the object pool
         protected override T OnProductCreation()
         {
+#if UNITY_EDITOR
+            AsyncOperationHandle<GameObject> poolHandle = objectPoolPrefab.InstantiateAsync(Vector3.zero, Quaternion.identity, transform);
+#else
             AsyncOperationHandle<GameObject> poolHandle = objectPoolPrefab.InstantiateAsync(Vector3.zero, Quaternion.identity);
+#endif
             poolHandle.WaitForCompletion();
             return poolHandle.Result.GetComponent<T>();
         }
