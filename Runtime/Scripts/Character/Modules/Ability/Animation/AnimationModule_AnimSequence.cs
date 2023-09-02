@@ -118,9 +118,23 @@ namespace NobunAtelier
                 }
             }
 
-            if (m_segmentTriggerMap.ContainsKey(segmentDefinition))
+            if (!m_segmentTriggerMap.ContainsKey(segmentDefinition))
             {
+                m_segmentTriggerMap.Add(segmentDefinition, new SegmentTrigger()
+                {
+                    onSegmentTrigger = new AnimationSegmentEvent(),
+                    segment = segmentDefinition
+                });
+            }
+
+            if (m_animationSegmentsMap.ContainsKey(segmentDefinition))
+            {
+
                 m_segmentTriggerMap[segmentDefinition].onSegmentTrigger?.Invoke(m_animationSegmentsMap[segmentDefinition]);
+            }
+            else
+            {
+                m_segmentTriggerMap[segmentDefinition].onSegmentTrigger?.Invoke(null);
             }
         }
 
