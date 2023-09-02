@@ -1,8 +1,7 @@
 using NaughtyAttributes;
 using NobunAtelier.Gameplay;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace NobunAtelier
 {
@@ -35,6 +34,10 @@ namespace NobunAtelier
         [SerializeField, ReadOnly]
         private Vector3 m_velocity;
 
+        public UnityEvent OnPushBackBegin;
+        public UnityEvent OnPushBackEnd;
+
+        // TODO: Handle several pushback in a row!
         public void HitPush(HitInfo info)
         {
             if (info.Hit == null || info.Hit.PushBackDefinition == null)
@@ -46,7 +49,14 @@ namespace NobunAtelier
             m_origin = ModuleOwner.Position;
             m_pushBack = info.Hit.PushBackDefinition;
             m_currentTime = 0;
-            Vector3 coord1 = (m_origin - (m_useAttackerPositionInsteadOfImpactPosition ? info.Origin.transform.position : info.ImpactLocation));
+
+            Vector3 attackOrigin = info.ImpactLocation;
+            if (m_useAttackerPositionInsteadOfImpactPosition)
+            {
+                attackOrigin = info.OriginTeam ? info.OriginTeam.ModuleOwner.Position : (info.OriginGao ? info.OriginGao.transform.position : info.ImpactLocation);
+            }
+
+            Vector3 coord1 = m_origin - attackOrigin;
             coord1.y = 0;
             coord1.Normalize();
             Vector3 coord2 = new Vector3(-coord1.z, 0, coord1.x);
@@ -59,6 +69,7 @@ namespace NobunAtelier
             m_velocity = Vector3.zero;
             // Debug.DrawLine(info.ImpactLocation, transform.position, Color.green, 1f);
             Debug.DrawLine(m_origin, m_destination, Color.red, m_pushBack.DurationInSeconds);
+            OnPushBackBegin?.Invoke();
         }
 
         public override void ModuleInit(Character character)
@@ -85,6 +96,7 @@ namespace NobunAtelier
             if (m_currentTime > m_pushBack.DurationInSeconds)
             {
                 ResetDash();
+                OnPushBackEnd?.Invoke();
             }
             else
             {
@@ -99,6 +111,7 @@ namespace NobunAtelier
             {
                 m_isPushingBack = false;
                 currentVel = Vector3.zero;
+                OnPushBackEnd?.Invoke();
             }
 
             return currentVel;

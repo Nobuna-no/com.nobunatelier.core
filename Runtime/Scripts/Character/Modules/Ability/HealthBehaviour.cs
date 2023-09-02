@@ -1,14 +1,14 @@
 using NaughtyAttributes;
+using NobunAtelier;
 using NobunAtelier.Gameplay;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.InputSystem.HID;
-using UnityEngine.UI;
 
 public struct HitInfo
 {
-    public GameObject Origin;
+    public TeamModule OriginTeam;
+    public GameObject OriginGao;
     public Vector3 ImpactLocation;
     public HitDefinition Hit;
 }
@@ -19,6 +19,7 @@ public class HitEvent : UnityEvent<HitInfo>
 
 namespace NobunAtelier.Gameplay
 {
+    [RequireComponent(typeof(TeamModule))]
     public class HealthBehaviour : CharacterAbilityModuleBase
     {
         public static HitDefinition KillHit
@@ -36,13 +37,10 @@ namespace NobunAtelier.Gameplay
 
         private static HitDefinition s_killHit = null;
 
-        public TeamDefinition Team => m_team;
+        public TeamDefinition Team => m_teamModule.Team;
         public bool IsVulnerable => IsVulnerable;
 
         [Header("Definition")]
-        [SerializeField]
-        private TeamDefinition m_team;
-
         [SerializeField, Required]
         private HealthDefinition m_definition;
 
@@ -91,14 +89,18 @@ namespace NobunAtelier.Gameplay
         private bool m_isVulnerable = true;
 
         private float m_currentInvulnerabilityDuration = 0f;
+        private TeamModule m_teamModule;
 
         public delegate void OnHealthChangedDelegate(float currentHealth, float maxHealth);
-
         public event OnHealthChangedDelegate OnHealthChanged;
+
+
 
         public override void ModuleInit(Character character)
         {
             base.ModuleInit(character);
+
+            m_teamModule = GetComponent<TeamModule>();
 
             Reset();
             Debug.Assert(m_definition != null);
@@ -184,44 +186,16 @@ namespace NobunAtelier.Gameplay
             }
         }
 
+        public void ApplyDamage(HitDefinition hit, Vector3 impactOrigin, TeamModule origin, bool ignoreIframe = false)
+        {
+            HitInfo info = new HitInfo { OriginTeam = origin, ImpactLocation = impactOrigin, Hit = hit };
+            ApplyDamage(info, ignoreIframe);
+        }
+
         public void ApplyDamage(HitDefinition hit, Vector3 impactOrigin, GameObject origin, bool ignoreIframe = false)
         {
-            //if (m_isDead || (!m_isVulnerable && !ignoreIframe))
-            //{
-            //    return;
-            //}
-
-            //if (hit.DamageAmount < 0)
-            //{
-            //    Debug.Log($"Trying to heal life using `ApplyDamage` on {this.gameObject}. Use `Heal` instead");
-            //    return;
-            //}
-
-            //m_CurrentLifeValue = Mathf.Max(m_CurrentLifeValue - hit.DamageAmount, 0);
-            //OnHealthChanged?.Invoke(m_CurrentLifeValue, m_definition.MaxValue);
-
-            HitInfo info = new HitInfo { Origin = origin, ImpactLocation = impactOrigin, Hit = hit };
+            HitInfo info = new HitInfo { OriginGao = origin, ImpactLocation = impactOrigin, Hit = hit };
             ApplyDamage(info, ignoreIframe);
-            //if (m_CurrentLifeValue <= 0)
-            //{
-            //    m_isDead = true;
-            //    OnDeath?.Invoke(info);
-            //    StartCoroutine(PoolObjectDeactivateCoroutine());
-            //}
-            //else
-            //{
-            //    OnHit?.Invoke(info);
-
-            //    if (hit.DamageAmount > 0)
-            //    {
-            //        m_currentInvulnerabilityDuration = m_definition.InvulnerabilityDuration;
-            //        if (m_isVulnerable)
-            //        {
-            //            m_isVulnerable = false;
-            //            StartCoroutine(InvulnerabilityCoroutine());
-            //        }
-            //    }
-            //}
         }
 
         public void Resurrect(float lifeAmount = -1)

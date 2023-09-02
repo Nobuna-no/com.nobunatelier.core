@@ -35,7 +35,14 @@ namespace NobunAtelier
             m_origin = m_characterMovement.Position;
             m_pushBack = info.Hit.PushBackDefinition;
             m_currentTime = 0;
-            Vector3 coord1 = (m_origin - (m_useAttackerPositionInsteadOfImpactPosition ? info.Origin.transform.position : info.ImpactLocation));
+
+            Vector3 attackOrigin = info.ImpactLocation;
+            if (m_useAttackerPositionInsteadOfImpactPosition)
+            {
+                attackOrigin = info.OriginTeam ? info.OriginTeam.ModuleOwner.Position : (info.OriginGao ? info.OriginGao.transform.position : info.ImpactLocation);
+            }
+
+            Vector3 coord1 = m_origin - attackOrigin;
             coord1.y = 0;
             coord1.Normalize();
             Vector3 coord2 = new Vector3(-coord1.z, 0, coord1.x);

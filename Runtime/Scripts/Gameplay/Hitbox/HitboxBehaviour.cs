@@ -1,6 +1,7 @@
 using NaughtyAttributes;
+using System;
 using System.Collections;
-using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -18,22 +19,21 @@ namespace NobunAtelier.Gameplay
     [RequireComponent(typeof(Collider), typeof(Rigidbody))]
     public class HitboxBehaviour : MonoBehaviour
     {
-        public List<TeamDefinition> TargetTeam => m_targetTeam;
-
-        // [SerializeField, Header("Hitbox")]
-        // private TeamPlaceholder m_targetTeam;
         [Header("Hitbox")]
-        [SerializeField, Tooltip("The owner of the hit. Can be use by the hit receiver to track the origin of the attack.")]
-        private GameObject m_hitOrigin;
 
+        [SerializeField, Tooltip("The team behind the attack.")]
+        private TeamDefinition m_team;
         [SerializeField]
-        private List<TeamDefinition> m_targetTeam = new List<TeamDefinition>();
+        private TeamDefinition.Target m_target;
+        [SerializeField]
+        private HitDefinition m_hitDefinition;
+        [SerializeField, Tooltip("The team module owner of the hit. Can be use by the hit receiver to track the origin of the attack.")]
+        private TeamModule m_hitOriginTeam;
+        [SerializeField, Tooltip("The owner of the hit. Can be use by the hit receiver to track the origin of the attack.")]
+        private GameObject m_hitOriginGao;
 
         [SerializeField]
         private Transform m_impactOriginSocket;
-
-        [SerializeField]
-        private HitDefinition m_hitDefinition;
 
         protected Collider OwnCollider => m_collider;
         private Collider m_collider;
@@ -41,6 +41,17 @@ namespace NobunAtelier.Gameplay
         public UnityEvent OnHitboxEnabled;
         public UnityEvent OnHitboxDisabled;
         public HitEvent OnHit;
+
+        public void SetOwner(TeamModule owner, TeamDefinition team = null)
+        {
+            m_hitOriginTeam = owner;
+            m_team = team != null ? team : (owner != null ? owner.Team : null);
+        }
+
+        public void SetTargetDefinition(TeamDefinition.Target target)
+        {
+            m_target = target;
+        }
 
         public void SetHitDefinition(HitDefinition hit)
         {
@@ -86,21 +97,24 @@ namespace NobunAtelier.Gameplay
             }
 
             var hpBehaviour = other.GetComponent<HealthBehaviour>();
-            if (hpBehaviour && !hpBehaviour.IsDead && m_targetTeam.Contains(hpBehaviour.Team))
-            {
-                HitInfo info = new HitInfo
-                {
-                    Origin = m_hitOrigin ? m_hitOrigin : this.gameObject,
-                    ImpactLocation = m_impactOriginSocket ? m_impactOriginSocket.position : transform.position,
-                    Hit = m_hitDefinition
-                };
-                hpBehaviour.ApplyDamage(info);
 
-                OnHit?.Invoke(info);
-                return true;
+            if (!hpBehaviour || hpBehaviour.IsDead || !m_team.IsTargetValid(m_target, hpBehaviour.Team))
+            {
+                return false;
             }
 
-            return false;
+            HitInfo info = new HitInfo
+            {
+                OriginTeam = m_hitOriginTeam ? m_hitOriginTeam : null,
+                OriginGao = m_hitOriginGao ? m_hitOriginGao : null,
+                ImpactLocation = m_impactOriginSocket ? m_impactOriginSocket.position : transform.position,
+                Hit = m_hitDefinition
+            };
+
+            hpBehaviour.ApplyDamage(info);
+
+            OnHit?.Invoke(info);
+            return true;
         }
 
 #if UNITY_EDITOR
