@@ -176,6 +176,7 @@ namespace NobunAtelier
             }
         }
 
+#if UNITY_EDITOR
         protected virtual void OnValidate()
         {
             if (transform.parent != null)
@@ -185,14 +186,27 @@ namespace NobunAtelier
 
             if (m_stateDefinition != null)
             {
-                gameObject.name = $"state-{m_stateDefinition.name}";
+                // if first frame we force the state definition description except if it is empty
+                if (gameObject.name != $"state-{m_stateDefinition.name}")
+                {
+                    gameObject.name = $"state-{m_stateDefinition.name}";
 
-                if (m_stateDefinition.Description != string.Empty)
+                    if (!string.IsNullOrEmpty(m_stateDefinition.Description))
+                    {
+                        m_Description = m_stateDefinition.Description;
+                    }
+                }
+                else if (string.IsNullOrEmpty(m_Description) && !string.IsNullOrEmpty(m_stateDefinition.Description))
                 {
                     m_Description = m_stateDefinition.Description;
                 }
+                else if (m_Description != m_stateDefinition.Description)
+                {
+                    m_stateDefinition.Editor_SetDescription(m_Description);
+                }
             }
         }
+#endif
 
         private void InitializeReflectionFields()
         {

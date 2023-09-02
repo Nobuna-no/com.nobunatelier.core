@@ -15,6 +15,10 @@ namespace NobunAtelier
             ModuleOwner = character;
         }
 
+        public virtual void ModuleStop()
+        {
+        }
+
         public virtual void Reset()
         { }
 

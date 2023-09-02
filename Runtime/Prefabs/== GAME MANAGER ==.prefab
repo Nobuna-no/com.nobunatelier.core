@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 575228954668086572}
   - component: {fileID: 37866436720156142}
   m_Layer: 0
-  m_Name: frontend-exit
+  m_Name: state-frontend-exit
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -44,31 +44,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 232a993dd93d85f44bdc11b1ae8fe8e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Description: On gamemodestop -> Unload scene and set new game state to....
+  m_Description: 
   m_stateDefinition: {fileID: 5499639690697540685, guid: 7781caee366ce8e419c062a2261da165,
     type: 2}
-  BreakOnEnter: 0
-  m_transitionToNextState: 0
+  m_stateModules: []
+  m_autoCaptureStateModule: 1
+  m_logDebug: 0
+  TransitionType: 1
   m_nextState: {fileID: 0}
   m_stateDurationInSeconds: -1
-  OnStateEnter:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: NobunAtelier.PlayerManager, NobunAtelier.Core
-        m_MethodName: DisablePlayerJoining
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  OnStateExit:
-    m_PersistentCalls:
-      m_Calls: []
   m_nextStateAfterScenesWork: {fileID: 0}
   m_scenesToLoad: []
   OnScenesLoaded:
@@ -112,7 +96,7 @@ GameObject:
   - component: {fileID: 7002435775795220459}
   - component: {fileID: 3168541846241126432}
   m_Layer: 0
-  m_Name: frontend-loop
+  m_Name: state-frontend-loop
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -145,13 +129,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8caf48462e9ac5b48a49f4618bc5c847, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Description: Waiting for the main menu to stop gamestop...
+  m_Description: 
   m_stateDefinition: {fileID: -7406123627082089869, guid: 7781caee366ce8e419c062a2261da165,
     type: 2}
-  BreakOnEnter: 0
+  m_stateModules: []
+  m_autoCaptureStateModule: 1
+  m_logDebug: 0
   m_gameModeHandling: -5
   m_nextStateOnGameModeStop: {fileID: 5499639690697540685, guid: 6f8d8814680dca341a33ce29cece5ba0,
     type: 2}
+  m_addPlayersToGameModeOnInit: 0
   OnGameModeInitEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -172,7 +159,7 @@ GameObject:
   - component: {fileID: 7502830255963893619}
   - component: {fileID: 3920509273076298075}
   m_Layer: 0
-  m_Name: frontend-loading
+  m_Name: state-frontend-loading
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -205,19 +192,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 232a993dd93d85f44bdc11b1ae8fe8e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Description: Load main menu scene
+  m_Description: 
   m_stateDefinition: {fileID: 7857518207980898091, guid: 7781caee366ce8e419c062a2261da165,
     type: 2}
-  BreakOnEnter: 0
-  m_transitionToNextState: 0
+  m_stateModules: []
+  m_autoCaptureStateModule: 1
+  m_logDebug: 0
+  TransitionType: 1
   m_nextState: {fileID: 0}
   m_stateDurationInSeconds: -1
-  OnStateEnter:
-    m_PersistentCalls:
-      m_Calls: []
-  OnStateExit:
-    m_PersistentCalls:
-      m_Calls: []
   m_nextStateAfterScenesWork: {fileID: -7406123627082089869, guid: 6f8d8814680dca341a33ce29cece5ba0,
     type: 2}
   m_scenesToLoad:
@@ -297,17 +280,13 @@ MonoBehaviour:
   m_Description: 
   m_stateDefinition: {fileID: 6954217850896907785, guid: 7781caee366ce8e419c062a2261da165,
     type: 2}
-  BreakOnEnter: 0
-  m_transitionToNextState: 1
+  m_stateModules: []
+  m_autoCaptureStateModule: 1
+  m_logDebug: 0
+  TransitionType: 1
   m_nextState: {fileID: -5279566794588525482, guid: 6f8d8814680dca341a33ce29cece5ba0,
     type: 2}
   m_stateDurationInSeconds: 0.5
-  OnStateEnter:
-    m_PersistentCalls:
-      m_Calls: []
-  OnStateExit:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!1 &7719448971109683364
 GameObject:
   m_ObjectHideFlags: 0
@@ -320,7 +299,7 @@ GameObject:
   - component: {fileID: 7645365655469923353}
   - component: {fileID: 2966304478422877836}
   m_Layer: 0
-  m_Name: == GAME MANAGER ==
+  m_Name: state-init
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -355,11 +334,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54457e41d0a8c48428a62f7b31959725, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Description: 
+  m_Description: Entry point.
   m_stateDefinition: {fileID: 6954217850896907785, guid: 6f8d8814680dca341a33ce29cece5ba0,
     type: 2}
-  BreakOnEnter: 0
+  m_stateModules: []
+  m_autoCaptureStateModule: 1
+  m_logDebug: 0
+  m_referenceStateCollection: {fileID: 0}
+  m_initialStateDefinition: {fileID: 0}
   m_enterInitialStateOnStart: 1
+  m_nextStateOnStateMachineExit: {fileID: 0}
   m_displayDebug: 0
 --- !u!114 &2966304478422877836
 MonoBehaviour:
@@ -387,7 +371,7 @@ GameObject:
   - component: {fileID: 2195937222321296151}
   - component: {fileID: 3677948349863553599}
   m_Layer: 0
-  m_Name: frontend-sm
+  m_Name: state-frontend-loading
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -426,8 +410,13 @@ MonoBehaviour:
   m_Description: 
   m_stateDefinition: {fileID: 7857518207980898091, guid: 7781caee366ce8e419c062a2261da165,
     type: 2}
-  BreakOnEnter: 0
+  m_stateModules: []
+  m_autoCaptureStateModule: 1
+  m_logDebug: 0
+  m_referenceStateCollection: {fileID: 0}
+  m_initialStateDefinition: {fileID: 0}
   m_enterInitialStateOnStart: 0
+  m_nextStateOnStateMachineExit: {fileID: 0}
   m_displayDebug: 0
 --- !u!1 &8902981617236295595
 GameObject:
@@ -477,26 +466,9 @@ MonoBehaviour:
   m_Description: 
   m_stateDefinition: {fileID: -5279566794588525482, guid: 7781caee366ce8e419c062a2261da165,
     type: 2}
-  BreakOnEnter: 0
-  m_transitionToNextState: 0
+  m_stateModules: []
+  m_autoCaptureStateModule: 1
+  m_logDebug: 0
+  TransitionType: 1
   m_nextState: {fileID: 0}
   m_stateDurationInSeconds: 0.5
-  OnStateEnter:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 3677948349863553599}
-        m_TargetAssemblyTypeName: NobunAtelier.StateMachineComponent`1[[NobunAtelier.GameStateDefinition,
-          NobunAtelier.Core
-        m_MethodName: ResetToDefault
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  OnStateExit:
-    m_PersistentCalls:
-      m_Calls: []

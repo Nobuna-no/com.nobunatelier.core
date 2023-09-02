@@ -77,19 +77,19 @@ namespace NobunAtelier
             return false;
         }
 
-        public virtual void Mount(CharacterControllerBase controller)
+        public virtual void SetController(CharacterControllerBase controller)
         {
             Controller = controller;
         }
 
         public Vector3 GetMoveVector()
         {
-            return m_physicsModule.Velocity;
+            return currentVel;
         }
 
         public float GetMoveSpeed()
         {
-            return m_physicsModule.Velocity.magnitude;
+            return currentVel.magnitude;
         }
 
         public Vector3 GetNormalizedMoveSpeed()

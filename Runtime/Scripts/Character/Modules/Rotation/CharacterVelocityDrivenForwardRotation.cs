@@ -12,10 +12,25 @@ namespace NobunAtelier
         [SerializeField, Range(0, 50f)]
         private float m_rotationSpeed = 10f;
 
-#if UNITY_EDITOR
-        [SerializeField, ReadOnly]
-        private Vector3 m_lastDirection;
-#endif
+        private float m_initialRotationSpeed = 0f;
+
+        public void SetRotationSpeed(float rotationSpeed)
+        {
+            m_rotationSpeed = rotationSpeed;
+        }
+
+        public void ResetRotationSpeed()
+        {
+            m_rotationSpeed = m_initialRotationSpeed;
+        }
+
+        public override void ModuleInit(Character character)
+        {
+            m_initialRotationSpeed = m_rotationSpeed;
+
+            base.ModuleInit(character);
+        }
+
         protected void SetForward(Vector3 dir, float deltaTime)
         {
             dir = Vector3.Slerp(ModuleOwner.transform.forward, dir, m_rotationSpeed * deltaTime);
@@ -29,10 +44,6 @@ namespace NobunAtelier
             dir.x = dir.x * m_forwardSpace.x;
             dir.y = dir.y * m_forwardSpace.y;
             dir.z = dir.z * m_forwardSpace.z;
-
-#if UNITY_EDITOR
-            m_lastDirection= dir;
-#endif
 
             if (dir.sqrMagnitude <= 1)
             {

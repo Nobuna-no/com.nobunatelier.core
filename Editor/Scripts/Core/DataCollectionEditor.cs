@@ -114,7 +114,6 @@ namespace NobunAtelier
                     m_currentEditor = Editor.CreateEditor(m_currentElement);
                 };
 
-
             list.onReorderCallbackWithDetails = (ReorderableList list, int oldIndex, int newIndex) =>
             {
                 m_collection.MoveDefinition(oldIndex, newIndex);
@@ -125,6 +124,7 @@ namespace NobunAtelier
         }
 
         private bool m_titleBarExpand = true;
+
         public override void OnInspectorGUI()
         {
             if (m_collection == null)
@@ -144,24 +144,87 @@ namespace NobunAtelier
                 list.DoLayoutList();
             }
 
+            HandleDragAndDrop();
+
             if (m_workingIndex != -1)
             {
                 if (m_currentEditor != null)
                 {
-                    using (new EditorGUILayout.VerticalScope(GUI.skin.box))
+                    using (new EditorGUILayout.VerticalScope(GUI.skin.window))
                     {
                         m_titleBarExpand = EditorGUILayout.InspectorTitlebar(m_titleBarExpand, m_currentEditor);
 
                         if (m_titleBarExpand)
                         {
-                            if (m_currentEditor.DrawDefaultInspector())
-                            {
-                                m_currentEditor.serializedObject.ApplyModifiedProperties();
-                            }
+                            EditorGUI.indentLevel++;
+                            m_currentEditor.OnInspectorGUI();
+                            EditorGUI.indentLevel--;
                         }
                     }
                 }
             }
+        }
+
+        private bool m_potentialDrag = false;
+        bool hasAtLeastOneValidAssetType = false;
+
+        private void HandleDragAndDrop()
+        {
+            Event currentEvent = Event.current;
+            // Check if an object is dragged into the inspector
+            if (currentEvent.type == EventType.DragUpdated || currentEvent.type == EventType.DragPerform)
+            {
+                m_potentialDrag = true;
+                if (currentEvent.type == EventType.DragPerform)
+                {
+                    foreach (var item in DragAndDrop.objectReferences)
+                    {
+                        if (!item.GetType().IsAssignableFrom(m_collection.GetDefinitionType()))
+                        {
+                            continue;
+                        }
+
+                        m_collection.AddDefinitionAssetToCollection(item as DataDefinition);
+                    }
+
+                    m_potentialDrag = false;
+                    DragAndDrop.AcceptDrag();
+                }
+            }
+
+            if (m_potentialDrag)
+            {
+                if (currentEvent.type == EventType.DragUpdated)
+                {
+                    hasAtLeastOneValidAssetType = false;
+                    foreach (var item in DragAndDrop.objectReferences)
+                    {
+                        if (item.GetType().IsAssignableFrom(m_collection.GetDefinitionType()))
+                        {
+                            hasAtLeastOneValidAssetType = true;
+                            break;
+                        }
+                    }
+                }
+                else if (currentEvent.type == EventType.DragExited)
+                {
+                    m_potentialDrag = false;
+                    return;
+                }
+
+                if (hasAtLeastOneValidAssetType)
+                {
+                    EditorGUILayout.HelpBox($"Drop here to add to the collection.", MessageType.Info);
+                    EditorGUILayout.HelpBox($"Original asset will be move to trash! Drag and dropping from another collection with move the entire collection to trash!", MessageType.Warning);
+                    DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox($"Invalid asset type. Cannot add to the collection.", MessageType.Error);
+                    DragAndDrop.visualMode = DragAndDropVisualMode.Rejected;
+                }
+            }
+
         }
     }
 }

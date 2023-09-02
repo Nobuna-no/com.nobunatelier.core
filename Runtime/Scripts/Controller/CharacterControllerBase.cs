@@ -1,44 +1,91 @@
+using NaughtyAttributes;
 using UnityEngine;
 
 namespace NobunAtelier
 {
-    public class CharacterControllerBase : MonoBehaviour
+    public abstract class CharacterControllerBase : MonoBehaviour
     {
+        public enum EnableInputBehaviour
+        {
+            OnAwake,
+            OnEnable,
+            Manual
+        }
+
+        public enum DisableInputBehaviour
+        {
+            OnDisable,
+            Manual
+        }
+
+        [Header("Controller")]
         [SerializeField]
         protected Character m_controlledCharacter;
 
         public Character ControlledCharacter => m_controlledCharacter;
 
+        // [SerializeField]
+        // protected bool m_mountCharacterOnStart = true;
+
         [SerializeField]
-        protected bool m_mountCharacterOnStart = true;
+        private EnableInputBehaviour m_enableInputBehaviour = EnableInputBehaviour.OnAwake;
+
+        [SerializeField, Tooltip("DisableInput is always called OnDestroy.")]
+        private DisableInputBehaviour m_disableInputBehaviour = DisableInputBehaviour.Manual;
+
+        [Button(enabledMode: EButtonEnableMode.Playmode)]
+        public abstract void EnableInput();
+
+        [Button(enabledMode: EButtonEnableMode.Playmode)]
+        public abstract void DisableInput();
+
+        protected virtual void Awake()
+        {
+            if (m_enableInputBehaviour == EnableInputBehaviour.OnAwake)
+            {
+                EnableInput();
+            }
+        }
 
         protected virtual void Start()
         {
-            if (!m_mountCharacterOnStart)
-            {
-                return;
-            }
+            // if (!m_mountCharacterOnStart)
+            // {
+            //     return;
+            // }
 
-            m_controlledCharacter?.Mount(this);
+            m_controlledCharacter?.SetController(this);
         }
 
-        protected virtual void UpdateController()
+        protected virtual void UpdateController(float deltaTime)
         { }
 
         protected virtual void OnEnable()
-        { }
+        {
+            if (m_enableInputBehaviour == EnableInputBehaviour.OnEnable)
+            {
+                EnableInput();
+            }
+        }
 
         protected virtual void OnDisable()
-        { }
+        {
+            if (m_disableInputBehaviour == DisableInputBehaviour.OnDisable)
+            {
+                DisableInput();
+            }
+        }
     }
 
     public abstract class CharacterControllerBase<T> : CharacterControllerBase
         where T : CharacterControllerModuleBase
     {
+        [Header("Modules")]
         [SerializeField]
         protected T[] m_modules;
+
         [SerializeField]
-        private bool m_autoRefreshModule = true;
+        private bool m_autoCaptureModule = true;
 
         public abstract bool IsAI { get; }
 
@@ -58,7 +105,7 @@ namespace NobunAtelier
             return false;
         }
 
-        protected virtual void Awake()
+        protected override void Awake()
         {
             if (!m_controlledCharacter)
             {
@@ -67,18 +114,25 @@ namespace NobunAtelier
                 Debug.Assert(m_controlledCharacter, $"No Character found for {this.transform.parent.gameObject.name}/{this}");
             }
 
-            if (m_autoRefreshModule)
+            if (m_autoCaptureModule)
             {
                 CaptureCharacterControllerModules();
             }
 
-            foreach (var extension in m_modules)
+            foreach (var module in m_modules)
             {
-                extension.InitModule(this);
+                module.InitModule(this);
             }
+
+            base.Awake();
         }
 
-        protected override void UpdateController()
+        protected virtual void OnDestroy()
+        {
+            DisableInput();
+        }
+
+        protected override void UpdateController(float deltaTime)
         {
             if (m_controlledCharacter == null)
             {
@@ -92,7 +146,7 @@ namespace NobunAtelier
                     continue;
                 }
 
-                module.UpdateModule(Time.deltaTime);
+                module.UpdateModule(deltaTime);
             }
         }
 
@@ -102,6 +156,8 @@ namespace NobunAtelier
             {
                 module.enabled = true;
             }
+
+            base.OnEnable();
         }
 
         protected override void OnDisable()
@@ -110,12 +166,13 @@ namespace NobunAtelier
             {
                 module.enabled = false;
             }
-        }
 
+            base.OnDisable();
+        }
 
         protected virtual void OnValidate()
         {
-            if (m_autoRefreshModule)
+            if (m_autoCaptureModule)
             {
                 CaptureCharacterControllerModules();
             }

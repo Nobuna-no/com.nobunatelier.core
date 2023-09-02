@@ -13,7 +13,7 @@ namespace NobunAtelier
     /// - The goal is to have control over:
     ///     - MaxBorderDistance: the further the distance, the stronger the SnappingForce is applied. This value is the distance at which the maximum snappingForce is applied
     ///     - SnappingForce: the force at which the character is snapped toward the nearest border
-    ///     - SnappingControl: How much control can the player have while being snapped? Not sure if that should be a duration or based on the distance...
+    ///     - SnappingControl: How much control can the player have while being snapped? Not sure if that should be a m_duration or based on the distance...
     ///     - DecelerationForce: the force at which the character decelerates afterMag reaching back the platform
     ///     - DecelerationControl: How much control can the player have while decelerating.
     /// </summary>
@@ -111,7 +111,7 @@ namespace NobunAtelier
                 direction.y = 0;
 
                 m_snapDistanceFactor = direction.sqrMagnitude / (m_maxSnapDistance * m_maxSnapDistance);
-                // The intention is: the more we are near the maxSnapDistance the more we reach the max duration
+                // The intention is: the more we are near the maxSnapDistance the more we reach the max m_duration
                 m_snapDuration += deltaTime + (m_maxSnapDuration * m_snapDistanceFactor);
                 float overflow = m_snapDuration - m_maxSnapDuration;
                 Vector3 snapForce = direction.normalized * m_snapAccelerationCurve.Evaluate(m_snapDuration / m_maxSnapDuration) * m_snapForceAcceleration;

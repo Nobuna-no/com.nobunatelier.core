@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Audio;
+using UnityEngine.InputSystem.HID;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
 // What is the goal of this Manager?
@@ -20,22 +21,10 @@ namespace NobunAtelier
 {
     public class AudioManager : SingletonManager<AudioManager>
     {
-        //private enum AudioId
-        //{
-        //    MainMenuIntroJingle = 0,
-        //    MainMenuBGM,
-        //    KitchenIntroJingle,
-        //    KitchenBGM,
-        //    VictoryMusic,
-
-        //    Count
-        //}
-
-
         [Header("Audio Settings")]
         [SerializeField]
         private double m_audioStartDelay = 0.2;
-        
+
         [SerializeField]
         private float m_audioFadeInTime = 0.25f;
 
@@ -67,33 +56,13 @@ namespace NobunAtelier
         [SerializeField]
         private float m_pauseSnapshotTransitionInSeconds = 0.5f;
 
+        [Header("3D Audio")]
+        [SerializeField]
+        private AudioSource m_3DAudioSourceTemplate;
 
         [Header("Debug")]
         [SerializeField]
         private bool m_logDebug = false;
-        //[Header("LEGACY - Audio Settings")]
-        //[SerializeField]
-        //private AudioMixerGroup m_mixerOutput;
-
-
-        
-
-        //[Header("Menu")]
-        //[SerializeField]
-        //private AssetReference m_mainMenuIntroJingle;
-
-        //[SerializeField]
-        //private AssetReference m_mainMenuBGM;
-
-        //[Header("Kitchen")]
-        //[SerializeField]
-        //private AssetReference m_kitchenIntroJingle;
-
-        //[SerializeField]
-        //private AssetReference m_kitchenBGM;
-
-        //[SerializeField]
-        //private AssetReference m_victoryMusic;
 
         private AsyncOperationHandle<AudioClip>[] m_audioToRelease = new AsyncOperationHandle<AudioClip>[2];
 
@@ -130,7 +99,7 @@ namespace NobunAtelier
             Debug.LogError($"{this.name}.LoadAudio: {baseAudioDefinition.name} type is not recognized!");
         }
 
-        public void LoadAudio(AudioDefinition audioDefinition)
+        public void LoadAudio(AudioDefinition audioDefinition, bool is3DAudio = false)
         {
             Debug.Assert(audioDefinition);
 
@@ -153,16 +122,38 @@ namespace NobunAtelier
                 Debug.Log($"{this.name}.LoadAudio(AudioDefinition): {audioDefinition.name}");
             }
 
-            GameObject child = new GameObject($"AudioSource - {audioDefinition.name}");
-            child.transform.parent = transform;
-            child.isStatic = true;
+            AudioHandle audioHandle = null;
+            if (!is3DAudio)
+            {
+                GameObject child = new GameObject($"AudioSource - {audioDefinition.name}");
+                child.transform.parent = transform;
+                child.isStatic = true;
 
-            var audioHandle = new AudioHandle(audioDefinition, child.AddComponent<AudioSource>());
+                AudioSource audioSource = child.AddComponent<AudioSource>();
+                audioHandle = new AudioHandle(audioDefinition, audioSource);
+            }
+            else if (m_3DAudioSourceTemplate == null)
+            {
+                // In case no 3D audio source template is provided, we generate a very basic 3D source.
+                GameObject gao = new GameObject($"AudioSource 3D - {audioDefinition.name}");
+                gao.isStatic = false;
+                AudioSource audioSource = gao.AddComponent<AudioSource>();
+                audioSource.spatialBlend = 1;
+                audioHandle = new AudioHandle(audioDefinition, audioSource);
+            }
+            else
+            {
+                // This audio source is going to move in the world...
+                GameObject gao = GameObject.Instantiate(m_3DAudioSourceTemplate.gameObject);
+                gao.name = $"AudioSource 3D - {audioDefinition.name}";
+                gao.isStatic = false;
+                audioHandle = new AudioHandle(audioDefinition, gao.GetComponent<AudioSource>());
+            }
+
             audioHandle.Load();
-
             m_audioHandlesDictionary.Add(audioDefinition, audioHandle);
         }
-        
+
         public void LoadAudio(AudioStitcherDefinition audioStitcherDefinition)
         {
             Debug.Assert(audioStitcherDefinition);
@@ -200,8 +191,51 @@ namespace NobunAtelier
             }
         }
 
-
         // PLAY AUDIO
+        public void Play3DAudio(AudioDefinition audioDefinition, Transform newParent)
+        {
+            if (m_logDebug)
+            {
+                Debug.Log($"{this.name}.Play3DAudio(AudioDefinition ({audioDefinition.name}), Transform ({newParent.name}))");
+            }
+
+            if (!m_audioHandlesDictionary.ContainsKey(audioDefinition))
+            {
+                if (m_logDebug)
+                {
+                    Debug.LogWarning($"{this.name}: {audioDefinition.name} hasn't been loaded yet. Loading now, this might affect the performance." +
+                     $"Prefer calling LoadAudio first.");
+                }
+                LoadAudio(audioDefinition, true);
+            }
+
+            m_audioHandlesDictionary[audioDefinition].audioSource.transform.parent = newParent;
+            m_audioHandlesDictionary[audioDefinition].audioSource.transform.localPosition = Vector3.zero;
+
+            StartCoroutine(AudioHandle_PlayAudio_Coroutine(m_audioHandlesDictionary[audioDefinition], audioDefinition.CanStartDelayed));
+        }
+
+        public void Play3DAudio(AudioDefinition audioDefinition, Vector3 position)
+        {
+            if (m_logDebug)
+            {
+                Debug.Log($"{this.name}.Play3DAudio(AudioDefinition ({audioDefinition.name}), Vector3 ({position}))");
+            }
+
+            if (!m_audioHandlesDictionary.ContainsKey(audioDefinition))
+            {
+                if (m_logDebug)
+                {
+                    Debug.LogWarning($"{this.name}: {audioDefinition.name} hasn't been loaded yet. Loading now, this might affect the performance." +
+                     $"Prefer calling LoadAudio first.");
+                }
+                LoadAudio(audioDefinition, true);
+            }
+
+            m_audioHandlesDictionary[audioDefinition].audioSource.transform.position = position;
+            StartCoroutine(AudioHandle_PlayAudio_Coroutine(m_audioHandlesDictionary[audioDefinition], audioDefinition.CanStartDelayed));
+        }
+
         public void PlayAudio(AudioResourceDefinition baseAudioDefinition)
         {
             var audioDefinition = baseAudioDefinition as AudioDefinition;
@@ -235,7 +269,7 @@ namespace NobunAtelier
                 LoadAudio(audioDefinition);
             }
 
-            StartCoroutine(AudioHandle_PlayAudio_Coroutine(m_audioHandlesDictionary[audioDefinition], audioDefinition.StartDelayed));
+            StartCoroutine(AudioHandle_PlayAudio_Coroutine(m_audioHandlesDictionary[audioDefinition], audioDefinition.CanStartDelayed));
         }
 
         public void PlayAudio(AudioStitcherDefinition audioStitcherDefinition)
@@ -303,9 +337,9 @@ namespace NobunAtelier
                 LoadAudio(audioDefinition);
             }
 
-            StartCoroutine(AudioHandle_FadeInAndPlayAudio_Coroutine(m_audioHandlesDictionary[audioDefinition], audioDefinition.StartDelayed));
+            StartCoroutine(AudioHandle_FadeInAndPlayAudio_Coroutine(m_audioHandlesDictionary[audioDefinition], audioDefinition.CanStartDelayed));
         }
-        
+
         public void FadeOutAndStopAudio(AudioResourceDefinition baseAudioDefinition)
         {
             if (m_logDebug)
@@ -351,7 +385,6 @@ namespace NobunAtelier
             StartCoroutine(AudioHandle_FadeOutAndStopAudio_Coroutine(m_audioHandlesDictionary[audioDefinition]));
         }
 
-
         // PAUSE AUDIO VOLUME
         public void PauseAudioVolume()
         {
@@ -363,7 +396,6 @@ namespace NobunAtelier
             m_pauseAudioSnapshot.TransitionTo(m_pauseSnapshotTransitionInSeconds);
             StartCoroutine(AudioHandle_PauseAudio_Coroutine(m_pauseSnapshotTransitionInSeconds));
         }
-
 
         // RESUME AUDIO VOLUME
         public void ResumeAudioSnapshot()
@@ -377,11 +409,10 @@ namespace NobunAtelier
             StartCoroutine(AudioHandle_ResumeAudio_Coroutine(m_defaultSnapshotTransitionInSeconds));
         }
 
-
         // UNLOAD AUDIO
         public void UnloadAudio(AudioResourceDefinition baseAudioDefinition)
         {
-            if(m_logDebug)
+            if (m_logDebug)
             {
                 Debug.Log($"{this.name}.UnloadAudio(AudioResourceDefinition): {baseAudioDefinition.name}");
             }
@@ -455,7 +486,6 @@ namespace NobunAtelier
             }
         }
 
-
         // FADE AUDIO
         public void FadeInAudioSnapshot()
         {
@@ -498,7 +528,7 @@ namespace NobunAtelier
                 audioHandle.Play(0.0);
             }
         }
-        
+
         private IEnumerator AudioHandle_FadeInAndPlayAudio_Coroutine(AudioHandle audioHandle, bool canStartDelayed)
         {
             while (!audioHandle.IsReadyToPlay())
@@ -605,7 +635,7 @@ namespace NobunAtelier
         private IEnumerator AudioHandle_PlayStitchedAudio_Coroutine(AudioStitcherDefinition audioStitcherDefinition)
         {
             bool isFirstAudio = true;
-            double scheduledStartTime = audioStitcherDefinition.StartDelayed ? m_audioStartDelay : 0.0;
+            double scheduledStartTime = audioStitcherDefinition.CanStartDelayed ? m_audioStartDelay : 0.0;
             foreach (var stitch in audioStitcherDefinition.StitchedAudios)
             {
                 if (!m_audioHandlesDictionary.ContainsKey(stitch.AudioDefinition))
@@ -633,127 +663,18 @@ namespace NobunAtelier
                 }
                 else
                 {
-                    audioHandle.PlayScheduled(scheduledStartTime + stitch.Delay);
+                    audioHandle.PlayScheduled(scheduledStartTime, stitch.Delay);
                 }
 
                 scheduledStartTime += audioHandle.ClipLength;
             }
         }
 
-        //private IEnumerator AudioHandle_PlayBGMWithJingle_Coroutine(AudioHandle jingle, AudioHandle bgm)
-        //{
-        //    while (!jingle.IsReadyToPlay())
-        //    {
-        //        yield return null;
-        //    }
-
-        //    if (jingle.HasBeenStopped)
-        //    {
-        //        yield break;
-        //    }
-
-        //    var scheduledStartTime = jingle.Play(m_audioStartDelay, false);
-        //    scheduledStartTime += jingle.ClipLength;
-
-        //    // waiting a little bit before to start the audio fade in.
-        //    yield return new WaitForSeconds(m_audioStartDelay * 0.7f);
-
-        //    float elapsedTime = 0.0f;
-        //    while (elapsedTime < m_bgmFadeInTime)
-        //    {
-        //        jingle.SetAudioSourceVolume(m_bgmFadeInCurve.Evaluate(elapsedTime / m_bgmFadeInTime));
-        //        elapsedTime += Time.deltaTime;
-        //        yield return null;
-
-        //        if (jingle.HasBeenStopped)
-        //        {
-        //            yield break;
-        //        }
-        //    }
-
-        //    while (!bgm.IsReadyToPlay())
-        //    {
-        //        yield return null;
-        //    }
-
-        //    if (bgm.HasBeenStopped)
-        //    {
-        //        yield break;
-        //    }
-
-        //    bgm.PlayScheduled(scheduledStartTime, true);
-        //}
-
-        //private IEnumerator AudioHandle_FadeOutAndReleaseAudio_Coroutine(AudioHandle audioHandle)
-        //{
-        //    // If resource already released (or releasing), no more work needed.
-        //    if (audioHandle.IsResourceReleased || audioHandle.IsFadingOut)
-        //    {
-        //        yield break;
-        //    }
-
-        //    // If audio has been stopped already, only need to release resource.
-        //    if (audioHandle.HasBeenStopped || !audioHandle.IsPlaying)
-        //    {
-        //        audioHandle.StopAndReleaseResource();
-        //        yield break;
-        //    }
-
-        //    audioHandle.StartFadeOut();
-        //    // If audio is playing, need to fade out before releasing resource.
-        //    float elapsedTime = 0.0f;
-
-        //    while (elapsedTime < m_bgmFadeInTime)
-        //    {
-        //        audioHandle.SetAudioSourceVolume(m_bgmFadeOutCurve.Evaluate(elapsedTime / m_bgmFadeInTime));
-        //        elapsedTime += Time.deltaTime;
-        //        yield return null;
-        //    }
-
-        //    audioHandle.StopAndReleaseResource();
-        //}
-
-        //protected override void Awake()
-        //{
-        //    base.Awake();
-        //    m_audioHandles = new AudioHandle[(int)AudioId.Count];
-        //    for (int i = 0, c = (int)AudioId.Count; i < c; ++i)
-        //    {
-        //        GameObject child = new GameObject($"AudioSource[{i}] - {(AudioId)i}");
-        //        child.transform.parent = transform;
-        //        m_audioHandles[i] = new AudioHandle(GetAudioReference((AudioId)i), child.AddComponent<AudioSource>(), m_mixerOutput);
-        //    }
-        //}
-
-        //private AssetReference GetAudioReference(AudioId id)
-        //{
-        //    switch (id)
-        //    {
-        //        case AudioId.MainMenuIntroJingle:
-        //            return m_mainMenuIntroJingle;
-
-        //        case AudioId.MainMenuBGM:
-        //            return m_mainMenuBGM;
-
-        //        case AudioId.KitchenIntroJingle:
-        //            return m_kitchenIntroJingle;
-
-        //        case AudioId.KitchenBGM:
-        //            return m_kitchenBGM;
-
-        //        case AudioId.VictoryMusic:
-        //            return m_victoryMusic;
-
-        //        default:
-        //            return null;
-        //    }
-        //}
-
         public class AudioHandle
         {
             public AssetReference audioAssetReference;
             public AudioSource audioSource;
-            public AsyncOperationHandle<AudioClip> resourceHandle;
+            public AsyncOperationHandle<AudioResource> resourceHandle;
             private float originalAudioVolume = 1.0f;
 
             public double ClipLength => audioSource.clip.length;
@@ -780,7 +701,7 @@ namespace NobunAtelier
 
                 if (!resourceHandle.IsValid())
                 {
-                    resourceHandle = audioAssetReference.LoadAssetAsync<AudioClip>();
+                    resourceHandle = audioAssetReference.LoadAssetAsync<AudioResource>();
                 }
             }
 
@@ -789,19 +710,36 @@ namespace NobunAtelier
                 HasBeenStopped = false;
 
                 ResetAudioSourceVolume();
-                this.audioSource.clip = resourceHandle.Result;
-                double scheduledStartTime = AudioSettings.dspTime + startDelay;
-                this.audioSource.PlayScheduled(scheduledStartTime);
+                this.audioSource.resource = resourceHandle.Result;
+
+                double scheduledStartTime = 0;
+                if (this.audioSource.resource is AudioClip)
+                {
+                    scheduledStartTime = AudioSettings.dspTime + startDelay;
+                    this.audioSource.PlayScheduled(scheduledStartTime);
+                }
+                else
+                {
+                    this.audioSource.PlayDelayed((float)startDelay);
+                }
+
                 return scheduledStartTime;
             }
 
-            public void PlayScheduled(double dspTime)
+            public void PlayScheduled(double dspTime, double startDelay)
             {
                 HasBeenStopped = false;
 
                 ResetAudioSourceVolume();
-                this.audioSource.clip = resourceHandle.Result;
-                this.audioSource.PlayScheduled(dspTime);
+                this.audioSource.resource = resourceHandle.Result;
+                if (this.audioSource.resource is AudioClip)
+                {
+                    this.audioSource.PlayScheduled(dspTime + startDelay);
+                }
+                else
+                {
+                    this.audioSource.PlayDelayed((float)startDelay);
+                }
             }
 
             public bool IsReadyToPlay()

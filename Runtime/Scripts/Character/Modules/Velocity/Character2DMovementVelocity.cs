@@ -88,6 +88,11 @@ namespace NobunAtelier
 
 #endif
 
+        public void SetMovementMaxSpeed(float speed)
+        {
+            m_maxSpeed = speed;
+        }
+
         public bool EvaluateState()
         {
             return true;

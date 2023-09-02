@@ -4,9 +4,9 @@ using UnityEngine.Audio;
 
 namespace NobunAtelier
 {
-    public class AudioResourceDefinition : DataDefinition 
+    public class AudioResourceDefinition : DataDefinition
     {
-        public bool StartDelayed => m_canStartDelayedToPreventCPUOverhead;
+        public bool CanStartDelayed => m_canStartDelayedToPreventCPUOverhead;
 
         [SerializeField]
         private bool m_canStartDelayedToPreventCPUOverhead = true;
@@ -23,7 +23,7 @@ namespace NobunAtelier
 
         [SerializeField]
         private AudioMixerGroup m_mixerGroup;
-        
+
         public float Volume => m_volume;
 
         [SerializeField, Range(0f, 1f)]

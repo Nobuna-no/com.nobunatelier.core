@@ -3,10 +3,13 @@ using UnityEngine.Pool;
 
 namespace NobunAtelier
 {
-    public abstract class AtelierFactory<T> : MonoBehaviour
+    public abstract class AtelierFactoryT<T> : MonoBehaviour
         where T : class
     {
         public int ReserveSize => m_initialSize;
+
+        [SerializeField]
+        private bool m_createPoolOnAwake;
 
         [SerializeField]
         protected int m_initialSize = 10;
@@ -31,8 +34,38 @@ namespace NobunAtelier
 
         private void Awake()
         {
+            if (m_createPoolOnAwake)
+            {
+                ResetPool();
+            }
+        }
+
+        public void SetInitialSize(int value)
+        {
+            m_initialSize = value;
+        }
+
+        public virtual void ResetPool()
+        {
+            if (ObjectPool != null)
+            {
+                ObjectPool.Clear();
+                ObjectPool = null;
+            }
+
             ObjectPool = new ObjectPool<T>(OnProductCreation, OnGetFromPool,
                 OnProductReleased, OnProductDestruction, m_collectionCheck, m_initialSize, m_maxSize);
+
+            T[] products = new T[m_initialSize];
+            for (int i = 0; i < m_initialSize; i++)
+            {
+                products[i] = ObjectPool.Get();
+            }
+
+            for (int i = 0; i < m_initialSize; i++)
+            {
+                ObjectPool.Release(products[i]);
+            }
         }
 
         // invoked when creating an item to populate the object pool
