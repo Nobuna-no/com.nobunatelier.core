@@ -86,7 +86,7 @@ namespace NobunAtelier
         public void StartFading()
         {
             m_fadeBeginTime = Time.realtimeSinceStartup;
-            if (!AnimatorFader.Instance)
+            if (!ScreenFader.Instance)
             {
                 FadeInEnd();
                 return;
@@ -95,12 +95,11 @@ namespace NobunAtelier
             switch (m_fadingInMode)
             {
                 case FadingMode.Normal:
-                    AnimatorFader.Instance.SetFaderDuration(m_fadeInDurationInSecond);
-                    AnimatorFader.Instance.FadeIn(FadeInEnd);
+                    ScreenFader.Instance.FadeIn(m_fadeInDurationInSecond, FadeInEnd);
                     break;
 
                 case FadingMode.Instant:
-                    AnimatorFader.Instance.Fill();
+                    ScreenFader.Instance.Fill();
                     FadeInEnd();
                     break;
 
@@ -207,12 +206,11 @@ namespace NobunAtelier
             switch (m_fadingOutMode)
             {
                 case FadingMode.Normal:
-                    AnimatorFader.Instance.SetFaderDuration(m_fadeOutDurationInSecond);
-                    AnimatorFader.Instance.FadeOut(FadeOutEnd);
+                    ScreenFader.Instance.FadeOut(m_fadeOutDurationInSecond, FadeOutEnd);
                     break;
 
                 case FadingMode.Instant:
-                    AnimatorFader.Instance.Clear();
+                    ScreenFader.Instance.Clear();
                     FadeOutEnd();
                     break;
 
@@ -229,7 +227,7 @@ namespace NobunAtelier
 
         private void FadeInEnd()
         {
-            AnimatorFader.Instance.ResetFaderDuration();
+            ScreenFader.Instance.ResetFaderDuration();
             // OnFadeInDone?.Invoke();
 
             bool isDoingSceneWork = LoadScenes();
@@ -253,7 +251,7 @@ namespace NobunAtelier
 
         private void FadeOutEnd()
         {
-            AnimatorFader.Instance.ResetFaderDuration();
+            ScreenFader.Instance.ResetFaderDuration();
             // OnFadeOutDone?.Invoke();
         }
 

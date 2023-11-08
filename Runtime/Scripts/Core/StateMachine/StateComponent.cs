@@ -205,6 +205,11 @@ namespace NobunAtelier
                     m_stateDefinition.Editor_SetDescription(m_Description);
                 }
             }
+
+            if (m_autoCaptureStateModule)
+            {
+                CaptureStateModule();
+            }
         }
 #endif
 

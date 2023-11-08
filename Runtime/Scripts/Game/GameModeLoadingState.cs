@@ -52,13 +52,13 @@ namespace NobunAtelier
 
         private void FadeInStart()
         {
-            if (!m_useAnimatorFadeIn || !AnimatorFader.Instance)
+            if (!m_useAnimatorFadeIn || !ScreenFader.Instance)
             {
                 FadeInEnd();
                 return;
             }
 
-            AnimatorFader.Instance.FadeIn(FadeInEnd);
+            ScreenFader.Instance.FadeIn(FadeInEnd);
         }
 
         public override void Tick(float deltaTime)
@@ -77,13 +77,13 @@ namespace NobunAtelier
         {
             OnFadeInDone?.Invoke();
 
-            if (!m_useAnimatorFadeOut || !AnimatorFader.Instance)
+            if (!m_useAnimatorFadeOut || !ScreenFader.Instance)
             {
                 FadeOutEnd();
             }
             else
             {
-                AnimatorFader.Instance.FadeOut(FadeOutEnd);
+                ScreenFader.Instance.FadeOut(FadeOutEnd);
             }
 
             if (m_nextStateAfterFade == null)

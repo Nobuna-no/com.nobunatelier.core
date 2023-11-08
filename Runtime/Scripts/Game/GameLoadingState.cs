@@ -59,7 +59,7 @@ namespace NobunAtelier
         {
             base.Enter();
 
-            if (!AnimatorFader.Instance)
+            if (!ScreenFader.Instance)
             {
                 // Debug.Log("No AnimatorFader found - no fade in animation played - invoking OnFadeInDone now.");
                 FadeInEnd();
@@ -68,13 +68,13 @@ namespace NobunAtelier
 
             if (m_useAnimatorFadeIn)
             {
-                AnimatorFader.Instance.FadeIn(FadeInEnd);
+                ScreenFader.Instance.FadeIn(FadeInEnd);
             }
             else
             {
                 if (m_useAnimatorInstantFill)
                 {
-                    AnimatorFader.Instance.Fill();
+                    ScreenFader.Instance.Fill();
                 }
 
                 FadeInEnd();
@@ -170,13 +170,13 @@ namespace NobunAtelier
                 OnScenesUnloaded?.Invoke();
             }
 
-            if (!m_useAnimatorFadeOut || !AnimatorFader.Instance)
+            if (!m_useAnimatorFadeOut || !ScreenFader.Instance)
             {
                 FadeOutEnd();
             }
             else
             {
-                AnimatorFader.Instance.FadeOut(FadeOutEnd);
+                ScreenFader.Instance.FadeOut(FadeOutEnd);
             }
 
             if (m_nextStateAfterScenesWork == null)
