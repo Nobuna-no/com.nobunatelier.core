@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 6024512173147486874}
   - component: {fileID: 2936063551025828415}
   m_Layer: 0
-  m_Name: img-fader
+  m_Name: img-screen-fader
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -114,17 +114,50 @@ MonoBehaviour:
   m_destroyGameObjectIfAlreadyExist: 1
   m_dontDestroyOnLoad: 0
   m_startFilled: 1
-  m_filledTrigger: Fill
-  m_fadeInAnimation: {fileID: 7400000, guid: 2c545b7f43e36834e9a79079805bf7d3, type: 2}
-  m_fadeInTrigger: FadeIn
-  m_fadeOutAnimation: {fileID: 7400000, guid: a087e4cbd53384a499bf79c783a3fb08, type: 2}
-  m_fadeOutTrigger: FadeOut
+  m_fillStateName: cross-fade-fill
+  m_clearStateName: cross-fade-fill
+  m_audioStartDelayInSecond: 0.2
+  m_FillAudioSource: {fileID: 0}
+  m_fadeInAudioSource: {fileID: 0}
+  m_fadeOutAudioSource: {fileID: 0}
+  OnFadeInBegin:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7797899222243317376}
+        m_TargetAssemblyTypeName: UnityEngine.UI.Graphic, UnityEngine.UI
+        m_MethodName: set_raycastTarget
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
+        m_CallState: 2
   OnFadeInEnd:
+    m_PersistentCalls:
+      m_Calls: []
+  OnFadeOutBegin:
     m_PersistentCalls:
       m_Calls: []
   OnFadeOutEnd:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 7797899222243317376}
+        m_TargetAssemblyTypeName: UnityEngine.UI.Graphic, UnityEngine.UI
+        m_MethodName: set_raycastTarget
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_debugCrossFadeDuration: 1
+  m_logDebug: 0
 --- !u!1 &6255426319550613286
 GameObject:
   m_ObjectHideFlags: 0
@@ -199,7 +232,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UiScaleMode: 1
+  m_UiScaleMode: 0
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 1920, y: 1080}

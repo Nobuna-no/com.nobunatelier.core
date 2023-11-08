@@ -17,21 +17,8 @@ namespace NobunAtelier
         [Header("Fader")]
         [SerializeField] private bool m_startFilled = false;
 
-        [SerializeField, AnimatorParam("m_animator")] private string m_filledTrigger;
-        [SerializeField, AnimatorParam("m_animator")] private string m_clearTrigger;
-
-        [SerializeField] private AnimationClip m_fadeInAnimation;
-        [SerializeField, AnimatorParam("m_animator")] private string m_fadeInTrigger;
-        [SerializeField] private AnimationClip m_fadeOutAnimation;
-        [SerializeField, AnimatorParam("m_animator")] private string m_fadeOutTrigger;
-
-        [Header("Experimental")]
-        [SerializeField] private bool m_useExperimentalCrossFade = false;
-        [SerializeField, ShowIf("m_useExperimentalCrossFade")] private string m_fillStateName;
-        [SerializeField, ShowIf("m_useExperimentalCrossFade")] private string m_clearStateName;
-        [Tooltip("Can be use to set the Image RaycastTarget to true to block UI on fade start. Don't forget to do the opposite in OnFadeOutEnd")]
-        [ShowIf("m_useExperimentalCrossFade")] public UnityEvent OnFadeInBegin;
-        [ShowIf("m_useExperimentalCrossFade")] public UnityEvent OnFadeOutBegin;
+        [SerializeField] private string m_fillStateName;
+        [SerializeField] private string m_clearStateName;
 
         [Header("Audio")]
         [SerializeField] private float m_audioStartDelayInSecond = 0.2f;
@@ -41,19 +28,29 @@ namespace NobunAtelier
         [SerializeField] private AudioSource m_fadeOutAudioSource;
 
         [Header("Events")]
-        public UnityEvent OnFadeInEnd;
-        public UnityEvent OnFadeOutEnd;
+        [Tooltip("Can be use to set the Image RaycastTarget to true to block UI on fade start. Don't forget to do the opposite in OnFadeOutEnd")]
+        public UnityEvent OnFadeInBegin;
 
+        public UnityEvent OnFadeInEnd;
+        public UnityEvent OnFadeOutBegin;
+        public UnityEvent OnFadeOutEnd;
         public bool IsFadeIn { get; private set; } = false;
 
         private Animator m_animator;
         private float m_currentTime = 0f;
-        private bool m_isCrossFading = false;
+        private int m_fillStateHash;
+        private int m_clearStateHash;
+        private bool m_isCrossFadingIn = false;
 
 #if UNITY_EDITOR
+
         [Header("Debug")]
         [SerializeField]
+        private float m_debugCrossFadeDuration = 1f;
+
+        [SerializeField]
         private bool m_logDebug = false;
+
 #endif
 
         protected override ScreenFader GetInstance()
@@ -70,21 +67,15 @@ namespace NobunAtelier
                 Debug.Log($"[{Time.frameCount}] - Filling");
             }
 #endif
-            if (!m_animator || m_filledTrigger.Length == 0)
+            if (!m_animator)
             {
                 return;
             }
 
-            if (m_useExperimentalCrossFade)
-            {
-                m_animator.CrossFadeInFixedTime(m_fillStateName, 0, 0);
-            }
-            else
-            {
-                m_animator.SetTrigger(m_filledTrigger);
-            }
+            m_animator.CrossFadeInFixedTime(m_fillStateName, 0, 0);
 
             IsFadeIn = true;
+            m_isCrossFadingIn = true;
 
             if (m_FillAudioSource)
             {
@@ -102,19 +93,12 @@ namespace NobunAtelier
             }
 #endif
 
-            if (!m_animator || m_clearTrigger.Length == 0)
+            if (!m_animator)
             {
                 return;
             }
 
-            if (m_useExperimentalCrossFade)
-            {
-                m_animator.CrossFadeInFixedTime(m_clearStateName, 0, 0);
-            }
-            else
-            {
-                m_animator.SetTrigger(m_clearTrigger);
-            }
+            m_animator.CrossFadeInFixedTime(m_clearStateName, 0, 0);
 
             IsFadeIn = false;
         }
@@ -124,11 +108,15 @@ namespace NobunAtelier
             m_animator.speed = 1f;
         }
 
-        [Button]
-        public void FadeIn()
+#if UNITY_EDITOR
+
+        [Button(enabledMode: EButtonEnableMode.Playmode)]
+        private void FadeIn()
         {
-            FadeIn(null);
+            FadeIn(m_debugCrossFadeDuration, null);
         }
+
+#endif
 
         public void FadeIn(UnityAction actionToRaiseOnEnd = null)
         {
@@ -144,16 +132,23 @@ namespace NobunAtelier
             }
 #endif
 
-            if (!m_animator || m_fadeInTrigger.Length == 0)
+            if (!m_animator)
             {
                 return;
             }
 
-            if (m_isCrossFading)
+            if (m_currentTime != -1)
             {
-                // force finish previous fade in and start new one.
-                FadeInEnd();
-                IsFadeIn = false;
+                if (m_isCrossFadingIn)
+                {
+                    // force finish previous fade in and start new one.
+                    FadeInEnd();
+                    IsFadeIn = false;
+                }
+                else
+                {
+                    FadeOutEnd();
+                }
             }
 
             if (IsFadeIn)
@@ -167,17 +162,10 @@ namespace NobunAtelier
                 m_fadeInAudioSource.PlayScheduled(AudioSettings.dspTime + m_audioStartDelayInSecond);
             }
 
-            if (m_useExperimentalCrossFade)
-            {
-                m_animator.CrossFadeInFixedTime(m_fillStateName, duration, 0);
-                m_currentTime = duration;
-                m_isCrossFading = true;
-                OnFadeInBegin?.Invoke();
-            }
-            else
-            {
-                m_animator.SetTrigger(m_fadeInTrigger);
-            }
+            m_animator.CrossFadeInFixedTime(m_fillStateHash, duration, 0);
+            m_currentTime = duration;
+            m_isCrossFadingIn = true;
+            OnFadeInBegin?.Invoke();
 
             if (actionToRaiseOnEnd == null)
             {
@@ -187,11 +175,15 @@ namespace NobunAtelier
             OnFadeInEnd.AddListener(actionToRaiseOnEnd);
         }
 
-        [Button]
-        public void FadeOut()
+#if UNITY_EDITOR
+
+        [Button(enabledMode: EButtonEnableMode.Playmode)]
+        private void FadeOut()
         {
-            FadeOut(null);
+            FadeOut(m_debugCrossFadeDuration, null);
         }
+
+#endif
 
         public void FadeOut(UnityAction actionToRaiseOnEnd = null)
         {
@@ -207,16 +199,23 @@ namespace NobunAtelier
             }
 #endif
 
-            if (!m_animator || m_fadeOutTrigger.Length == 0)
+            if (!m_animator)
             {
                 return;
             }
 
-            if (!m_isCrossFading)
+            if (m_currentTime != -1)
             {
-                // force finish previous fade out and start new one.
-                FadeOutEnd();
-                IsFadeIn = true;
+                if (!m_isCrossFadingIn)
+                {
+                    // force finish previous fade out and start new one.
+                    FadeOutEnd();
+                    IsFadeIn = true;
+                }
+                else
+                {
+                    FadeInEnd();
+                }
             }
 
             if (!IsFadeIn)
@@ -230,17 +229,10 @@ namespace NobunAtelier
                 m_fadeOutAudioSource.PlayScheduled(AudioSettings.dspTime + m_audioStartDelayInSecond);
             }
 
-            if (m_useExperimentalCrossFade)
-            {
-                m_animator.CrossFadeInFixedTime(m_clearStateName, duration, 0);
-                m_currentTime = duration;
-                m_isCrossFading = false;
-                OnFadeOutBegin?.Invoke();
-            }
-            else
-            {
-                m_animator.SetTrigger(m_fadeOutTrigger);
-            }
+            m_animator.CrossFadeInFixedTime(m_clearStateHash, duration, 0);
+            m_currentTime = duration;
+            m_isCrossFadingIn = false;
+            OnFadeOutBegin?.Invoke();
 
             if (actionToRaiseOnEnd == null)
             {
@@ -255,8 +247,11 @@ namespace NobunAtelier
             base.Awake();
 
             m_animator = GetComponent<Animator>();
-            // AddAnimationEvent("FadeInEnd", m_fadeInAnimation.name);
-            // AddAnimationEvent("FadeOutEnd", m_fadeOutAnimation.name);
+            m_fillStateHash = Animator.StringToHash(m_fillStateName);
+            m_clearStateHash = Animator.StringToHash(m_clearStateName);
+
+            Debug.Assert(m_animator.HasState(0, m_fillStateHash), $"{this.GetType().Name}: Cannot find valid Fill state name '{m_fillStateName}' in AnimatorController.");
+            Debug.Assert(m_animator.HasState(0, m_clearStateHash), $"{this.GetType().Name}: Cannot find valid Fill state name '{m_clearStateName}' in AnimatorController.");
         }
 
         private void Start()
@@ -279,7 +274,7 @@ namespace NobunAtelier
             {
                 m_currentTime = -1f;
 
-                if (m_isCrossFading)
+                if (m_isCrossFadingIn)
                 {
                     FadeInEnd();
                 }
@@ -293,32 +288,6 @@ namespace NobunAtelier
         private void OnValidate()
         {
             m_animator = GetComponent<Animator>();
-        }
-
-        private void AddAnimationEvent(string evtFunctionName, string targetAnimationName/*, out AnimationClip targetAnimationClip, out AnimationEvent targetAnimEvent*/)
-        {
-            AnimationEvent targetAnimEvent = null;
-            AnimationClip targetAnimationClip = null;
-
-            var clips = m_animator.runtimeAnimatorController.animationClips;
-            foreach (var clip in clips)
-            {
-                if (clip.name != targetAnimationName)
-                {
-                    continue;
-                }
-
-                targetAnimationClip = clip;
-
-                targetAnimEvent = new AnimationEvent();
-                // Add event
-                targetAnimEvent.time = clip.length;
-                targetAnimEvent.functionName = evtFunctionName;
-                targetAnimationClip.AddEvent(targetAnimEvent);
-                return;
-            }
-
-            Debug.LogError($"No fade in animation clip named {m_fadeInAnimation.name} found in the animator.");
         }
 
         private void FadeInEnd()
@@ -336,3 +305,30 @@ namespace NobunAtelier
         }
     }
 }
+
+// Legacy code but might be handy in the future
+//private void AddAnimationEvent(string evtFunctionName, string targetAnimationName/*, out AnimationClip targetAnimationClip, out AnimationEvent targetAnimEvent*/)
+//{
+//    AnimationEvent targetAnimEvent = null;
+//    AnimationClip targetAnimationClip = null;
+
+//    var clips = m_animator.runtimeAnimatorController.animationClips;
+//    foreach (var clip in clips)
+//    {
+//        if (clip.name != targetAnimationName)
+//        {
+//            continue;
+//        }
+
+//        targetAnimationClip = clip;
+
+//        targetAnimEvent = new AnimationEvent();
+//        // Add event
+//        targetAnimEvent.time = clip.length;
+//        targetAnimEvent.functionName = evtFunctionName;
+//        targetAnimationClip.AddEvent(targetAnimEvent);
+//        return;
+//    }
+
+//    Debug.LogError($"No fade in animation clip named {m_fadeInAnimation.name} found in the animator.");
+//}
