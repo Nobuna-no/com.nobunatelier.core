@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Audio;
-using UnityEngine.InputSystem.HID;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
 // What is the goal of this Manager?
@@ -36,6 +35,10 @@ namespace NobunAtelier
 
         [SerializeField]
         private AnimationCurve m_audioFadeOutCurve = AnimationCurve.EaseInOut(0, 1, 1, 0);
+
+        [Tooltip("Should a warning message be log when trying to play a resource that have not been loaded yet?")]
+        [SerializeField]
+        private bool m_enableHotLoadingWarning = false;
 
         [Header("Audio Snapshots")]
         [SerializeField]
@@ -103,7 +106,9 @@ namespace NobunAtelier
         {
             Debug.Assert(audioDefinition);
 
-            if (m_audioHandlesDictionary.ContainsKey(audioDefinition))
+            bool isAudioHandleRegistered = m_audioHandlesDictionary.ContainsKey(audioDefinition);
+            bool isAudioHandleCreated = m_audioHandlesDictionary.ContainsKey(audioDefinition) && m_audioHandlesDictionary[audioDefinition] != null && m_audioHandlesDictionary[audioDefinition].audioSource != null;
+            if (isAudioHandleRegistered  && isAudioHandleCreated)
             {
                 if (m_audioHandlesDictionary[audioDefinition].IsLoading)
                 {
@@ -151,7 +156,14 @@ namespace NobunAtelier
             }
 
             audioHandle.Load();
-            m_audioHandlesDictionary.Add(audioDefinition, audioHandle);
+            if (m_audioHandlesDictionary.ContainsKey(audioDefinition))
+            {
+                m_audioHandlesDictionary[audioDefinition] = audioHandle;
+            }
+            else
+            {
+                m_audioHandlesDictionary.Add(audioDefinition, audioHandle);
+            }
         }
 
         public void LoadAudio(AudioStitcherDefinition audioStitcherDefinition)
@@ -201,11 +213,7 @@ namespace NobunAtelier
 
             if (!m_audioHandlesDictionary.ContainsKey(audioDefinition))
             {
-                if (m_logDebug)
-                {
-                    Debug.LogWarning($"{this.name}: {audioDefinition.name} hasn't been loaded yet. Loading now, this might affect the performance." +
-                     $"Prefer calling LoadAudio first.");
-                }
+                LogHotLoadingWarning(audioDefinition.name);
                 LoadAudio(audioDefinition, true);
             }
 
@@ -224,11 +232,7 @@ namespace NobunAtelier
 
             if (!m_audioHandlesDictionary.ContainsKey(audioDefinition))
             {
-                if (m_logDebug)
-                {
-                    Debug.LogWarning($"{this.name}: {audioDefinition.name} hasn't been loaded yet. Loading now, this might affect the performance." +
-                     $"Prefer calling LoadAudio first.");
-                }
+                LogHotLoadingWarning(audioDefinition.name);
                 LoadAudio(audioDefinition, true);
             }
 
@@ -264,8 +268,7 @@ namespace NobunAtelier
 
             if (!m_audioHandlesDictionary.ContainsKey(audioDefinition))
             {
-                Debug.LogWarning($"{this.name}: {audioDefinition.name} hasn't been loaded yet. Loading now, this might affect the performance." +
-                    $"Prefer calling LoadAudio first.");
+                LogHotLoadingWarning(audioDefinition.name);
                 LoadAudio(audioDefinition);
             }
 
@@ -290,8 +293,7 @@ namespace NobunAtelier
                 var audioDefinition = audioStitcherDefinition.StitchedAudios[i].AudioDefinition;
                 if (!m_audioHandlesDictionary.ContainsKey(audioDefinition))
                 {
-                    Debug.LogWarning($"{this.name}: {audioDefinition.name} hasn't been loaded yet. Loading now, this might affect the performance." +
-                        $"Prefer calling LoadAudio first.");
+                    LogHotLoadingWarning(audioDefinition.name);
                     LoadAudio(audioDefinition);
                 }
             }
@@ -383,6 +385,14 @@ namespace NobunAtelier
             }
 
             StartCoroutine(AudioHandle_FadeOutAndStopAudio_Coroutine(m_audioHandlesDictionary[audioDefinition]));
+        }
+
+        public void FadeOutAndStopAllAudioResources()
+        {
+            foreach (var audio in m_audioHandlesDictionary.Keys)
+            {
+                FadeOutAndStopAudio(audio);
+            }
         }
 
         // PAUSE AUDIO VOLUME
@@ -590,6 +600,11 @@ namespace NobunAtelier
             }
 
             audioHandle.Stop();
+
+            if (audioHandle.ReleaseResourceOnStop)
+            {
+                AudioHandle_ReleaseAudio(audioHandle);
+            }
         }
 
         private IEnumerator AudioHandle_PauseAudio_Coroutine(float transitionTime)
@@ -630,6 +645,8 @@ namespace NobunAtelier
             audioHandle.StopAndReleaseResource();
 
             Destroy(audioHandle.audioSource.gameObject);
+
+            audioHandle.audioSource = null;
         }
 
         private IEnumerator AudioHandle_PlayStitchedAudio_Coroutine(AudioStitcherDefinition audioStitcherDefinition)
@@ -670,6 +687,15 @@ namespace NobunAtelier
             }
         }
 
+        private void LogHotLoadingWarning(string resourceName)
+        {
+            if (m_enableHotLoadingWarning)
+            {
+                Debug.LogWarning($"{this.name}: {resourceName} hasn't been loaded yet. Loading now, this might affect the performance." +
+                 $"Prefer calling LoadAudio first.");
+            }
+        }
+
         public class AudioHandle
         {
             public AssetReference audioAssetReference;
@@ -683,6 +709,7 @@ namespace NobunAtelier
             public bool IsResourceReleased => !resourceHandle.IsValid();
             public bool IsPlaying => audioSource.isPlaying;
             public bool IsLoading => resourceHandle.IsValid();
+            public bool ReleaseResourceOnStop { get; private set; }
 
             public AudioHandle(AudioDefinition audioDefinition, AudioSource audioSource)
             {
@@ -693,6 +720,7 @@ namespace NobunAtelier
                 this.originalAudioVolume = audioDefinition.Volume;
                 this.audioSource.volume = audioDefinition.Volume;
                 this.audioSource.outputAudioMixerGroup = audioDefinition.MixerGroup;
+                this.ReleaseResourceOnStop = audioDefinition.ReleaseResourceOnStop;
             }
 
             public void Load()
@@ -770,9 +798,16 @@ namespace NobunAtelier
 
             public void Stop()
             {
-                IsFadingOut = false;
-                HasBeenStopped = true;
-                this.audioSource.Stop();
+                if (ReleaseResourceOnStop)
+                {
+                    StopAndReleaseResource();
+                }
+                else
+                {
+                    IsFadingOut = false;
+                    HasBeenStopped = true;
+                    this.audioSource.Stop();
+                }
             }
 
             public void StartFadeOut()

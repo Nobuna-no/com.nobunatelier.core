@@ -33,5 +33,10 @@ namespace NobunAtelier
 
         [SerializeField]
         private bool m_loop = false;
+
+        public bool ReleaseResourceOnStop => m_releaseResourceOnStop;
+
+        [SerializeField, Tooltip("Should resource be unloaded from memory when stopped?")]
+        private bool m_releaseResourceOnStop = true;
     }
 }
