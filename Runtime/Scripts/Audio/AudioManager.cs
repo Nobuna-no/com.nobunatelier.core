@@ -107,8 +107,8 @@ namespace NobunAtelier
             Debug.Assert(audioDefinition);
 
             bool isAudioHandleRegistered = m_audioHandlesDictionary.ContainsKey(audioDefinition);
-            bool isAudioHandleCreated = m_audioHandlesDictionary.ContainsKey(audioDefinition) && m_audioHandlesDictionary[audioDefinition] != null && m_audioHandlesDictionary[audioDefinition].audioSource != null;
-            if (isAudioHandleRegistered  && isAudioHandleCreated)
+            bool isAudioHandleCreated = isAudioHandleRegistered && m_audioHandlesDictionary[audioDefinition] != null && m_audioHandlesDictionary[audioDefinition].audioSource != null;
+            if (isAudioHandleCreated)
             {
                 if (m_audioHandlesDictionary[audioDefinition].IsLoading)
                 {
@@ -156,7 +156,7 @@ namespace NobunAtelier
             }
 
             audioHandle.Load();
-            if (m_audioHandlesDictionary.ContainsKey(audioDefinition))
+            if (isAudioHandleRegistered)
             {
                 m_audioHandlesDictionary[audioDefinition] = audioHandle;
             }
@@ -537,6 +537,14 @@ namespace NobunAtelier
             {
                 audioHandle.Play(0.0);
             }
+
+            // wait for the one shot to end before releasing resource
+            while (audioHandle.IsPlaying)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            audioHandle.StopAndReleaseResource();
         }
 
         private IEnumerator AudioHandle_FadeInAndPlayAudio_Coroutine(AudioHandle audioHandle, bool canStartDelayed)
@@ -636,17 +644,22 @@ namespace NobunAtelier
         private void AudioHandle_ReleaseAudio(AudioHandle audioHandle)
         {
             // If resource already released (or releasing), no more work needed.
-            if (audioHandle.IsResourceReleased || audioHandle.IsFadingOut)
-            {
-                return;
-            }
+            // if (audioHandle.IsResourceReleased || audioHandle.IsFadingOut)
+            // {
+            //     return;
+            // }
 
-            // If audio has been stopped already, only need to release resource.
-            audioHandle.StopAndReleaseResource();
+            if (!audioHandle.IsResourceReleased)
+            {
+                // If audio has been stopped already, only need to release resource.
+                audioHandle.StopAndReleaseResource();
+            }
 
             Destroy(audioHandle.audioSource.gameObject);
 
             audioHandle.audioSource = null;
+
+            m_audioHandlesDictionary.Remove(audioHandle.Definition);
         }
 
         private IEnumerator AudioHandle_PlayStitchedAudio_Coroutine(AudioStitcherDefinition audioStitcherDefinition)
@@ -703,6 +716,7 @@ namespace NobunAtelier
             public AsyncOperationHandle<AudioResource> resourceHandle;
             private float originalAudioVolume = 1.0f;
 
+            public AudioDefinition Definition { get; private set; }
             public double ClipLength => audioSource.clip.length;
             public bool HasBeenStopped { get; private set; } = false;
             public bool IsFadingOut { get; private set; } = false;
@@ -713,6 +727,7 @@ namespace NobunAtelier
 
             public AudioHandle(AudioDefinition audioDefinition, AudioSource audioSource)
             {
+                this.Definition = audioDefinition;
                 this.audioAssetReference = audioDefinition.AudioAssetReference;
                 this.audioSource = audioSource;
                 this.audioSource.playOnAwake = false;
@@ -774,6 +789,11 @@ namespace NobunAtelier
             {
                 Debug.Assert(resourceHandle.IsValid(), $"{audioSource.name} resource is not initialized yet.");
                 return resourceHandle.IsDone;
+            }
+
+            public bool NeedInitialization()
+            {
+                return audioSource == null;
             }
 
             public void SetAudioSourceVolume(float volume)
