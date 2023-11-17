@@ -1,20 +1,29 @@
 using UnityEngine;
 
 public abstract class SingletonManager<T> : MonoBehaviour
-    where T: MonoBehaviour
+    where T : MonoBehaviour
 {
     public static T Instance { get; private set; }
 
-    protected virtual void Constructor() { }
+    protected virtual void Constructor()
+    { }
+
     protected abstract T GetInstance();
 
     [Header("Singleton")]
     [SerializeField]
     private bool m_destroyGameObjectIfAlreadyExist = true;
+
     [SerializeField]
     private bool m_dontDestroyOnLoad = false;
 
+    public static bool IsInstanceValid()
+    {
+        return Instance != null;
+    }
+
 #if UNITY_EDITOR
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void Init()
     {
@@ -24,6 +33,7 @@ public abstract class SingletonManager<T> : MonoBehaviour
             Instance = null;
         }
     }
+
 #endif
 
     protected virtual void Awake()
@@ -42,7 +52,3 @@ public abstract class SingletonManager<T> : MonoBehaviour
         }
     }
 }
-
-
-
-

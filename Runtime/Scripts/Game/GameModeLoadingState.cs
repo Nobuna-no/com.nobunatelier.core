@@ -58,7 +58,7 @@ namespace NobunAtelier
                 return;
             }
 
-            ScreenFader.Instance.FadeIn(FadeInEnd);
+            ScreenFader.FadeIn(FadeInEnd);
         }
 
         public override void Tick(float deltaTime)
@@ -83,7 +83,7 @@ namespace NobunAtelier
             }
             else
             {
-                ScreenFader.Instance.FadeOut(FadeOutEnd);
+                ScreenFader.FadeOut(FadeOutEnd);
             }
 
             if (m_nextStateAfterFade == null)

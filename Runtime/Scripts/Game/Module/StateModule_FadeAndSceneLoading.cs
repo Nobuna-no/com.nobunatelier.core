@@ -86,7 +86,7 @@ namespace NobunAtelier
         public void StartFading()
         {
             m_fadeBeginTime = Time.realtimeSinceStartup;
-            if (!ScreenFader.Instance)
+            if (!ScreenFader.IsInstanceValid())
             {
                 FadeInEnd();
                 return;
@@ -95,11 +95,11 @@ namespace NobunAtelier
             switch (m_fadingInMode)
             {
                 case FadingMode.Normal:
-                    ScreenFader.Instance.FadeIn(m_fadeInDurationInSecond, FadeInEnd);
+                    ScreenFader.FadeIn(m_fadeInDurationInSecond, FadeInEnd);
                     break;
 
                 case FadingMode.Instant:
-                    ScreenFader.Instance.Fill();
+                    ScreenFader.Fill();
                     FadeInEnd();
                     break;
 
@@ -206,16 +206,14 @@ namespace NobunAtelier
             switch (m_fadingOutMode)
             {
                 case FadingMode.Normal:
-                    ScreenFader.Instance.FadeOut(m_fadeOutDurationInSecond, FadeOutEnd);
+                    ScreenFader.FadeOut(m_fadeOutDurationInSecond);
                     break;
 
                 case FadingMode.Instant:
-                    ScreenFader.Instance.Clear();
-                    FadeOutEnd();
+                    ScreenFader.Clear();
                     break;
 
                 default:
-                    FadeOutEnd();
                     break;
             }
 
@@ -227,9 +225,6 @@ namespace NobunAtelier
 
         private void FadeInEnd()
         {
-            ScreenFader.Instance.ResetFaderDuration();
-            // OnFadeInDone?.Invoke();
-
             bool isDoingSceneWork = LoadScenes();
             isDoingSceneWork |= UnloadScenes();
 
@@ -247,12 +242,6 @@ namespace NobunAtelier
             {
                 OnAllScenesLoaded();
             }
-        }
-
-        private void FadeOutEnd()
-        {
-            ScreenFader.Instance.ResetFaderDuration();
-            // OnFadeOutDone?.Invoke();
         }
 
         private IEnumerator FadeMinimumDelay_Coroutine(float delay)
