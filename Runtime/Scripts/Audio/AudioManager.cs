@@ -314,11 +314,11 @@ namespace NobunAtelier
             var audioStitcher = audioResourceDefinition as AudioStitcherDefinition;
             if (audioStitcher)
             {
-                for (int i = 0, c = audioStitcher.StitchedAudios.Length; i < c; ++i)
-                {
-                    FadeInAndPlayAudio(audioStitcher);
-                }
-
+                //for (int i = 0, c = audioStitcher.StitchedAudios.Length; i < c; ++i)
+                //{
+                // Audio stitcher doesn't support fade in yet.
+                PlayAudio(audioStitcher);
+                //}
                 return;
             }
 
