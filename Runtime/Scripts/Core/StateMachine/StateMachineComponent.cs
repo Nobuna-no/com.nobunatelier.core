@@ -14,7 +14,6 @@ namespace NobunAtelier
         public T CurrentStateDefinition => m_activeStateDefinition;
         public bool IsPaused { get; set; } = false;
 
-        [Header("State Machine")]
 #if UNITY_EDITOR
         [SerializeField, ShowIf("IsMainStateMachine")]
         private TCollection m_referenceStateCollection;
@@ -78,6 +77,7 @@ namespace NobunAtelier
         }
 #endif
 
+        [Header("State Machine")]
         [SerializeField]
         private T m_initialStateDefinition;
         [SerializeField, ShowIf("IsMainStateMachine")]
