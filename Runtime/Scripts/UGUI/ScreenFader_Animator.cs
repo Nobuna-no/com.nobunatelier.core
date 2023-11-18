@@ -4,7 +4,7 @@ using UnityEngine.Events;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Utils/Screen Fader/Animation")]
+    [AddComponentMenu("NobunAtelier/Utils/Screen Fader: Animation")]
     [RequireComponent(typeof(Animator))]
     public class ScreenFader_Animation : ScreenFader
     {

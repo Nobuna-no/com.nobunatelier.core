@@ -1,11 +1,13 @@
 using NaughtyAttributes;
+using System.ComponentModel;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Utils/Screen Fader/CrossFade")]
-    [RequireComponent(typeof(Animator))]
+    [AddComponentMenu("NobunAtelier/Utils/Screen Fader: CrossFade")]
+    [RequireComponent(typeof(Animator), typeof(Image))]
     public class ScreenFader_CrossFade : ScreenFader
     {
         [Header("Screen Fader: CrossFade")]
@@ -18,7 +20,7 @@ namespace NobunAtelier
         private int m_fillStateHash;
         private int m_clearStateHash;
         private bool m_isCrossFadingIn = false;
-
+        private Image m_image;
 #if UNITY_EDITOR
 
         [Header("Cross Fade Debug")]
@@ -30,6 +32,8 @@ namespace NobunAtelier
         {
             base.Awake();
 
+            m_image = GetComponent<Image>();
+            m_image.enabled = false;
             m_animator = GetComponent<Animator>();
             m_fillStateHash = Animator.StringToHash(m_fillStateName);
             m_clearStateHash = Animator.StringToHash(m_clearStateName);
@@ -50,6 +54,7 @@ namespace NobunAtelier
             m_animator.CrossFadeInFixedTime(m_fillStateName, 0, 0);
 
             m_isCrossFadingIn = true;
+            m_image.enabled = true;
         }
 
         // Instantly fill the screen
@@ -65,6 +70,7 @@ namespace NobunAtelier
             m_animator.CrossFadeInFixedTime(m_clearStateName, 0, 0);
 
             m_isFadeIn = false;
+            m_image.enabled = false;
         }
 
 #if UNITY_EDITOR
@@ -83,6 +89,8 @@ namespace NobunAtelier
             {
                 return;
             }
+
+            m_image.enabled = true;
 
             if (m_currentTime != -1)
             {
@@ -155,6 +163,17 @@ namespace NobunAtelier
             base.FadeOutImpl(duration, actionToRaiseOnEnd);
         }
 
+        protected override void FadeInEnd()
+        {
+            base.FadeInEnd();
+        }
+
+        protected override void FadeOutEnd()
+        {
+            base.FadeOutEnd();
+            m_image.enabled = false;
+        }
+
         private void FixedUpdate()
         {
             if (m_currentTime == -1)
@@ -176,11 +195,6 @@ namespace NobunAtelier
                     FadeOutEnd();
                 }
             }
-        }
-
-        private void OnValidate()
-        {
-            m_animator = GetComponent<Animator>();
         }
     }
 }
