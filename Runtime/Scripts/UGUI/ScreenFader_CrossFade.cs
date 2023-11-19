@@ -163,11 +163,6 @@ namespace NobunAtelier
             base.FadeOutImpl(duration, actionToRaiseOnEnd);
         }
 
-        protected override void FadeInEnd()
-        {
-            base.FadeInEnd();
-        }
-
         protected override void FadeOutEnd()
         {
             base.FadeOutEnd();
