@@ -299,7 +299,7 @@ GameObject:
   - component: {fileID: 7645365655469923353}
   - component: {fileID: 2966304478422877836}
   m_Layer: 0
-  m_Name: state-init
+  m_Name: '[ Game State Machine ]'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
