@@ -11,6 +11,7 @@ namespace NobunAtelier
     {
         [SerializeField]
         private bool m_ForwardZ = true;
+
         [SerializeField]
         private bool m_useAttackerPositionInsteadOfImpactPosition = false;
 
@@ -18,6 +19,7 @@ namespace NobunAtelier
         private HealthBehaviour m_healthComponent;
         private Vector3 m_destination = Vector3.zero;
         private Vector3 m_origin = Vector3.zero;
+
         [SerializeField, ReadOnly, Foldout("Debug")]
         private float m_currentTime = 0;
 

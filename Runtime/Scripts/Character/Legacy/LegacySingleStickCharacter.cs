@@ -55,7 +55,7 @@ namespace NobunAtelier
 
         public override void Move(Vector3 direction)
         {
-            m_lastMoveVector = direction.normalized;;
+            m_lastMoveVector = direction.normalized; ;
         }
 
         public override void ProceduralMove(Vector3 movement)

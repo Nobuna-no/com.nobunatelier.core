@@ -7,6 +7,7 @@ namespace NobunAtelier
     {
         [SerializeField]
         private float m_jumpHeight = 20;
+
         [SerializeField]
         private int m_maxJumpCount = 1;
 

@@ -10,6 +10,7 @@ namespace NobunAtelier
     {
         [Header("Screen Fader: Animator")]
         [SerializeField, AnimatorParam("m_animator")] private string m_filledTrigger;
+
         [SerializeField, AnimatorParam("m_animator")] private string m_clearTrigger;
 
         [SerializeField] private AnimationClip m_fadeInAnimation;

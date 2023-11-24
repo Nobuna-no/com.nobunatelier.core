@@ -101,7 +101,6 @@ namespace NobunAtelier
                 return slideDir;
             }
 
-
             return currentVel;
         }
     }

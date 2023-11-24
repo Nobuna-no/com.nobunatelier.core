@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-
 namespace NobunAtelier
 {
-
     public abstract class PoolManager<T> : MonoBehaviour
         where T : class
     {
@@ -18,7 +16,6 @@ namespace NobunAtelier
         //    public int reserveSize;
         //}
 
-        
         //protected abstract T GetInstance();
 
         // Parent object of where the instantiate objects are placed.

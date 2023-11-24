@@ -4,8 +4,10 @@ using UnityEngine.SceneManagement;
 using NaughtyAttributes;
 
 #if UNITY_EDITOR
+
 using UnityEditor.SearchService;
 using UnityEditor.SceneManagement;
+
 #endif
 
 namespace NobunAtelier
@@ -15,6 +17,7 @@ namespace NobunAtelier
         [Header("Level Manager")]
         [SerializeField, Scene]
         private string m_persistentScene;
+
         public StringEvent OnSceneLoaded;
         public StringEvent OnSceneUnloaded;
 
@@ -71,6 +74,7 @@ namespace NobunAtelier
         }
 
 #if UNITY_EDITOR
+
         private void Start()
         {
             PlaymodeRemoveScenesButPersistent();
@@ -135,6 +139,7 @@ namespace NobunAtelier
                 }
             }
         }
+
 #endif
 
         private class AsyncSceneLoadingData
@@ -143,6 +148,7 @@ namespace NobunAtelier
             public bool IsLoading { get; private set; }
             private AsyncOperation m_asyncOp;
             private bool m_resourcesReleased = false;
+
             public AsyncSceneLoadingData(string sceneName, LoadSceneMode loadSceneMode)
             {
                 SceneName = sceneName;

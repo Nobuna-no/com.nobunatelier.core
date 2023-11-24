@@ -19,6 +19,7 @@ namespace NobunAtelier
 
         [SerializeField]
         private bool m_ForwardZ = true;
+
         [SerializeField]
         private bool m_useAttackerPositionInsteadOfImpactPosition = false;
 

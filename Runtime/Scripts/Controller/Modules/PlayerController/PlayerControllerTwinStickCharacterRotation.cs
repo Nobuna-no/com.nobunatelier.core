@@ -8,6 +8,7 @@ namespace NobunAtelier
     {
         [SerializeField]
         private Camera m_camera;
+
         [SerializeField]
         private string m_lookActionName = "Look";
 

@@ -1,11 +1,9 @@
-using UnityEngine;
-using UnityEngine.InputSystem;
-
 namespace NobunAtelier
 {
     public class AIPlayer : GameModeParticipant
     {
         private LegacyAIControllerBase m_aiController;
+
         public LegacyAIControllerBase AIController
         {
             get

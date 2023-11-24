@@ -9,6 +9,7 @@ namespace NobunAtelier
 
         [SerializeField]
         private PoolableBehaviour m_poolablePrefab;
+
         [SerializeField]
         private int m_reserveSize = 10;
     }

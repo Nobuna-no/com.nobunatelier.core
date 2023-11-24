@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace NobunAtelier
@@ -17,11 +15,12 @@ namespace NobunAtelier
         private StateDefinition m_requiredPriorState;
 
 #if UNITY_EDITOR
+
         public void Editor_SetDescription(string description)
         {
             m_description = description;
         }
+
 #endif
     }
 }
-

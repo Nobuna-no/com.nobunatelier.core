@@ -1,7 +1,5 @@
 using NaughtyAttributes;
-using System;
 using System.Collections;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -20,15 +18,18 @@ namespace NobunAtelier.Gameplay
     public class HitboxBehaviour : MonoBehaviour
     {
         [Header("Hitbox")]
-
         [SerializeField, Tooltip("The team behind the attack.")]
         private TeamDefinition m_team;
+
         [SerializeField]
         private TeamDefinition.Target m_target;
+
         [SerializeField]
         private HitDefinition m_hitDefinition;
+
         [SerializeField, Tooltip("The team module owner of the hit. Can be use by the hit receiver to track the origin of the attack.")]
         private TeamModule m_hitOriginTeam;
+
         [SerializeField, Tooltip("The owner of the hit. Can be use by the hit receiver to track the origin of the attack.")]
         private GameObject m_hitOriginGao;
 

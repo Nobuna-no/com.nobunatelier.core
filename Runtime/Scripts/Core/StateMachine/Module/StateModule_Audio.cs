@@ -31,6 +31,7 @@ namespace NobunAtelier
         [Header("State")]
         [SerializeField]
         private ActivationTrigger m_audioActionTrigger = ActivationTrigger.OnStateEnter;
+
         [SerializeField, ShowIf("DisplayDelay")]
         private float m_delayBeforeAudioActionInSecond = 0.0f;
 
@@ -47,8 +48,10 @@ namespace NobunAtelier
         private float m_currentDelay = 0.0f;
 
         private bool DisplayDelay => m_audioActionTrigger == ActivationTrigger.OnStateEnter;
-        private bool DisplayAudioResourceDefinition => m_action == AudioAction.LoadResource || m_action == AudioAction.PlayResource || m_action == AudioAction.UnloadResource 
+
+        private bool DisplayAudioResourceDefinition => m_action == AudioAction.LoadResource || m_action == AudioAction.PlayResource || m_action == AudioAction.UnloadResource
             || m_action == AudioAction.FadeInResource || m_action == AudioAction.FadeOutResource;
+
         private bool DisplayAudioCollection => m_action == AudioAction.LoadCollection || m_action == AudioAction.UnloadCollection;
 
         public override void Enter()

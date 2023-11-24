@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    public class BaseState<T, TCollection> : StateComponent<T, TCollection>
+    public class StateWithTransition<T, TCollection> : StateComponent<T, TCollection>
         where T : NobunAtelier.StateDefinition
         where TCollection : DataCollection
     {
@@ -16,7 +16,7 @@ namespace NobunAtelier
         // To improve by creating an intermediate that have only UnityEvent and one with timed transition
         [Header("Next State")]
         [SerializeField]
-        NextStateTransitionType TransitionType = NextStateTransitionType.Manual;
+        private NextStateTransitionType TransitionType = NextStateTransitionType.Manual;
 
         [SerializeField, ShowIf("DisplayNextState")]
         private T m_nextState;
@@ -25,9 +25,6 @@ namespace NobunAtelier
         private float m_stateDurationInSeconds = -1f;
 
         private float m_timeBeforeNextState = -1f;
-
-        private bool DisplayDelay => TransitionType == NextStateTransitionType.Delay;
-        private bool DisplayNextState => TransitionType != NextStateTransitionType.Manual;
 
         public override void Enter()
         {

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    public class GameModeState_SubStateMachineHandler : BaseState<GameModeStateDefinition, GameModeStateCollection>
+    public class GameModeState_SubStateMachineHandler : StateWithTransition<GameModeStateDefinition, GameModeStateCollection>
     {
         [SerializeField]
         private GameModeStateMachine m_subStateMachine;
@@ -24,7 +24,6 @@ namespace NobunAtelier
             base.Enter();
             m_subStateMachine.StartFromScratch();
         }
-
 
         [Button(enabledMode: EButtonEnableMode.Editor)]
         private void CaptureSubStateMachine()

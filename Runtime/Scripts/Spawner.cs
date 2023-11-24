@@ -1,7 +1,6 @@
-using System.Collections;
+using NaughtyAttributes;
 using System.Collections.Generic;
 using UnityEngine;
-using NaughtyAttributes;
 
 public class Spawner : MonoBehaviour
 {
@@ -9,11 +8,15 @@ public class Spawner : MonoBehaviour
     private class SpawnDefinition
     {
         public GameObject Prefab;
+
         [Required]
         public Transform InSceneParent;
+
         [NaughtyAttributes.MinMaxSlider(1, 20)]
-        public Vector2Int InRangeSpawnCount = new Vector2Int(1,10);
+        public Vector2Int InRangeSpawnCount = new Vector2Int(1, 10);
+
         public Color PreviewColor = Color.red;
+
         [Min(0.01f)]
         public float PreviewSize = 0.5f;
     }
@@ -23,6 +26,7 @@ public class Spawner : MonoBehaviour
     [HorizontalLine(1)]
     [SerializeField]
     private SpawnDefinition[] m_objectToSpawn;
+
     [SerializeField]
     private float m_spawnRadius = 1f;
 
@@ -36,7 +40,7 @@ public class Spawner : MonoBehaviour
     [Button]
     private void GeneratePreview()
     {
-        if(m_objectToSpawn == null || m_objectToSpawn.Length == 0)
+        if (m_objectToSpawn == null || m_objectToSpawn.Length == 0)
         {
             return;
         }
@@ -82,7 +86,6 @@ public class Spawner : MonoBehaviour
     {
         return Random.insideUnitSphere * radius;
     }
-
 
     private void OnDrawGizmosSelected()
     {

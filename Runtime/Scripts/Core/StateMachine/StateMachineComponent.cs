@@ -1,5 +1,4 @@
 using NaughtyAttributes;
-using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -15,8 +14,10 @@ namespace NobunAtelier
         public bool IsPaused { get; set; } = false;
 
 #if UNITY_EDITOR
+
         [SerializeField, ShowIf("IsMainStateMachine")]
         private TCollection m_referenceStateCollection;
+
         public TCollection ReferenceStateCollection
         {
             get
@@ -59,7 +60,6 @@ namespace NobunAtelier
                 return;
             }
 
-
             int apparitionCount = 0;
             for (int i = 0, c = children.Length; i < c; ++i)
             {
@@ -75,13 +75,16 @@ namespace NobunAtelier
                 }
             }
         }
+
 #endif
 
         [Header("State Machine")]
         [SerializeField]
         private T m_initialStateDefinition;
+
         [SerializeField, ShowIf("IsMainStateMachine")]
         private bool m_enterInitialStateOnStart = false;
+
         [SerializeField, ShowIf("HasParentStateMachine")]
         private T m_nextStateOnStateMachineExit;
 

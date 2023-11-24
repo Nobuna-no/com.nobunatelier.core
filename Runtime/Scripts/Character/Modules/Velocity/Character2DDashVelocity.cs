@@ -10,7 +10,8 @@ namespace NobunAtelier
     public class Character2DDashVelocity : CharacterVelocityModuleBase
     {
         [System.Serializable]
-        public class DashEvent : UnityEvent<DashDirection> { };
+        public class DashEvent : UnityEvent<DashDirection>
+        { };
 
         public enum DashDirection
         {

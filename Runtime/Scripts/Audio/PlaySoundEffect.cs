@@ -1,7 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 using NaughtyAttributes;
+using System.Collections;
+using UnityEngine;
 
 [RequireComponent(typeof(AudioSource))]
 public class PlaySoundEffect : MonoBehaviour
@@ -18,7 +17,7 @@ public class PlaySoundEffect : MonoBehaviour
     private void Start()
     {
         m_AudioSource = GetComponent<AudioSource>();
-        
+
         if (loopRandomSounds)
         {
             waitingForNewPlay = true;
@@ -46,9 +45,10 @@ public class PlaySoundEffect : MonoBehaviour
     }
 
     public bool waitingForNewPlay = false;
+
     private void FixedUpdate()
     {
-        if(!waitingForNewPlay)
+        if (!waitingForNewPlay)
         {
             return;
         }
@@ -60,7 +60,7 @@ public class PlaySoundEffect : MonoBehaviour
         }
     }
 
-    IEnumerator Coroutine_LoopSE()
+    private IEnumerator Coroutine_LoopSE()
     {
         yield return new WaitForSeconds(Random.Range(m_TimerBetweenPlaySE.x, m_TimerBetweenPlaySE.y));
         if (loopRandomSounds)

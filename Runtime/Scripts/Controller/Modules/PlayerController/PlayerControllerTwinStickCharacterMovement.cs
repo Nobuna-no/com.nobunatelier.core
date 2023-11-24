@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 namespace NobunAtelier
 {
     [AddComponentMenu("NobunAtelier/Controller/PlayerModule TwinStick Character Movement")]
-    public class PlayerControllerTwinStickCharacterMovement: PlayerControllerModuleBase
+    public class PlayerControllerTwinStickCharacterMovement : PlayerControllerModuleBase
     {
         private InputAction m_moveAction;
         private Vector2 m_lastMoveInputValue;

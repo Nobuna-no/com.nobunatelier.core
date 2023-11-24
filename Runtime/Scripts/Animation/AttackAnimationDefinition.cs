@@ -1,5 +1,5 @@
-using UnityEngine;
 using NobunAtelier;
+using UnityEngine;
 
 public class AttackAnimationDefinition : AttackDefinition
 {
@@ -7,5 +7,5 @@ public class AttackAnimationDefinition : AttackDefinition
 
     [Header("Animation")]
     [SerializeField]
-	private AnimMontageDefinition m_animation;
+    private AnimMontageDefinition m_animation;
 }

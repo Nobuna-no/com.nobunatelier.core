@@ -30,7 +30,8 @@ namespace NobunAtelier
             }
         }
 
-        public override void DisableAIModule() { }
+        public override void DisableAIModule()
+        { }
 
         public override void UpdateModule(float deltaTime)
         {

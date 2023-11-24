@@ -4,7 +4,8 @@ using UnityEngine.Events;
 namespace NobunAtelier
 {
     [System.Serializable]
-    public class TargetChangedEvent : UnityEvent<ITargetable> { }
+    public class TargetChangedEvent : UnityEvent<ITargetable>
+    { }
 
     public interface ITargetable
     {

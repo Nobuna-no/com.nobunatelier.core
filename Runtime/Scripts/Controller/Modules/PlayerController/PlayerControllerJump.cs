@@ -18,7 +18,6 @@ namespace NobunAtelier
             m_jumpAction.performed += M_jumpAction_performed;
         }
 
-
         public override void DisableModuleInput(PlayerInput playerInput, InputActionMap activeActionMap)
         {
             if (m_jumpAction != null)

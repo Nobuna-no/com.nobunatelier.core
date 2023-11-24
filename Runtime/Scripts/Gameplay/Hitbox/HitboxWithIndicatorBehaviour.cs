@@ -8,6 +8,7 @@ namespace NobunAtelier.Gameplay
     {
         [SerializeField]
         private Gradient m_warningGradient;
+
         [SerializeField]
         private Color m_hitIndicatorGradient = Color.red;
 
@@ -78,12 +79,14 @@ namespace NobunAtelier.Gameplay
         }
 
 #if UNITY_EDITOR
+
         [Button]
         private void ToggleRenderer()
         {
             m_renderer = GetComponentInChildren<MeshRenderer>();
             m_renderer.enabled = !m_renderer.enabled;
         }
+
 #endif
     }
 }

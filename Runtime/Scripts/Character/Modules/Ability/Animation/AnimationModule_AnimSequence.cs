@@ -129,7 +129,6 @@ namespace NobunAtelier
 
             if (m_animationSegmentsMap.ContainsKey(segmentDefinition))
             {
-
                 m_segmentTriggerMap[segmentDefinition].onSegmentTrigger?.Invoke(m_animationSegmentsMap[segmentDefinition]);
             }
             else

@@ -30,15 +30,15 @@ namespace NobunAtelier
 
             if ((m_lockAxes & LockAxis.X) != 0)
             {
-                currentVel.x = m_lerpSpeed == 0 ? (m_axesValue.x - dest.x) / deltaTime  : (m_axesValue.x - dest.x) * m_lerpSpeed;
+                currentVel.x = m_lerpSpeed == 0 ? (m_axesValue.x - dest.x) / deltaTime : (m_axesValue.x - dest.x) * m_lerpSpeed;
             }
             if ((m_lockAxes & LockAxis.Y) != 0)
             {
-                currentVel.y = m_lerpSpeed == 0 ? (m_axesValue.y - dest.y) / deltaTime  : (m_axesValue.y - dest.y) * m_lerpSpeed;
+                currentVel.y = m_lerpSpeed == 0 ? (m_axesValue.y - dest.y) / deltaTime : (m_axesValue.y - dest.y) * m_lerpSpeed;
             }
             if ((m_lockAxes & LockAxis.Z) != 0)
             {
-                currentVel.z = m_lerpSpeed == 0 ? (m_axesValue.z - dest.z) / deltaTime  : (m_axesValue.z - dest.z) * m_lerpSpeed;
+                currentVel.z = m_lerpSpeed == 0 ? (m_axesValue.z - dest.z) / deltaTime : (m_axesValue.z - dest.z) * m_lerpSpeed;
             }
 
             return currentVel;

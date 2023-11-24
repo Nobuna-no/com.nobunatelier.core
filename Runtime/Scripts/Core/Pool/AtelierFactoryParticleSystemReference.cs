@@ -9,7 +9,6 @@ namespace NobunAtelier
         { }
     }
 
-
     public class AtelierFactoryParticleSystemReference
         : AtelierFactoryGameObjectReferenceT<ParticleSystem, AssetReferenceParticleSystem, AtelierFactoryParticleSystemReference>
     { }

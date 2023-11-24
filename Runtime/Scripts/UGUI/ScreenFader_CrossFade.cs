@@ -1,5 +1,4 @@
 using NaughtyAttributes;
-using System.ComponentModel;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -28,6 +27,7 @@ namespace NobunAtelier
         private float m_debugCrossFadeDuration = 1f;
 
 #endif
+
         protected override void OnSingletonAwake()
         {
             m_image = GetComponent<Image>();

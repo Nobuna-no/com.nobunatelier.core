@@ -10,8 +10,10 @@ namespace NobunAtelier
     {
         [SerializeField]
         private float m_maxFreeFallSpeed = 100f;
+
         [SerializeField, Range(0, 10)]
         private float m_gravityMultiplier = 1f;
+
         [SerializeField, ReadOnly]
         private bool m_isGrounded;
 

@@ -1,8 +1,7 @@
-using UnityEngine;
 using NobunAtelier;
+using UnityEngine;
 
-[CreateAssetMenu(fileName ="DC_AttackAnimation", menuName = "NobunAtelier/Collection/AttackAnimation")]
+[CreateAssetMenu(fileName = "[AttackAnimation]", menuName = "NobunAtelier/Collection/AttackAnimation")]
 public class AttackAnimationCollection : DataCollection<AttackAnimationDefinition>
 {
-
 }

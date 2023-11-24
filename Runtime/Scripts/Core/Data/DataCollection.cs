@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
-using System.IO;
-using static UnityEngine.Analytics.IAnalytic;
 
 #if UNITY_EDITOR
 
@@ -19,6 +17,7 @@ namespace NobunAtelier
         public abstract DataDefinition GetRandomDefinition();
 
 #if UNITY_EDITOR
+
         public abstract Type GetDefinitionType();
 
         public abstract void AddDefinitionAssetToCollection(DataDefinition asset);
@@ -38,6 +37,7 @@ namespace NobunAtelier
         public abstract void MoveDefinition(int oldIndex, int newIndex);
 
         public abstract void ForceSetDataDefinition(int index, DataDefinition data);
+
 #endif
     }
 
@@ -65,6 +65,7 @@ namespace NobunAtelier
         }
 
 #if UNITY_EDITOR
+
         public override Type GetDefinitionType()
         {
             return typeof(T);
@@ -168,7 +169,7 @@ namespace NobunAtelier
 
         public override sealed DataDefinition GetOrCreateDefinition(string name)
         {
-            foreach(var dataDefinition in m_dataDefinitions)
+            foreach (var dataDefinition in m_dataDefinitions)
             {
                 if (dataDefinition.name == name)
                 {
@@ -256,6 +257,7 @@ namespace NobunAtelier
             AssetDatabase.SaveAssetIfDirty(this);
             AssetDatabase.Refresh();
         }
+
 #endif
     }
 }

@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace NobunAtelier.Gameplay
 {
     [System.Serializable]
@@ -8,7 +6,6 @@ namespace NobunAtelier.Gameplay
         public AssetReferenceHitboxBehaviour(string guid) : base(guid)
         { }
     }
-
 
     public class AtelierFactoryHitboxBehaviourReference
         : AtelierFactoryGameObjectReferenceT<HitboxBehaviour, AssetReferenceHitboxBehaviour, AtelierFactoryHitboxBehaviourReference>

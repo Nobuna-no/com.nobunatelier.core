@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace NobunAtelier
@@ -63,7 +61,7 @@ namespace NobunAtelier
                 }
             }
 
-            if(m_currentTarget != null && closestTarget == null)
+            if (m_currentTarget != null && closestTarget == null)
             {
                 return;
             }

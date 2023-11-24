@@ -18,6 +18,7 @@ namespace NobunAtelier
 
         [SerializeField]
         private TeamDefinition[] m_allies;
+
         [SerializeField]
         private TeamDefinition[] m_enemies;
 

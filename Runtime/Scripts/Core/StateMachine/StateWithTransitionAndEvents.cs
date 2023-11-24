@@ -1,10 +1,9 @@
-using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.Events;
 
 namespace NobunAtelier
 {
-    public class BaseStateWithEvents<T, TCollection> : BaseState<T, TCollection>
+    public class StateWithTransitionAndEvents<T, TCollection> : StateWithTransition<T, TCollection>
         where T : NobunAtelier.StateDefinition
         where TCollection : DataCollection
     {

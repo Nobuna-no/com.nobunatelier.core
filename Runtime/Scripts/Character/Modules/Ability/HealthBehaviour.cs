@@ -92,9 +92,8 @@ namespace NobunAtelier.Gameplay
         private TeamModule m_teamModule;
 
         public delegate void OnHealthChangedDelegate(float currentHealth, float maxHealth);
+
         public event OnHealthChangedDelegate OnHealthChanged;
-
-
 
         public override void ModuleInit(Character character)
         {

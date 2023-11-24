@@ -1,7 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace NobunAtelier
 {
@@ -9,6 +6,7 @@ namespace NobunAtelier
     {
         [SerializeField]
         protected Animator m_animator;
+
         public Animator Animator => m_animator;
 
         public override void ModuleInit(Character character)

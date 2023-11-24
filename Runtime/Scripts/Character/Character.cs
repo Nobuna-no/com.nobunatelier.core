@@ -8,8 +8,10 @@ namespace NobunAtelier
     {
         public virtual CharacterControllerBase Controller { get; private set; }
         public Animator Animator { get; private set; }
+
         // public virtual bool IsTargetable => true;
         public Transform Transform => Body.transform;
+
         public CharacterPhysicsModule Body => m_physicsModule;
         public Vector3 Position => Body.Position;
         public Quaternion Rotation => Body.Rotation;

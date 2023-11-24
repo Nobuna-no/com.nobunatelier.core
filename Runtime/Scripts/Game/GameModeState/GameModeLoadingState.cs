@@ -1,6 +1,6 @@
+using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.Events;
-using NaughtyAttributes;
 
 namespace NobunAtelier
 {
@@ -23,6 +23,7 @@ namespace NobunAtelier
 
         [SerializeField, ShowIf("m_useAnimatorFadeIn")]
         private float m_delayBeforeFadeIn = 0f;
+
         private float m_remainingDelay = 0f;
 
         [ShowIf("m_useAnimatorFadeIn")]

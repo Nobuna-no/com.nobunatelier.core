@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 
 namespace NobunAtelier
@@ -8,6 +7,7 @@ namespace NobunAtelier
     {
         // public AnimSequenceDefinition AnimSequence => m_animSequence;
         public ParticleEffect Particle => m_particle;
+
         public IReadOnlyList<SoundEffect> SoundEffects => m_soundEffects;
 
         public bool HasFX => !string.IsNullOrEmpty(m_particle.AssetReference.AssetGUID);
@@ -20,7 +20,6 @@ namespace NobunAtelier
 
         [SerializeField]
         private SoundEffect[] m_soundEffects;
-
 
         [System.Serializable]
         public class ParticleEffect

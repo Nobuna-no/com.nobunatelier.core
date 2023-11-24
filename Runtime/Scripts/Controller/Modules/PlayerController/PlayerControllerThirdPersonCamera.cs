@@ -1,5 +1,5 @@
-using Unity.Cinemachine;
 using NaughtyAttributes;
+using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -15,7 +15,7 @@ namespace NobunAtelier
         [SerializeField, Required]
         private Transform m_cameraTarget;
 
-        [SerializeField, MinMaxSlider(-85f,85f)]
+        [SerializeField, MinMaxSlider(-85f, 85f)]
         private Vector2 m_TiltAngleDegreeRange = new Vector2(-20, 60);
 
         // [SerializeField]
@@ -91,7 +91,6 @@ namespace NobunAtelier
             eulerRot.x = Mathf.Clamp(eulerRot.x, m_TiltAngleDegreeRange.x, m_TiltAngleDegreeRange.y);
             m_cameraTarget.rotation = Quaternion.Euler(eulerRot);
         }
-
 
         private void OnLookActionPerformed(InputAction.CallbackContext obj)
         {

@@ -1,8 +1,7 @@
-using UnityEngine;
 using NobunAtelier;
+using UnityEngine;
 
-[CreateAssetMenu(fileName ="DC_Team", menuName = "NobunAtelier/Collection/Team")]
+[CreateAssetMenu(fileName = "[Teams]", menuName = "NobunAtelier/Collection/Team")]
 public class TeamCollection : DataCollection<TeamDefinition>
 {
-
 }

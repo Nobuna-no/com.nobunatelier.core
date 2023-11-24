@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace NobunAtelier
@@ -9,13 +7,16 @@ namespace NobunAtelier
     {
         [SerializeField]
         private UnityEngine.CharacterController m_targetCharacterController;
+
         [SerializeField]
         private Vector3 m_maxVelocity = new Vector3(10f, 20f, 10f);
+
         [SerializeField]
         private float m_maxSpeed = 20f;
 
         [SerializeField]
         private bool m_useSimpleMove = false;
+
         public override VelocityApplicationUpdate VelocityUpdate
         {
             get
@@ -83,5 +84,4 @@ namespace NobunAtelier
             Velocity = newVelocity;
         }
     }
-
 }

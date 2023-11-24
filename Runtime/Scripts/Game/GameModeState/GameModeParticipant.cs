@@ -8,8 +8,10 @@ namespace NobunAtelier
     {
         [SerializeField]
         private LegacyCharacterControllerBase m_controllerPrefab;
+
         [SerializeField]
         private LegacyCharacterBase m_characterMovementPrefab;
+
         [SerializeField]
         private bool m_isAI = false;
 
@@ -36,7 +38,7 @@ namespace NobunAtelier
             {
                 return;
             }
-            
+
             this.CharacterMovement = Instantiate(characterPrefab, gameObject.transform);
         }
 

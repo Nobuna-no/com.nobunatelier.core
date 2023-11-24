@@ -11,6 +11,6 @@ namespace NobunAtelier
         public T Data => m_data;
 
         [SerializeField]
-        protected T m_data;
+        private T m_data;
     }
 }

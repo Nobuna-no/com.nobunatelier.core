@@ -2,7 +2,6 @@ using UnityEngine;
 
 namespace NobunAtelier.Gameplay
 {
-
     // [CreateAssetMenu(menuName = "NobunAtelier/Gameplay/Procedural Movement", fileName = "[Procedural Move] ")]
     public class ProceduralMovementDefinition : DataDefinition
     {

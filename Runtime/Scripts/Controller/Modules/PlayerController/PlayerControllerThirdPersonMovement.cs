@@ -16,12 +16,14 @@ namespace NobunAtelier
         public Vector2 LastMoveInput => m_lastMoveInputValue;
 
 #if UNITY_EDITOR
+
         [Header("Debug")]
         [SerializeField]
         private bool m_debugEnabled = false;
 
         [SerializeField, ShowIf("m_debugEnabled")]
         private float m_debugDrawDistance = 5;
+
 #endif
 
         public override void UpdateModule(float deltaTime)

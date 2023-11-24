@@ -1,13 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
-using NaughtyAttributes;
 
 namespace NobunAtelier
 {
     [AddComponentMenu("NobunAtelier/States/Game Mode/Game Mode State: Timed Actions")]
-    public class GameModeState_DelayedAction : BaseState<GameModeStateDefinition, GameModeStateCollection>
+    public class GameModeState_DelayedAction : StateWithTransition<GameModeStateDefinition, GameModeStateCollection>
     {
         [SerializeField]
         private DelayedAction[] m_delayedActions;
@@ -37,8 +34,10 @@ namespace NobunAtelier
         {
             [SerializeField]
             private float m_actionDelayInSeconds = 1f;
+
             [SerializeField]
             private bool m_loopAction = false;
+
             [SerializeField]
             private UnityEvent m_onAction;
 
@@ -70,6 +69,5 @@ namespace NobunAtelier
                 }
             }
         }
-
     }
 }

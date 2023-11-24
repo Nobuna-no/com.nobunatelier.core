@@ -1,6 +1,5 @@
 using NaughtyAttributes;
 using System;
-using UnityEditor;
 using UnityEngine;
 
 namespace NobunAtelier
@@ -33,8 +32,10 @@ namespace NobunAtelier
     {
         [SerializeField]
         private LayerMask m_groundLayer;
+
         [SerializeField]
         private Transform m_castOrigin;
+
         [SerializeField]
         private float m_rayCastMaxDistance = 0.5f;
 
@@ -58,7 +59,6 @@ namespace NobunAtelier
 
         [SerializeField, Range(0, 10f)]
         private float m_maxSnapDuration = 3f;
-
 
         private Collider m_lastHitCollider;
         private Vector3 m_snapAcceleration = Vector3.zero;
@@ -105,7 +105,6 @@ namespace NobunAtelier
             }
             else if (m_lastHitCollider)
             {
-
                 m_latestClosestPoint = m_lastHitCollider.ClosestPoint(position);
                 Vector3 direction = m_latestClosestPoint - position;
                 direction.y = 0;

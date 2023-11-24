@@ -8,6 +8,7 @@ public class Bootstrap : MonoBehaviour
 
     [SerializeField]
     private bool m_forceResolution = false;
+
     [SerializeField, ShowIf("m_forceResolution")]
     private Vector2 screenResolution = new Vector2(640, 480);
 

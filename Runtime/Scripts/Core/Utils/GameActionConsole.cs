@@ -1,8 +1,6 @@
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.InputSystem;
 
 namespace NobunAtelier
 {
@@ -19,7 +17,7 @@ namespace NobunAtelier
             {
                 var action = new ActionDefinition();
                 action.ButtonName = actionName;
-                action.MenuName= menu;
+                action.MenuName = menu;
                 action.Action = new UnityEvent();
                 action.Action.AddListener(method);
                 return action;
@@ -45,6 +43,7 @@ namespace NobunAtelier
         // i.e. "Debug/AI/Boids", "Debug/AI/StateMachine"
         // Isn't a bit overkill? I mean, for a small game I don't think that much menu would be relevant.
         private readonly Dictionary<string, List<ActionDefinition>> m_hierarchy = new Dictionary<string, List<ActionDefinition>>();
+
         private Vector2 m_scrollPosition = Vector2.zero;
         private string m_selectedMenu = null;
         private float m_minWidht = 150;
@@ -70,7 +69,7 @@ namespace NobunAtelier
         {
             foreach (var menu in m_hierarchy.Values)
             {
-                foreach(var action in menu)
+                foreach (var action in menu)
                 {
                     action.Action.RemoveAllListeners();
                 }

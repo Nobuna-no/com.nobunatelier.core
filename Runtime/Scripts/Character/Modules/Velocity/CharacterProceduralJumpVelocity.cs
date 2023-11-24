@@ -9,8 +9,10 @@ namespace NobunAtelier
     {
         [SerializeField]
         private float m_jumpHeight = 20;
+
         [SerializeField, Range(0f, 1f)]
         private float m_durationInSeconds = 0.5f;
+
         [SerializeField]
         private AnimationCurve m_accelerationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 

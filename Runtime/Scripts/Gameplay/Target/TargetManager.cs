@@ -8,6 +8,7 @@ namespace NobunAtelier
     {
         [SerializeField]
         private CharacterSimpleTargetingAbility m_targetingModule;
+
         private List<ITargetable> m_targets = new List<ITargetable>();
         public List<ITargetable> Targets => m_targets;
 

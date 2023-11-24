@@ -13,10 +13,13 @@ namespace NobunAtelier
 
         public abstract Vector3 VelocityUpdate(Vector3 currentVel, float deltaTime);
 
-        public virtual void OnModuleCollisionEnter(Collision collision) { }
+        public virtual void OnModuleCollisionEnter(Collision collision)
+        { }
 
-        public virtual void OnModuleCollisionExit(Collision collision) { }
+        public virtual void OnModuleCollisionExit(Collision collision)
+        { }
 
-        public void OnModuleCollisionStay(Collision collision) { }
+        public void OnModuleCollisionStay(Collision collision)
+        { }
     }
 }

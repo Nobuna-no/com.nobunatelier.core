@@ -1,6 +1,3 @@
-using UnityEngine;
-using UnityEngine.InputSystem;
-
 namespace NobunAtelier
 {
     public abstract class AIControllerModuleBase : CharacterControllerModuleBase<AIController>

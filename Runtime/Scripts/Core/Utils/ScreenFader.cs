@@ -50,6 +50,7 @@ namespace NobunAtelier
         private bool m_logDebug = false;
 
 #endif
+
         protected virtual void Start()
         {
             if (m_startFilled)
@@ -283,8 +284,6 @@ namespace NobunAtelier
         //    // Debug.Assert(m_animator.HasState(0, m_fillStateHash), $"{this.GetType().Name}: Cannot find valid Fill state name '{m_fillStateName}' in AnimatorController.");
         //    // Debug.Assert(m_animator.HasState(0, m_clearStateHash), $"{this.GetType().Name}: Cannot find valid Fill state name '{m_clearStateName}' in AnimatorController.");
         //}
-
-        
 
         //private void FixedUpdate()
         //{

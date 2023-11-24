@@ -1,7 +1,5 @@
 using NaughtyAttributes;
-using NUnit.Framework.Internal;
 using System;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace NobunAtelier
@@ -17,7 +15,6 @@ namespace NobunAtelier
         where TCollection : DataCollection
     {
         [Header("State")]
-
         [SerializeField, TextArea]
         private string m_Description;
 
@@ -26,6 +23,7 @@ namespace NobunAtelier
 
         [SerializeField]
         protected StateComponentModule[] m_stateModules;
+
         [SerializeField]
         private bool m_autoCaptureStateModule = true;
 
@@ -113,7 +111,7 @@ namespace NobunAtelier
             m_parentStateMachine.SetState(newState);
         }
 
-        public sealed override void SetState(Type newStateType, StateDefinition stateDefinition)
+        public override sealed void SetState(Type newStateType, StateDefinition stateDefinition)
         {
             // Check if the specified newStateType matches the StateDefinition type
             if (m_stateDefinitionType != newStateType)
@@ -152,7 +150,6 @@ namespace NobunAtelier
                 m_parentStateMachine.RegisterStateComponent(this);
             }
 
-
             if (m_autoCaptureStateModule)
             {
                 CaptureStateModule();
@@ -177,6 +174,7 @@ namespace NobunAtelier
         }
 
 #if UNITY_EDITOR
+
         protected virtual void OnValidate()
         {
             if (transform.parent != null)
@@ -211,6 +209,7 @@ namespace NobunAtelier
                 CaptureStateModule();
             }
         }
+
 #endif
 
         private void InitializeReflectionFields()

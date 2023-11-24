@@ -20,6 +20,7 @@ public class AttackDefinition : DataDefinition
     [Header("Attack")]
     [SerializeField]
     private HitDefinition m_hitDefinition;
+
     [SerializeField]
     private TeamDefinition.Target m_hitTarget = TeamDefinition.Target.Enemies;
 

@@ -1,7 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace NobunAtelier
 {
@@ -13,7 +10,6 @@ namespace NobunAtelier
 
         public virtual void UpdateModule(float deltaTime)
         {
-
         }
 
         public virtual bool IsAvailable()

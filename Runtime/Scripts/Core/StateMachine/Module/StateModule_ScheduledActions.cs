@@ -1,6 +1,4 @@
 using NaughtyAttributes;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -35,10 +33,12 @@ namespace NobunAtelier
         [System.Serializable]
         private class TimedAction
         {
-            [SerializeField, MinMaxSlider(0,10)]
-            private Vector2 m_actionDelayInSeconds = new Vector2(0,1);
+            [SerializeField, MinMaxSlider(0, 10)]
+            private Vector2 m_actionDelayInSeconds = new Vector2(0, 1);
+
             [SerializeField]
             private bool m_loopAction = false;
+
             [SerializeField]
             private UnityEvent m_onAction;
 

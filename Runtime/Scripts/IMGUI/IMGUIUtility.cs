@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace NobunAtelier
@@ -11,14 +9,15 @@ namespace NobunAtelier
             get => s_labelWidth;
             set
             {
-                if(value <= 0)
+                if (value <= 0)
                 {
                     return;
                 }
-                
+
                 s_labelWidth = value;
             }
         }
+
         private static float s_labelWidth;
 
         private static GUIStyle s_titleStyle = null;
