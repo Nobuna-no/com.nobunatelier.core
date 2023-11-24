@@ -1,8 +1,9 @@
 using UnityEditor;
-using NobunAtelier;
 
-[CustomEditor(typeof(AttackCollection))]
-public class AttackCollectionEditor : DataCollectionEditor
+namespace NobunAtelier.Editor
 {
-
+    [CustomEditor(typeof(AttackCollection))]
+    public class AttackCollectionEditor : DataCollectionEditor
+    {
+    }
 }

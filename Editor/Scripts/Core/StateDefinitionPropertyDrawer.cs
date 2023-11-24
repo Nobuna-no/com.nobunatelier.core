@@ -3,10 +3,10 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace NobunAtelier
+namespace NobunAtelier.Editor
 {
-    // Could even improve by only showing a drop down of available definition from the collection...
-    // [CustomPropertyDrawer(typeof(StateDefinition))]
+    // Draws a nice dropdown list of all available state definitions on the state components.
+    // Also provide a Ping button to locate the references in the project as well with a button to create a new definition from the field.
     public class StateDefinitionPropertyDrawer<T, TCollection> : PropertyDrawer
         where T : StateDefinition
         where TCollection : DataCollection

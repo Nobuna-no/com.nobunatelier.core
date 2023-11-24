@@ -1,11 +1,9 @@
 using UnityEditor;
-using NobunAtelier;
 
-namespace NobunAtelier
+namespace NobunAtelier.Editor
 {
-	[CustomEditor(typeof(AudioStitcherCollection))]
-	public class AudioStitcherCollectionEditor : DataCollectionEditor
-	{
-
-	}
+    [CustomEditor(typeof(AudioStitcherCollection))]
+    public class AudioStitcherCollectionEditor : DataCollectionEditor
+    {
+    }
 }

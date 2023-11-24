@@ -1,5 +1,9 @@
 using UnityEditor;
-using NobunAtelier;
 
-[CustomEditor(typeof(PoolObjectCollection))]
-public class PoolObjectCollectionEditor : DataCollectionEditor { }
+namespace NobunAtelier.Editor
+{
+    [CustomEditor(typeof(PoolObjectCollection))]
+    public class PoolObjectCollectionEditor : DataCollectionEditor
+    {
+    }
+}

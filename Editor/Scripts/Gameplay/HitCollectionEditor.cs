@@ -1,7 +1,8 @@
 using UnityEditor;
 
-namespace NobunAtelier.Gameplay
+namespace NobunAtelier.Editor
 {
-    [CustomEditor(typeof(HitCollection))]
-    public class HitCollectionEditor : DataCollectionEditor { }
+    [CustomEditor(typeof(NobunAtelier.Gameplay.HitCollection))]
+    public class HitCollectionEditor : DataCollectionEditor
+    { }
 }

@@ -1,6 +1,6 @@
 using UnityEditor;
 
-namespace NobunAtelier
+namespace NobunAtelier.Editor
 {
     [CustomEditor(typeof(GameModeStateCollection))]
     public class GameModeStateCollectionEditor : DataCollectionEditor

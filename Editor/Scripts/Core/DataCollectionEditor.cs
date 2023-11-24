@@ -2,11 +2,11 @@ using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 
-namespace NobunAtelier
+namespace NobunAtelier.Editor
 {
     [CustomEditor(typeof(DataCollection))]
     [CanEditMultipleObjects]
-    public class DataCollectionEditor : Editor
+    public class DataCollectionEditor : UnityEditor.Editor
     {
         private static bool s_DirtyList = false;
         private static string s_CollectionType = "Unknown";
@@ -18,7 +18,7 @@ namespace NobunAtelier
         public ReorderableList list = null;
 
         private DataDefinition m_currentElement;
-        private Editor m_currentEditor;
+        private UnityEditor.Editor m_currentEditor;
         private int m_workingIndex = -1;
         private bool m_showBasicData = false;
 
@@ -111,7 +111,7 @@ namespace NobunAtelier
                 {
                     m_workingIndex = list.index;
                     m_currentElement = m_collection.DataDefinitions[m_workingIndex];
-                    m_currentEditor = Editor.CreateEditor(m_currentElement);
+                    m_currentEditor = UnityEditor.Editor.CreateEditor(m_currentElement);
                 };
 
             list.onReorderCallbackWithDetails = (ReorderableList list, int oldIndex, int newIndex) =>
@@ -166,7 +166,7 @@ namespace NobunAtelier
         }
 
         private bool m_potentialDrag = false;
-        bool hasAtLeastOneValidAssetType = false;
+        private bool hasAtLeastOneValidAssetType = false;
 
         private void HandleDragAndDrop()
         {
@@ -224,7 +224,6 @@ namespace NobunAtelier
                     DragAndDrop.visualMode = DragAndDropVisualMode.Rejected;
                 }
             }
-
         }
     }
 }

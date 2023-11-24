@@ -1,19 +1,20 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using System.IO;
 
-namespace NobunAtelier
+namespace NobunAtelier.Editor
 {
-    public class NobunAtelierScriptGenerator : EditorWindow
+    public class DataScriptGenerator : EditorWindow
     {
         private readonly string NamespacesString = "using UnityEngine;\nusing NobunAtelier;\n\n";
         private readonly string EditorNamespacesString = "using UnityEditor;\nusing NobunAtelier;\n\n";
         private readonly string DefinitionTemplateString = "public class {0}Definition : {1}\n";
         private readonly string CollectionTemplateString = "[CreateAssetMenu(fileName =\"DC_{0}\", menuName = \"NobunAtelier/Collection/{0}\")]\npublic class {0}Collection : DataCollection<{0}Definition>\n";
         private readonly string CollectionEditorTemplateString = "[CustomEditor(typeof({0}Collection))]\npublic class {0}CollectionEditor : DataCollectionEditor\n";
+        private readonly string DefinitionPropertyDrawerTemplateString = "[CustomPropertyDrawer(typeof({0}Definition))]\npublic class {0}DefinitionPropertyDrawer : {0}DefinitionPropertyDrawer<{0}Definition, {0}Collection>\n";
         private readonly string EmptyMethodString = "{\n\n}";
 
         private List<Type> m_dataDefinitionTypes = new List<Type>();
@@ -22,13 +23,15 @@ namespace NobunAtelier
         private string m_savePath = "";
         private int m_selectedTypeIndex = 0;
 
-        private string m_scriptPath;
-        private string m_collectionScriptPath;
-        private string m_editorFolderPath;
         private string m_scriptContent;
+        private string m_scriptPath;
         private string m_collectionScriptContent;
+        private string m_collectionScriptPath;
+        private string m_propertyDrawerScriptContent;
+        private string m_propertyDrawerScriptPath;
         private string m_collectionEditorScriptContent;
         private string m_collectionEditorScriptPath;
+        private string m_editorFolderPath;
         private bool m_isPreviewReady;
         private Vector2 m_scrollviewPosition = Vector2.zero;
 
@@ -37,7 +40,7 @@ namespace NobunAtelier
         [MenuItem("NobunAtelier/Script Generator")]
         public static void ShowWindow()
         {
-            GetWindow<NobunAtelierScriptGenerator>("NobunAtelier Script Generator");
+            GetWindow<DataScriptGenerator>("NobunAtelier Script Generator");
         }
 
         private void OnEnable()
@@ -45,7 +48,7 @@ namespace NobunAtelier
             m_dataDefinitionTypes.Add(typeof(DataDefinition));
             m_dataDefinitionTypes.AddRange(AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes())
-                .Where(type => type.IsSubclassOf(typeof(DataDefinition)) && !type.IsAbstract)
+                .Where(type => type.IsSubclassOf(typeof(DataDefinition)) && !type.IsGenericType)
                 .ToArray());
 
             m_typeNames = m_dataDefinitionTypes.Select(type => type.Name).ToArray();
@@ -111,6 +114,13 @@ namespace NobunAtelier
                         EditorGUILayout.LabelField(m_collectionEditorScriptPath, EditorStyles.boldLabel);
                         m_collectionEditorScriptContent = EditorGUILayout.TextArea(m_collectionEditorScriptContent);
 
+                        if (!string.IsNullOrEmpty(m_propertyDrawerScriptPath))
+                        {
+                            GUILayout.Space(10);
+                            EditorGUILayout.LabelField(m_propertyDrawerScriptPath, EditorStyles.boldLabel);
+                            m_propertyDrawerScriptContent = EditorGUILayout.TextArea(m_propertyDrawerScriptContent);
+                        }
+
                         EditorGUI.indentLevel--;
                     }
                 }
@@ -131,7 +141,10 @@ namespace NobunAtelier
                 File.WriteAllText(m_scriptPath, m_scriptContent);
                 File.WriteAllText(m_collectionScriptPath, m_collectionScriptContent);
                 File.WriteAllText(m_collectionEditorScriptPath, m_collectionEditorScriptContent);
-
+                if (!string.IsNullOrEmpty(m_propertyDrawerScriptPath))
+                {
+                    File.WriteAllText(m_propertyDrawerScriptPath, m_propertyDrawerScriptContent);
+                }
                 AssetDatabase.Refresh();
 
                 // Focus the generated script in the Project view
@@ -159,8 +172,18 @@ namespace NobunAtelier
             m_editorFolderPath = Path.Combine(m_savePath, "Editor");
             Directory.CreateDirectory(m_editorFolderPath);
             m_collectionEditorScriptPath = Path.Combine(m_editorFolderPath, m_className + "CollectionEditor.cs");
+
+            // Adding property drawer script if the parent type is a state definition for the state machine.
+            m_propertyDrawerScriptPath = string.Empty;
+            Type type = m_dataDefinitionTypes.Find(type => type.Name == parentType);
+            if (type == typeof(StateDefinition) || type.IsSubclassOf(typeof(StateDefinition)))
+            {
+                m_propertyDrawerScriptContent = NamespacesString +
+                    string.Format(DefinitionPropertyDrawerTemplateString, m_className) + EmptyMethodString;
+                m_propertyDrawerScriptPath = Path.Combine(m_editorFolderPath, m_className + "DefinitionPropertyDrawer.cs");
+            }
+
             m_isPreviewReady = true;
         }
     }
-
 }

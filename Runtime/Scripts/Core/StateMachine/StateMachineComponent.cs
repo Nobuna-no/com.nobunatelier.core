@@ -13,72 +13,13 @@ namespace NobunAtelier
         public T CurrentStateDefinition => m_activeStateDefinition;
         public bool IsPaused { get; set; } = false;
 
+        [Header("State Machine")]
 #if UNITY_EDITOR
-
         [SerializeField, ShowIf("IsMainStateMachine")]
         private TCollection m_referenceStateCollection;
 
-        public TCollection ReferenceStateCollection
-        {
-            get
-            {
-                if (IsMainStateMachine)
-                {
-                    return m_referenceStateCollection;
-                }
-                else
-                {
-                    return ParentStateMachine.ReferenceStateCollection;
-                }
-            }
-        }
-
-        // very slow and not optimized, but whatever ;D
-        public int GetStateDefinitionRefCount(StateComponent<T, TCollection> source, T definition)
-        {
-            int useCount = 0;
-            var children = transform.GetComponentsInChildren<StateComponent<T, TCollection>>();
-
-            for (int i = 0, c = children.Length; i < c; ++i)
-            {
-                if (children[i].GetStateDefinition() == definition)
-                {
-                    ++useCount;
-                }
-            }
-
-            return useCount;
-        }
-
-        // very slow and not optimized, but whatever ;D
-        public void PingStateDefinitionRef(T definition, int objectApparitionOrder)
-        {
-            var children = transform.GetComponentsInChildren<StateComponent<T, TCollection>>();
-
-            if (objectApparitionOrder < 0 || objectApparitionOrder >= children.Length)
-            {
-                return;
-            }
-
-            int apparitionCount = 0;
-            for (int i = 0, c = children.Length; i < c; ++i)
-            {
-                if (children[i].GetStateDefinition() == definition)
-                {
-                    if (apparitionCount == objectApparitionOrder)
-                    {
-                        EditorGUIUtility.PingObject(children[i].gameObject);
-                        break;
-                    }
-
-                    ++apparitionCount;
-                }
-            }
-        }
-
 #endif
 
-        [Header("State Machine")]
         [SerializeField]
         private T m_initialStateDefinition;
 
@@ -259,6 +200,68 @@ namespace NobunAtelier
 
             m_statesMap[m_activeStateDefinition].Tick(deltaTime);
         }
+
+#if UNITY_EDITOR
+
+        public TCollection ReferenceStateCollection
+        {
+            get
+            {
+                if (IsMainStateMachine)
+                {
+                    return m_referenceStateCollection;
+                }
+                else
+                {
+                    return ParentStateMachine.ReferenceStateCollection;
+                }
+            }
+        }
+
+        // very slow and not optimized, but whatever ;D
+        public int GetStateDefinitionRefCount(StateComponent<T, TCollection> source, T definition)
+        {
+            int useCount = 0;
+            var children = transform.GetComponentsInChildren<StateComponent<T, TCollection>>();
+
+            for (int i = 0, c = children.Length; i < c; ++i)
+            {
+                if (children[i].GetStateDefinition() == definition)
+                {
+                    ++useCount;
+                }
+            }
+
+            return useCount;
+        }
+
+        // very slow and not optimized, but whatever ;D
+        public void PingStateDefinitionRef(T definition, int objectApparitionOrder)
+        {
+            var children = transform.GetComponentsInChildren<StateComponent<T, TCollection>>();
+
+            if (objectApparitionOrder < 0 || objectApparitionOrder >= children.Length)
+            {
+                return;
+            }
+
+            int apparitionCount = 0;
+            for (int i = 0, c = children.Length; i < c; ++i)
+            {
+                if (children[i].GetStateDefinition() == definition)
+                {
+                    if (apparitionCount == objectApparitionOrder)
+                    {
+                        EditorGUIUtility.PingObject(children[i].gameObject);
+                        break;
+                    }
+
+                    ++apparitionCount;
+                }
+            }
+        }
+
+#endif
 
         protected virtual void OnGUI()
         {

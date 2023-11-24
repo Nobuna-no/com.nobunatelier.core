@@ -1,6 +1,6 @@
 using UnityEditor;
 
-namespace NobunAtelier
+namespace NobunAtelier.Editor
 {
     [CustomPropertyDrawer(typeof(GameModeStateDefinition))]
     public class GameModeStateDefinitionPropertyDrawer : StateDefinitionPropertyDrawer<GameModeStateDefinition, GameModeStateCollection>

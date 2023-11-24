@@ -1,10 +1,8 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEditor;
-using UnityEngine;
 
-namespace NobunAtelier
+namespace NobunAtelier.Editor
 {
     [CustomEditor(typeof(GameStateCollection))]
-    public class GameStateCollectionEditor : DataCollectionEditor { }
+    public class GameStateCollectionEditor : DataCollectionEditor
+    { }
 }

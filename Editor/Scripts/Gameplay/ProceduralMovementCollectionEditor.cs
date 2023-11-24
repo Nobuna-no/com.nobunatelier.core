@@ -1,7 +1,8 @@
 using UnityEditor;
 
-namespace NobunAtelier.Gameplay
+namespace NobunAtelier.Editor
 {
-    [CustomEditor(typeof(ProceduralMovementCollection))]
-    public class ProceduralMovementCollectionEditor : DataCollectionEditor { }
+    [CustomEditor(typeof(NobunAtelier.Gameplay.ProceduralMovementCollection))]
+    public class ProceduralMovementCollectionEditor : DataCollectionEditor
+    { }
 }

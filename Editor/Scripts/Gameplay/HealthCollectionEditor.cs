@@ -1,7 +1,8 @@
 using UnityEditor;
 
-namespace NobunAtelier.Gameplay
+namespace NobunAtelier.Editor
 {
-    [CustomEditor(typeof(HealthCollection))]
-    public class HealthCollectionEditor : DataCollectionEditor { }
+    [CustomEditor(typeof(NobunAtelier.Gameplay.HealthCollection))]
+    public class HealthCollectionEditor : DataCollectionEditor
+    { }
 }

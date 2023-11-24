@@ -1,8 +1,9 @@
 using UnityEditor;
-using NobunAtelier;
 
-[CustomEditor(typeof(TeamCollection))]
-public class TeamCollectionEditor : DataCollectionEditor
+namespace NobunAtelier.Editor
 {
-
+    [CustomEditor(typeof(TeamCollection))]
+    public class TeamCollectionEditor : DataCollectionEditor
+    {
+    }
 }

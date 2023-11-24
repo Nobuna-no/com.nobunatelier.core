@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
 
-namespace NobunAtelier
+namespace NobunAtelier.Editor
 {
     public class AnimSequenceBaker : EditorWindow
     {

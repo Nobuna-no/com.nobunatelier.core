@@ -1,12 +1,12 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace NobunAtelier
+namespace NobunAtelier.Editor
 {
     [CustomEditor(typeof(AttackAnimationDefinition))]
-    public class AttackAnimationDefinitionInspectorDrawer : Editor
+    public class AttackAnimationDefinitionInspectorDrawer : UnityEditor.Editor
     {
-        private Editor m_sequenceEditor;
+        private UnityEditor.Editor m_sequenceEditor;
         private AnimMontageDefinition m_previousAnimSequence;
         private bool m_showAnimSequenceEditor = true;
 
@@ -22,7 +22,7 @@ namespace NobunAtelier
             {
                 if (m_sequenceEditor == null || m_previousAnimSequence != attackDefinition.AnimMontage)
                 {
-                    m_sequenceEditor = Editor.CreateEditor(attackDefinition.AnimMontage);
+                    m_sequenceEditor = UnityEditor.Editor.CreateEditor(attackDefinition.AnimMontage);
                     m_previousAnimSequence = attackDefinition.AnimMontage;
                 }
 
