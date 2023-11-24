@@ -19,10 +19,8 @@ namespace NobunAtelier
 
         private Animator m_animator;
 
-        protected override void Awake()
+        protected override void OnSingletonAwake()
         {
-            base.Awake();
-
             m_animator = GetComponent<Animator>();
             AddAnimationEvent("FadeInEnd", m_fadeInAnimation.name);
             AddAnimationEvent("FadeOutEnd", m_fadeOutAnimation.name);

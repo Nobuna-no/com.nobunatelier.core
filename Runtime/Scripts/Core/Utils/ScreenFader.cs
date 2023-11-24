@@ -11,7 +11,7 @@ namespace NobunAtelier
         Instant
     }
 
-    public abstract class ScreenFader : SingletonManager<ScreenFader>
+    public abstract class ScreenFader : Singleton<ScreenFader>
     {
         [Header("Fader")]
         [SerializeField] protected bool m_startFilled = false;
@@ -91,11 +91,6 @@ namespace NobunAtelier
         public static bool IsFadeIn()
         {
             return Instance.m_isFadeIn;
-        }
-
-        protected override ScreenFader GetInstance()
-        {
-            return this;
         }
 
         // Instantly fill the screen

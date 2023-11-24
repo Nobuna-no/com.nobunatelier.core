@@ -18,7 +18,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace NobunAtelier
 {
-    public class AudioManager : SingletonManager<AudioManager>
+    public class AudioManager : Singleton<AudioManager>
     {
         [Header("Audio Settings")]
         [SerializeField]
@@ -74,11 +74,6 @@ namespace NobunAtelier
         private Dictionary<AudioDefinition, AudioHandle> m_audioHandlesDictionary = new Dictionary<AudioDefinition, AudioHandle>();
 
         private HashSet<AudioStitcherDefinition> m_audioStitchers = new HashSet<AudioStitcherDefinition>();
-
-        protected override AudioManager GetInstance()
-        {
-            return this;
-        }
 
         // LOAD AUDIO
         public void LoadAudio(AudioResourceDefinition baseAudioDefinition)

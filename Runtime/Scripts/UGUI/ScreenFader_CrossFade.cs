@@ -28,10 +28,8 @@ namespace NobunAtelier
         private float m_debugCrossFadeDuration = 1f;
 
 #endif
-        protected override void Awake()
+        protected override void OnSingletonAwake()
         {
-            base.Awake();
-
             m_image = GetComponent<Image>();
             m_image.enabled = false;
             m_animator = GetComponent<Animator>();

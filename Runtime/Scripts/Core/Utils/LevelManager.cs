@@ -10,7 +10,7 @@ using UnityEditor.SceneManagement;
 
 namespace NobunAtelier
 {
-    public class LevelManager : SingletonManager<LevelManager>
+    public class LevelManager : Singleton<LevelManager>
     {
         [Header("Level Manager")]
         [SerializeField, Scene]
@@ -38,14 +38,8 @@ namespace NobunAtelier
             this.enabled = true;
         }
 
-        protected override LevelManager GetInstance()
+        protected override void OnSingletonAwake()
         {
-            return this;
-        }
-
-        protected override void Awake()
-        {
-            base.Awake();
             this.enabled = false;
         }
 

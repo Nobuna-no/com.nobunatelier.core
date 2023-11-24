@@ -59,7 +59,7 @@ namespace NobunAtelier
         {
             base.Enter();
 
-            if (!ScreenFader.IsInstanceValid())
+            if (!ScreenFader.IsSingletonValid)
             {
                 // Debug.Log("No AnimatorFader found - no fade in animation played - invoking OnFadeInDone now.");
                 FadeInEnd();
@@ -170,7 +170,7 @@ namespace NobunAtelier
                 OnScenesUnloaded?.Invoke();
             }
 
-            if (!m_useAnimatorFadeOut || !ScreenFader.IsInstanceValid())
+            if (!m_useAnimatorFadeOut || !ScreenFader.IsSingletonValid)
             {
                 FadeOutEnd();
             }

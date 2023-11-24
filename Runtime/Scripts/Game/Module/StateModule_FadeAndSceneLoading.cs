@@ -86,7 +86,7 @@ namespace NobunAtelier
         public void StartFading()
         {
             m_fadeBeginTime = Time.realtimeSinceStartup;
-            if (!ScreenFader.IsInstanceValid())
+            if (!ScreenFader.IsSingletonValid)
             {
                 FadeInEnd();
                 return;

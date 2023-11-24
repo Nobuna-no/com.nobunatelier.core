@@ -6,13 +6,8 @@ using UnityEngine.InputSystem;
 
 namespace NobunAtelier
 {
-    public class GameActionConsole : SingletonManager<GameActionConsole>
+    public class GameActionConsole : Singleton<GameActionConsole>
     {
-        protected override GameActionConsole GetInstance()
-        {
-            return this;
-        }
-
         [System.Serializable]
         public struct ActionDefinition
         {

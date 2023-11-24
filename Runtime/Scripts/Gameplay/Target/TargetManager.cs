@@ -4,17 +4,12 @@ using UnityEngine;
 namespace NobunAtelier
 {
     [DefaultExecutionOrder(0)]
-    public class TargetManager : SingletonManager<TargetManager>
+    public class TargetManager : Singleton<TargetManager>
     {
         [SerializeField]
         private CharacterSimpleTargetingAbility m_targetingModule;
         private List<ITargetable> m_targets = new List<ITargetable>();
         public List<ITargetable> Targets => m_targets;
-
-        protected override TargetManager GetInstance()
-        {
-            return this;
-        }
 
         private void Start()
         {
