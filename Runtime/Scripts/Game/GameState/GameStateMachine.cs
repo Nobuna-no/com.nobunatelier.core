@@ -1,3 +1,6 @@
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
 
 namespace NobunAtelier
@@ -7,7 +10,14 @@ namespace NobunAtelier
     {
         public virtual void ExitApplication()
         {
+#if UNITY_EDITOR
+            if (Application.isEditor)
+            {
+                EditorApplication.ExitPlaymode();
+            }
+#else
             Application.Quit();
+#endif
         }
     }
 }

@@ -1,11 +1,12 @@
 {
-    "name": "NobunAtelier.Tests.EditMode",
-    "rootNamespace": "NobunAtelier.Tests.EditMode",
+    "name": "NobunAtelier.Core.Editor.Tests",
+    "rootNamespace": "NobunAtelier.Core.Editor.Tests",
     "references": [
+        "NobunAtelier.Core",
+        "NobunAtelier.Editor",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "NobunAtelier.Editor",
-        "NobunAtelier.Core"
+        "NobunAtelier.Tests"
     ],
     "includePlatforms": [
         "Editor"

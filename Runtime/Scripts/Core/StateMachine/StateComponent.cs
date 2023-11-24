@@ -33,7 +33,7 @@ namespace NobunAtelier
 
         private NobunAtelier.StateMachineComponent<T, TCollection> m_parentStateMachine = null;
         public NobunAtelier.StateMachineComponent<T, TCollection> ParentStateMachine => m_parentStateMachine;
-
+        public T StateDefinition => m_stateDefinition;
         protected bool HasStateModule => m_stateModules != null && m_stateModules.Length > 0;
         private Type m_genericState;
         private Type m_stateDefinitionType;
@@ -134,11 +134,6 @@ namespace NobunAtelier
 
         protected virtual void Awake()
         {
-            if (!this.enabled)
-            {
-                return;
-            }
-
             if (transform.parent != null)
             {
                 m_parentStateMachine = transform.parent.GetComponentInParent<NobunAtelier.StateMachineComponent<T, TCollection>>(true);
@@ -155,6 +150,8 @@ namespace NobunAtelier
                 CaptureStateModule();
             }
 
+            InitializeReflectionFields();
+
             if (!HasStateModule)
             {
                 var availableSM = GetComponents<StateComponentModule>();
@@ -164,8 +161,6 @@ namespace NobunAtelier
                 }
                 return;
             }
-
-            InitializeReflectionFields();
 
             for (int i = 0, c = m_stateModules.Length; i < c; i++)
             {

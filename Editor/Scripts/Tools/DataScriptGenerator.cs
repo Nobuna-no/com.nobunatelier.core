@@ -10,11 +10,11 @@ namespace NobunAtelier.Editor
     public class DataScriptGenerator : EditorWindow
     {
         private readonly string NamespacesString = "using UnityEngine;\nusing NobunAtelier;\n\n";
-        private readonly string EditorNamespacesString = "using UnityEditor;\nusing NobunAtelier;\n\n";
+        private readonly string EditorNamespacesString = "using UnityEditor;\nusing NobunAtelier;\nusing NobunAtelier.Editor;\n\n";
         private readonly string DefinitionTemplateString = "public class {0}Definition : {1}\n";
         private readonly string CollectionTemplateString = "[CreateAssetMenu(fileName =\"DC_{0}\", menuName = \"NobunAtelier/Collection/{0}\")]\npublic class {0}Collection : DataCollection<{0}Definition>\n";
         private readonly string CollectionEditorTemplateString = "[CustomEditor(typeof({0}Collection))]\npublic class {0}CollectionEditor : DataCollectionEditor\n";
-        private readonly string DefinitionPropertyDrawerTemplateString = "[CustomPropertyDrawer(typeof({0}Definition))]\npublic class {0}DefinitionPropertyDrawer : {0}DefinitionPropertyDrawer<{0}Definition, {0}Collection>\n";
+        private readonly string DefinitionPropertyDrawerTemplateString = "[CustomPropertyDrawer(typeof({0}Definition))]\npublic class StateDefinitionPropertyDrawer : {0}DefinitionPropertyDrawer<{0}Definition, {0}Collection>\n";
         private readonly string EmptyMethodString = "{\n\n}";
 
         private List<Type> m_dataDefinitionTypes = new List<Type>();
@@ -147,7 +147,11 @@ namespace NobunAtelier.Editor
                 }
                 AssetDatabase.Refresh();
 
-                // Focus the generated script in the Project view
+                // Focus the generated script in the Project view if in the Assets folder.
+                if (!m_scriptPath.Contains("Assets"))
+                {
+                    return;
+                }   
                 string assetPath = m_scriptPath.Substring(m_scriptPath.IndexOf("Assets"));
                 UnityEngine.Object generatedScript = AssetDatabase.LoadAssetAtPath(assetPath, typeof(MonoScript));
                 Selection.activeObject = generatedScript;
@@ -167,11 +171,11 @@ namespace NobunAtelier.Editor
                 string.Format(CollectionTemplateString, m_className) + EmptyMethodString;
             m_collectionEditorScriptContent = EditorNamespacesString +
                 string.Format(CollectionEditorTemplateString, m_className) + EmptyMethodString;
-            m_scriptPath = Path.Combine(m_savePath, m_className + "Definition.cs");
-            m_collectionScriptPath = Path.Combine(m_savePath, m_className + "Collection.cs");
-            m_editorFolderPath = Path.Combine(m_savePath, "Editor");
+            m_scriptPath = Path.Combine(m_savePath, m_className + "Definition.cs").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            m_collectionScriptPath = Path.Combine(m_savePath, m_className + "Collection.cs").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            m_editorFolderPath = Path.Combine(m_savePath, "Editor").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             Directory.CreateDirectory(m_editorFolderPath);
-            m_collectionEditorScriptPath = Path.Combine(m_editorFolderPath, m_className + "CollectionEditor.cs");
+            m_collectionEditorScriptPath = Path.Combine(m_editorFolderPath, m_className + "CollectionEditor.cs").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
             // Adding property drawer script if the parent type is a state definition for the state machine.
             m_propertyDrawerScriptPath = string.Empty;
@@ -180,7 +184,7 @@ namespace NobunAtelier.Editor
             {
                 m_propertyDrawerScriptContent = NamespacesString +
                     string.Format(DefinitionPropertyDrawerTemplateString, m_className) + EmptyMethodString;
-                m_propertyDrawerScriptPath = Path.Combine(m_editorFolderPath, m_className + "DefinitionPropertyDrawer.cs");
+                m_propertyDrawerScriptPath = Path.Combine(m_editorFolderPath, m_className + "DefinitionPropertyDrawer.cs").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             }
 
             m_isPreviewReady = true;

@@ -26,6 +26,13 @@ namespace NobunAtelier
 
         private float m_timeBeforeNextState = -1f;
 
+#if UNITY_EDITOR
+        // Used by NaughtyAttributes.ShowIf
+        private bool DisplayDelay => TransitionType == NextStateTransitionType.Delay;
+        // Used by NaughtyAttributes.ShowIf
+        private bool DisplayNextState => TransitionType != NextStateTransitionType.Manual;
+#endif
+
         public override void Enter()
         {
             base.Enter();
