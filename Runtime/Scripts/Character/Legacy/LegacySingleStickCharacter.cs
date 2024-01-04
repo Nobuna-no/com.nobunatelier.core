@@ -82,9 +82,9 @@ namespace NobunAtelier
             m_movement = GetComponent<UnityEngine.CharacterController>();
         }
 
-        protected virtual void FixedUpdate()
+        protected virtual void Update()
         {
-            float deltaTime = Time.fixedDeltaTime;
+            float deltaTime = Time.deltaTime;
             m_lastMoveSpeed = (m_lastMoveVector.magnitude * m_moveSpeed) / deltaTime;
             m_movement.Move(m_lastMoveVector * m_moveSpeed * deltaTime);
             m_movement.Move(Physics.gravity * deltaTime);
