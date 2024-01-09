@@ -5,6 +5,11 @@ using UnityEngine.Events;
 
 namespace NobunAtelier
 {
+    /// <summary>
+    ///  responsible for managing the game mode in a Unity project. 
+    ///  It provides methods for initializing, starting, stopping, pausing, and resuming the game mode.
+    ///  It also handles the addition and removal of players and AI players to the game mode.
+    /// </summary>
     public class GameModeManager : MonoBehaviour
     {
         public static GameModeManager Instance { get; private set; }

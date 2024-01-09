@@ -12,6 +12,10 @@ using UnityEditor.SceneManagement;
 
 namespace NobunAtelier
 {
+    /// <summary>
+    /// Provides methods to asynchronously and simultaneously load and unload scenes, 
+    /// wrapping Unity async loading API.
+    /// </summary>
     public class LevelManager : Singleton<LevelManager>
     {
         [Header("Level Manager")]

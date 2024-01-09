@@ -2,8 +2,10 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    // Can either be a human or an IA - use by GameModes
-    // Use cases: Players, AIs, Spectators, ...
+    // Represents a participant in a game mode, which can either be a human player or an AI.
+    // The class is used by GameModes to instantiate the character and the controller
+    // affiliated to this participant.
+    // Use cases: Players, AIs or Spectators.
     public class GameModeParticipant : MonoBehaviour
     {
         [SerializeField]

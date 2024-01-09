@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
+    // Designed to be extended by other classes that implement specific character controller behaviors.
     public abstract class LegacyCharacterControllerBase : MonoBehaviour
     {
         public LegacyCharacterBase ControlledCharacter => m_controlledCharacter;
