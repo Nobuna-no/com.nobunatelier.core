@@ -1,6 +1,5 @@
 using NaughtyAttributes;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace NobunAtelier
@@ -13,6 +12,7 @@ namespace NobunAtelier
         [SerializeField] private string m_fillStateName;
 
         [SerializeField] private string m_clearStateName;
+        public override bool IsFadeInProgress => m_currentTime != -1;
 
         private Animator m_animator;
         private float m_currentTime = 0f;
@@ -42,8 +42,6 @@ namespace NobunAtelier
 
         protected override void FillImpl()
         {
-            base.FillImpl();
-
             if (!m_animator)
             {
                 return;
@@ -58,8 +56,6 @@ namespace NobunAtelier
         // Instantly fill the screen
         protected override void ClearImpl()
         {
-            base.ClearImpl();
-
             if (!m_animator)
             {
                 return;
@@ -81,7 +77,7 @@ namespace NobunAtelier
 
 #endif
 
-        protected override void FadeInImpl(float duration, UnityAction actionToRaiseOnEnd = null)
+        protected override void FadeInImpl(float duration)
         {
             if (!m_animator)
             {
@@ -106,15 +102,12 @@ namespace NobunAtelier
 
             if (m_isFadeIn)
             {
-                actionToRaiseOnEnd?.Invoke();
                 return;
             }
 
             m_animator.CrossFadeInFixedTime(m_fillStateHash, duration, 0);
             m_currentTime = duration;
             m_isCrossFadingIn = true;
-
-            base.FadeInImpl(duration, actionToRaiseOnEnd);
         }
 
 #if UNITY_EDITOR
@@ -127,7 +120,7 @@ namespace NobunAtelier
 
 #endif
 
-        protected override void FadeOutImpl(float duration, UnityAction actionToRaiseOnEnd = null)
+        protected override void FadeOutImpl(float duration)
         {
             if (!m_animator)
             {
@@ -150,15 +143,12 @@ namespace NobunAtelier
 
             if (!m_isFadeIn)
             {
-                actionToRaiseOnEnd?.Invoke();
                 return;
             }
 
             m_animator.CrossFadeInFixedTime(m_clearStateHash, duration, 0);
             m_currentTime = duration;
             m_isCrossFadingIn = false;
-
-            base.FadeOutImpl(duration, actionToRaiseOnEnd);
         }
 
         protected override void FadeOutEnd()

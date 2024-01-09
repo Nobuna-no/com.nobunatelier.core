@@ -1,6 +1,5 @@
 using NaughtyAttributes;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace NobunAtelier
 {
@@ -18,7 +17,10 @@ namespace NobunAtelier
         [SerializeField] private AnimationClip m_fadeOutAnimation;
         [SerializeField, AnimatorParam("m_animator")] private string m_fadeOutTrigger;
 
+        public override bool IsFadeInProgress => m_fadeEstimatedRemainingTime != -1;
+
         private Animator m_animator;
+        private float m_fadeEstimatedRemainingTime = -1;
 
         protected override void OnSingletonAwake()
         {
@@ -29,7 +31,7 @@ namespace NobunAtelier
 
         protected override void FillImpl()
         {
-            base.FillImpl();
+            m_fadeEstimatedRemainingTime = -1f;
 
             if (!m_animator)
             {
@@ -42,7 +44,7 @@ namespace NobunAtelier
         // Instantly fill the screen
         protected override void ClearImpl()
         {
-            base.ClearImpl();
+            m_fadeEstimatedRemainingTime = -1f;
 
             if (!m_animator)
             {
@@ -52,33 +54,30 @@ namespace NobunAtelier
             m_animator.SetTrigger(m_clearTrigger);
         }
 
-        protected override void FadeInImpl(float duration, UnityAction actionToRaiseOnEnd = null)
+        protected override void FadeInImpl(float duration)
         {
             if (!m_animator)
             {
-                base.FadeInImpl(duration, actionToRaiseOnEnd);
                 return;
             }
 
-            SetFaderDuration(duration);
-
+            m_animator.speed = m_fadeInAnimation.length / duration;
             m_animator.SetTrigger(m_fadeInTrigger);
 
-            base.FadeInImpl(duration, actionToRaiseOnEnd);
+            m_fadeEstimatedRemainingTime = m_fadeInAnimation.length * duration;
         }
 
-        protected override void FadeOutImpl(float duration, UnityAction actionToRaiseOnEnd = null)
+        protected override void FadeOutImpl(float duration)
         {
             if (!m_animator)
             {
-                base.FadeOutImpl(duration, actionToRaiseOnEnd);
                 return;
             }
 
-            SetFaderDuration(duration);
+            m_animator.speed = m_fadeOutAnimation.length / duration;
             m_animator.SetTrigger(m_fadeOutTrigger);
 
-            base.FadeOutImpl(duration, actionToRaiseOnEnd);
+            m_fadeEstimatedRemainingTime = m_fadeOutAnimation.length * duration;
         }
 
         protected override void FadeInEnd()
@@ -91,11 +90,6 @@ namespace NobunAtelier
         {
             ResetFaderDuration();
             base.FadeOutEnd();
-        }
-
-        private void SetFaderDuration(float duration)
-        {
-            m_animator.speed = m_fadeInAnimation.length / duration;
         }
 
         private void ResetFaderDuration()
@@ -132,6 +126,20 @@ namespace NobunAtelier
         private void OnValidate()
         {
             m_animator = GetComponent<Animator>();
+        }
+
+        private void FixedUpdate()
+        {
+            if (m_fadeEstimatedRemainingTime == -1)
+            {
+                return;
+            }
+
+            m_fadeEstimatedRemainingTime -= Time.fixedDeltaTime;
+            if (m_fadeEstimatedRemainingTime <= 0f)
+            {
+                m_fadeEstimatedRemainingTime = -1f;
+            }
         }
     }
 }

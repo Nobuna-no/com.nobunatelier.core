@@ -27,7 +27,7 @@ namespace NobunAtelier
         private Trigger m_fadeTrigger = Trigger.OnStateEnter;
 
         [SerializeField]
-        private FadingMode m_fadingInMode = FadingMode.Normal;
+        private ScreenFader.FadingMode m_fadingInMode = ScreenFader.FadingMode.Normal;
 
         [SerializeField, ShowIf("IsNormalFadeIn")]
         private float m_fadeInDurationInSecond = 1.0f;
@@ -40,7 +40,7 @@ namespace NobunAtelier
         // public UnityEvent OnFadeInDone;
 
         [SerializeField]
-        private FadingMode m_fadingOutMode = FadingMode.Normal;
+        private ScreenFader.FadingMode m_fadingOutMode = ScreenFader.FadingMode.Normal;
 
         [SerializeField, ShowIf("IsNormalFadeOut")]
         private float m_fadeOutDurationInSecond = 1.0f;
@@ -64,8 +64,8 @@ namespace NobunAtelier
         private List<string> m_loadingScenes = new List<string>();
         private List<string> m_unloadingScenes = new List<string>();
 
-        private bool IsNormalFadeIn => m_fadingInMode == FadingMode.Normal;
-        private bool IsNormalFadeOut => m_fadingOutMode == FadingMode.Normal;
+        private bool IsNormalFadeIn => m_fadingInMode == ScreenFader.FadingMode.Normal;
+        private bool IsNormalFadeOut => m_fadingOutMode == ScreenFader.FadingMode.Normal;
 
         public override void Enter()
         {
@@ -94,11 +94,11 @@ namespace NobunAtelier
 
             switch (m_fadingInMode)
             {
-                case FadingMode.Normal:
+                case ScreenFader.FadingMode.Normal:
                     ScreenFader.FadeIn(m_fadeInDurationInSecond, FadeInEnd);
                     break;
 
-                case FadingMode.Instant:
+                case ScreenFader.FadingMode.Instant:
                     ScreenFader.Fill();
                     FadeInEnd();
                     break;
@@ -205,11 +205,11 @@ namespace NobunAtelier
 
             switch (m_fadingOutMode)
             {
-                case FadingMode.Normal:
+                case ScreenFader.FadingMode.Normal:
                     ScreenFader.FadeOut(m_fadeOutDurationInSecond);
                     break;
 
-                case FadingMode.Instant:
+                case ScreenFader.FadingMode.Instant:
                     ScreenFader.Clear();
                     break;
 
