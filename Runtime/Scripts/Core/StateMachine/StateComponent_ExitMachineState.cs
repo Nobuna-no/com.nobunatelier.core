@@ -10,8 +10,8 @@ namespace NobunAtelier
         private enum ExitStateMachineTrigger
         {
             Manual,
-            AfterDelay,
             OnStateEnter,
+            AfterDelay,
         }
 
         [Header("State Machine Exit")]

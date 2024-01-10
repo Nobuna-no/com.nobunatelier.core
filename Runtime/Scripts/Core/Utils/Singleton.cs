@@ -4,9 +4,9 @@ using UnityEngine;
 public abstract class Singleton<T> : MonoBehaviour
     where T : MonoBehaviour
 {
+    [Header("Singleton")]
     [SerializeField] private bool m_dontDestroyOnLoad = false;
 
-    [Header("Singleton")]
     [Tooltip("If a singleton already exist, any a new singleton instance is going to be destroyed." +
         "Set this value to true to only destroy the component instead of the entire GameObject.")]
     [SerializeField] private bool m_onlyDestroyDuplicatedComponent = true;
