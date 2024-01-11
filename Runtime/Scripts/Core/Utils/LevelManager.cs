@@ -21,6 +21,7 @@ namespace NobunAtelier
         [Header("Level Manager")]
         [SerializeField, Scene]
         private string m_persistentScene;
+        [SerializeField] private bool m_logDebug = false;
 
         public StringEvent OnSceneLoaded;
         public StringEvent OnSceneUnloaded;
@@ -60,12 +61,18 @@ namespace NobunAtelier
                     if (scene.IsLoading)
                     {
                         OnSceneLoaded?.Invoke(scene.SceneName);
-                        Debug.Log($"Scene '{scene.SceneName}' Loaded");
+                        if (m_logDebug)
+                        {
+                            Debug.Log($"Scene '{scene.SceneName}' Loaded");
+                        }
                     }
                     else
                     {
                         OnSceneUnloaded?.Invoke(scene.SceneName);
-                        Debug.Log($"Scene '{scene.SceneName}' Unloaded");
+                        if (m_logDebug)
+                        {
+                            Debug.Log($"Scene '{scene.SceneName}' Unloaded");
+                        }
                     }
                     m_loadingScenes.RemoveAt(i);
                 }

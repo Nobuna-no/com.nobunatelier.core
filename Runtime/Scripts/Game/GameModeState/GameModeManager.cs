@@ -159,7 +159,7 @@ namespace NobunAtelier
             }
 
             var basePlayerController = participant.Controller as LegacyPlayerControllerBase;
-            var humanPlayer = participant as Player;
+            var humanPlayer = participant as PlayerInputParticipant;
             Debug.Assert(humanPlayer, "LegacyPlayerControllerBase is BasePlayerController but it is not a Human Player!");
 
             // Pretty sure this is not needed anymore - TO REMOVE
@@ -215,7 +215,7 @@ namespace NobunAtelier
 
             // Do we need to mount the input on the AI controller ?
             var basePlayerController = bot.Controller as LegacyAIControllerBase;
-            var botPlayer = bot as AIPlayer;
+            var botPlayer = bot as AIParticipant;
             Debug.Assert(botPlayer, $"{this.name}: {bot.name} is not an AIPlayer!");
 
             if (m_enableInputOnJoin)

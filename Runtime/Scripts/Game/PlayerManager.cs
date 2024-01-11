@@ -16,10 +16,10 @@ namespace NobunAtelier
         private int m_playerLimit = 4;
 
         [SerializeField, Required, InfoBox("This prefab will override the PlayerInputManager `Player Prefab`")]
-        private Player m_playerPrefab;
+        private PlayerInputParticipant m_playerPrefab;
 
         [SerializeField]
-        private AIPlayer m_botPrefab;
+        private AIParticipant m_botPrefab;
 
         [SerializeField]
         private bool m_enablePlayerJoiningByDefault = true;
@@ -39,8 +39,8 @@ namespace NobunAtelier
 
         private PlayerInputManager m_manager;
         private GameModeManager m_gamemode;
-        private List<Player> m_players = new List<Player>();
-        private List<AIPlayer> m_bots = new List<AIPlayer>();
+        private List<PlayerInputParticipant> m_players = new List<PlayerInputParticipant>();
+        private List<AIParticipant> m_bots = new List<AIParticipant>();
         private List<GameModeParticipant> m_pendingPlayers = new List<GameModeParticipant>();
 
         public virtual void EnablePlayerJoining()
@@ -114,7 +114,7 @@ namespace NobunAtelier
         }
 
         [Button(enabledMode: EButtonEnableMode.Playmode)]
-        public virtual void RemoveAIPlayer(AIPlayer botToRemove = null, bool removeFromGameMode = true)
+        public virtual void RemoveAIPlayer(AIParticipant botToRemove = null, bool removeFromGameMode = true)
         {
             if (botToRemove == null)
             {
@@ -212,7 +212,7 @@ namespace NobunAtelier
 
         protected virtual void OnHumanPlayerLeft(PlayerInput obj)
         {
-            m_players.Remove(obj.GetComponent<Player>());
+            m_players.Remove(obj.GetComponent<PlayerInputParticipant>());
             OnPlayerLeftEvent?.Invoke();
         }
 
@@ -222,7 +222,7 @@ namespace NobunAtelier
             {
                 return;
             }
-            m_pendingPlayers.Add(obj.GetComponent<Player>());
+            m_pendingPlayers.Add(obj.GetComponent<PlayerInputParticipant>());
 
             this.enabled = true;
         }
@@ -286,14 +286,14 @@ namespace NobunAtelier
                 if (m_pendingPlayers[i].IsAI)
                 {
                     m_pendingPlayers[i].gameObject.name = m_pendingPlayers[i].gameObject.name.Replace("(Clone)", $"#{m_bots.Count}");
-                    AIPlayer newBotPlayer = m_pendingPlayers[i] as AIPlayer;
+                    AIParticipant newBotPlayer = m_pendingPlayers[i] as AIParticipant;
                     Debug.Assert(newBotPlayer, $"{this.name}: player '{m_pendingPlayers[i].name}' is not am AI player.");
                     m_bots.Add(newBotPlayer);
                 }
                 else
                 {
                     m_pendingPlayers[i].gameObject.name = m_pendingPlayers[i].gameObject.name.Replace("(Clone)", $"#{m_players.Count}");
-                    Player newHumanPlayer = m_pendingPlayers[i] as Player;
+                    PlayerInputParticipant newHumanPlayer = m_pendingPlayers[i] as PlayerInputParticipant;
                     Debug.Assert(newHumanPlayer, $"{this.name}: player '{m_pendingPlayers[i].name}' is not a human player.");
                     m_players.Add(newHumanPlayer);
 

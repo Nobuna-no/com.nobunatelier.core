@@ -5,8 +5,10 @@ namespace NobunAtelier
 {
     // The class is used to handle player input and interactions within the game mode.
     [RequireComponent(typeof(PlayerInput))]
-    public class Player : GameModeParticipant
+    public class PlayerInputParticipant : GameModeParticipant
     {
+        public override bool IsAI => false;
+
         public PlayerInput PlayerInput
         {
             get

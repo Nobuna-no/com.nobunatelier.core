@@ -1,8 +1,10 @@
 namespace NobunAtelier
 {
     // The class is used to handle AI player interactions within the game mode.
-    public class AIPlayer : GameModeParticipant
+    public class AIParticipant : GameModeParticipant
     {
+        public override bool IsAI => true;
+
         private LegacyAIControllerBase m_aiController;
 
         public LegacyAIControllerBase AIController
