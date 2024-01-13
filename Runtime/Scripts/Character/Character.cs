@@ -20,13 +20,13 @@ namespace NobunAtelier
         private CharacterPhysicsModule m_physicsModule;
 
         [SerializeField, Tooltip("Each frame, the modules are sorted per priority and availability and then executed.")]
-        private List<CharacterVelocityModuleBase> m_velocityModules;
+        private List<CharacterVelocityModuleBase> m_velocityModules = new List<CharacterVelocityModuleBase>();
 
         [SerializeField, Tooltip("Only one rotation module executed per frame. The best module is evaluated based on availability and priority.")]
-        private List<CharacterRotationModuleBase> m_rotationModules;
+        private List<CharacterRotationModuleBase> m_rotationModules = new List<CharacterRotationModuleBase>();
 
         [SerializeField, Tooltip("Each frame, the modules are sorted per priority and availability and then executed.")]
-        private List<CharacterAbilityModuleBase> m_abilityModules;
+        private List<CharacterAbilityModuleBase> m_abilityModules = new List<CharacterAbilityModuleBase>();
 
         [SerializeField, ReadOnly]
         private Vector3 currentVel = Vector3.zero;
