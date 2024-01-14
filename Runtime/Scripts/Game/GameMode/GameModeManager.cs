@@ -2,11 +2,12 @@ using NaughtyAttributes;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UIElements;
 
 namespace NobunAtelier
 {
     /// <summary>
-    ///  responsible for managing the game mode in a Unity project. 
+    ///  responsible for managing the game mode in a Unity project.
     ///  It provides methods for initializing, starting, stopping, pausing, and resuming the game mode.
     ///  It also handles the addition and removal of players and AI players to the game mode.
     /// </summary>
@@ -15,9 +16,9 @@ namespace NobunAtelier
         public static GameModeManager Instance { get; private set; }
 
         public IReadOnlyList<GameModeParticipant> PlayersController => m_participants;
-        public LegacyPlayerControllerBase PlayerControllerPrefab => m_playerControllerPrefab;
-        public LegacyAIControllerBase AIControllerPrefab => m_aiControllerPrefab;
-        public LegacyCharacterBase CharacterMovementPrefab => m_characterMovementPrefab;
+        public PlayerController PlayerControllerPrefab => m_playerControllerPrefab;
+        public AIController AIControllerPrefab => m_aiControllerPrefab;
+        public Character CharacterMovementPrefab => m_characterMovementPrefab;
 
         [Header("GameMode")]
         [SerializeField]
@@ -41,10 +42,10 @@ namespace NobunAtelier
         private bool m_instantiateController = true;
 
         [SerializeField, ShowIf("m_instantiateController")]
-        private LegacyPlayerControllerBase m_playerControllerPrefab;
+        private PlayerController m_playerControllerPrefab;
 
         [SerializeField, ShowIf("m_instantiateController")]
-        private LegacyAIControllerBase m_aiControllerPrefab;
+        private AIController m_aiControllerPrefab;
 
         [SerializeField, ShowIf("m_instantiateController")]
         private bool m_enableInputOnJoin = true;
@@ -53,7 +54,7 @@ namespace NobunAtelier
         private bool m_instantiateCharacterMovement = true;
 
         [SerializeField, ShowIf("m_instantiateCharacterMovement")]
-        private LegacyCharacterBase m_characterMovementPrefab;
+        private Character m_characterMovementPrefab;
 
         public IList<GameModeParticipant> Participants => m_participants;
         private List<GameModeParticipant> m_participants = new List<GameModeParticipant>();
@@ -90,13 +91,13 @@ namespace NobunAtelier
                     continue;
                 }
 
-                if (m_participants[i].Controller.IsAI)
+                if (m_participants[i].IsAI)
                 {
                     RemoveAIPlayer(m_participants[i], true);
                 }
                 else
                 {
-                    var controller = m_participants[i].Controller as LegacyPlayerControllerBase;
+                    var controller = m_participants[i].Controller as PlayerController;
 
                     if (!controller || !controller.PlayerInput)
                     {
@@ -113,9 +114,9 @@ namespace NobunAtelier
         public virtual void GameModePause()
         {
             m_isPaused = true;
-            if (PlayerManager.Instance)
+            if (LegacyPlayerManager.Instance)
             {
-                PlayerManager.Instance.SetActivePlayerInput(false);
+                LegacyPlayerManager.Instance.SetActivePlayerInput(false);
             }
             OnGameModePause();
         }
@@ -123,9 +124,9 @@ namespace NobunAtelier
         public virtual void GameModeResume()
         {
             m_isPaused = false;
-            if (PlayerManager.Instance)
+            if (LegacyPlayerManager.Instance)
             {
-                PlayerManager.Instance.SetActivePlayerInput(true);
+                LegacyPlayerManager.Instance.SetActivePlayerInput(true);
             }
             OnGameModeResume();
         }
@@ -158,16 +159,20 @@ namespace NobunAtelier
                 participant.InstantiateController(m_playerControllerPrefab);
             }
 
-            var basePlayerController = participant.Controller as LegacyPlayerControllerBase;
-            var humanPlayer = participant as PlayerInputParticipant;
-            Debug.Assert(humanPlayer, "LegacyPlayerControllerBase is BasePlayerController but it is not a Human Player!");
-
-            // Pretty sure this is not needed anymore - TO REMOVE
-            // basePlayerController.MountPlayerInput(humanPlayer.PlayerInput);
+            if (participant.IsAI)
+            {
+                var botPlayer = participant as AIParticipant;
+                Debug.Assert(botPlayer, $"{this.name}: {participant.name} is not an AIPlayer!");
+            }
+            else
+            {
+                var humanPlayer = participant as PlayerInputParticipant;
+                Debug.Assert(humanPlayer, $"{this.name}: {participant.name} is not a Human Player!");
+            }
 
             if (m_enableInputOnJoin)
             {
-                basePlayerController.EnableInput();
+                participant.Controller.EnableInput();
             }
 
             m_participants.Add(participant);
@@ -184,9 +189,9 @@ namespace NobunAtelier
 
             if (destroyChildrenPrefab)
             {
-                if (participant.CharacterMovement)
+                if (participant.Character)
                 {
-                    Destroy(participant.CharacterMovement.gameObject);
+                    Destroy(participant.Character.gameObject);
                 }
 
                 Destroy(participant.Controller.gameObject);
@@ -214,7 +219,7 @@ namespace NobunAtelier
             }
 
             // Do we need to mount the input on the AI controller ?
-            var basePlayerController = bot.Controller as LegacyAIControllerBase;
+            var basePlayerController = bot.Controller as AIController;
             var botPlayer = bot as AIParticipant;
             Debug.Assert(botPlayer, $"{this.name}: {bot.name} is not an AIPlayer!");
 
@@ -227,7 +232,7 @@ namespace NobunAtelier
                 }
                 else
                 {
-                    basePlayerController.EnableAI();
+                    basePlayerController.EnableInput();
                 }
             }
 
@@ -245,9 +250,9 @@ namespace NobunAtelier
 
             if (destroyChildrenPrefab)
             {
-                if (bot.CharacterMovement)
+                if (bot.Character)
                 {
-                    Destroy(bot.CharacterMovement.gameObject);
+                    Destroy(bot.Character.gameObject);
                 }
 
                 Destroy(bot.Controller.gameObject);
@@ -299,14 +304,5 @@ namespace NobunAtelier
                 GameModeStop();
             }
         }
-
-        // TODO: Add a common Enable Input to the game agents
-        // public void SetActiveGameAgentInput(bool enable)
-        // {
-        //     for (int i = 0; i < m_participants.Count; ++i)
-        //     {
-        //         // m_participants[i].Controller.ena
-        //     }
-        // }
     }
 }
