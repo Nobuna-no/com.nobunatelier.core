@@ -39,7 +39,7 @@ namespace NobunAtelier
         public override void Enter()
         {
             base.Enter();
-            var gamemode = FindFirstObjectByType<GameModeManager>();
+            var gamemode = FindFirstObjectByType<LegacyGameModeManager>();
             if (!gamemode)
             {
                 Debug.LogWarning($"{this}: No game mode found");
@@ -53,7 +53,7 @@ namespace NobunAtelier
 
                 if (m_addPlayersToGameModeOnInit)
                 {
-                    PlayerManager.Instance.AddPlayersToGameMode();
+                    LegacyPlayerManager.Instance.AddPlayersToGameMode();
                 }
             }
             if (IsTransitioningOnGameModeStop())

@@ -99,7 +99,7 @@ namespace NobunAtelier
         {
             if (m_playerInput == null)
             {
-                m_playerInput = GetComponent<PlayerInput>();
+                m_playerInput = GetComponentInParent<PlayerInput>();
             }
 
             if (m_playerInput)

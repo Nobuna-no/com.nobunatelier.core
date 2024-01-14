@@ -6,7 +6,7 @@ namespace NobunAtelier
     // The class is used by GameModes to instantiate the character and the controller
     // affiliated to this participant.
     // Use cases: Players, AIs or Spectators.
-    public abstract class GameModeParticipant : MonoBehaviour
+    public abstract class LegacyGameModeParticipant : MonoBehaviour
     {
         [SerializeField]
         private LegacyCharacterControllerBase m_controllerPrefab;

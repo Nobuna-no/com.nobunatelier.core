@@ -31,6 +31,9 @@ namespace NobunAtelier
         [SerializeField, ReadOnly]
         private Vector3 currentVel = Vector3.zero;
 
+        [SerializeField]
+        private bool m_ignoreMissingModule = false;
+
         public bool TryGetAbilityModule<T>(out T outModule) where T : CharacterAbilityModuleBase
         {
             outModule = null;
@@ -145,18 +148,24 @@ namespace NobunAtelier
                 Debug.LogWarning($"No physics module found on {this}, instancing a default CharacterUnityCharacterController.");
             }
 
-            if (m_velocityModules == null || m_velocityModules.Count == 0)
+            if (!m_ignoreMissingModule)
             {
-                Debug.LogWarning($"No velocity module found on {this}.");
-            }
-            if (m_rotationModules == null || m_rotationModules.Count == 0)
-            {
-                Debug.LogWarning($"No rotation module found on {this}.");
+                if (m_velocityModules == null || m_velocityModules.Count == 0)
+                {
+                    Debug.LogWarning($"No velocity module found on {this}.");
+                }
+                if (m_rotationModules == null || m_rotationModules.Count == 0)
+                {
+                    Debug.LogWarning($"No rotation module found on {this}.");
+                }
             }
 #else
             Debug.Assert(m_physicsModule, $"{this} doesn't have a Physics module!");
-            Debug.Assert(m_velocityModules != null && m_velocityModules.Count > 0, $"{this} doesn't have any Velocity module!");
-            Debug.Assert(m_rotationModules != null && m_rotationModules.Count > 0, $"{this} doesn't have any Rotation module!");
+            if (!m_ignoreMissingModule)
+            {
+                Debug.Assert(m_velocityModules != null && m_velocityModules.Count > 0, $"{this} doesn't have any Velocity module!");
+                Debug.Assert(m_rotationModules != null && m_rotationModules.Count > 0, $"{this} doesn't have any Rotation module!");
+            }
 #endif
 
             m_physicsModule.ModuleInit(this);
