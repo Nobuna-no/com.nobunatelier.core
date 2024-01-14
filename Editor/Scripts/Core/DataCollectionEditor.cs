@@ -8,19 +8,23 @@ namespace NobunAtelier.Editor
     [CanEditMultipleObjects]
     public class DataCollectionEditor : UnityEditor.Editor
     {
+        protected virtual bool ShouldHandleDragAndDrop => true;
         private static bool s_DirtyList = false;
         private static string s_CollectionType = "Unknown";
 
         private readonly GUIContent Title = new GUIContent("", "Show definition data");
         private readonly GUIContent NoBasicDataAvailableMessage = new GUIContent("No available data");
 
-        private DataCollection m_collection;
+        protected DataCollection m_collection;
         public ReorderableList list = null;
 
         private DataDefinition m_currentElement;
         private UnityEditor.Editor m_currentEditor;
         private int m_workingIndex = -1;
         private bool m_showBasicData = false;
+
+        private bool m_potentialDrag = false;
+        private bool hasAtLeastOneValidAssetType = false;
 
         private void OnEnable()
         {
@@ -127,6 +131,8 @@ namespace NobunAtelier.Editor
 
         public override void OnInspectorGUI()
         {
+            serializedObject.Update();
+
             if (m_collection == null)
             {
                 Debug.LogError("ScriptableObject is null");
@@ -144,7 +150,10 @@ namespace NobunAtelier.Editor
                 list.DoLayoutList();
             }
 
-            HandleDragAndDrop();
+            if (ShouldHandleDragAndDrop)
+            {
+                HandleDragAndDrop();
+            }
 
             if (m_workingIndex != -1)
             {
@@ -163,10 +172,9 @@ namespace NobunAtelier.Editor
                     }
                 }
             }
-        }
 
-        private bool m_potentialDrag = false;
-        private bool hasAtLeastOneValidAssetType = false;
+            serializedObject.ApplyModifiedProperties();
+        }
 
         private void HandleDragAndDrop()
         {

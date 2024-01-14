@@ -1,5 +1,6 @@
 using NaughtyAttributes;
 using System.Collections.Generic;
+using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
@@ -26,16 +27,24 @@ namespace NobunAtelier
         private bool m_addToGameModeOnPlayerJoin = true;
 
         [Header("Events")]
-        public UnityEvent OnPlayerJoinedEvent;
+        public UnityEvent OnParticipantJoinedEvent;
 
-        public UnityEvent OnPlayerLeftEvent;
+        public UnityEvent OnParticipantLeftEvent;
 
-        private bool m_addPlayerToGameModeOnPlayerJoin;
+        [Header("Split-Screen")]
+        [SerializeField, Tooltip("Override PlayerInputManager splitscreen behavior for Cinemachine camera.")]
+        private bool m_enableSplitScreen = false;
+
+        [SerializeField] private SplitScreenRatioCollection m_splitScreenViewportCollection;
+
+        public int ParticipantCount => m_participants.Count;
+        public IReadOnlyList<GameModeParticipant> Participants => m_participants;
 
         private PlayerInputManager m_manager;
         private GameModeManager m_gamemode;
         private List<GameModeParticipant> m_participants = new List<GameModeParticipant>();
         private List<GameModeParticipant> m_pendingParticipants = new List<GameModeParticipant>();
+        private bool m_addPlayerToGameModeOnPlayerJoin;
 
         public virtual void EnablePlayerJoining()
         {
@@ -163,6 +172,7 @@ namespace NobunAtelier
             }
 
             m_participants.Remove(botToRemove);
+            OnParticipantLeftEvent?.Invoke();
         }
 
         private bool CanNewPlayerJoin()
@@ -238,10 +248,23 @@ namespace NobunAtelier
             //}
         }
 
+        public void EnableSplitScreen()
+        {
+            m_manager.splitScreen = false;
+            m_enableSplitScreen = true;
+            RefreshSplitScreenCameras();
+        }
+
+        public void DisableSplitScreen()
+        {
+            m_enableSplitScreen = false;
+            RefreshSplitScreenCameras();
+        }
+
         protected virtual void OnHumanPlayerLeft(PlayerInput obj)
         {
             m_participants.Remove(obj.GetComponent<PlayerInputParticipant>());
-            OnPlayerLeftEvent?.Invoke();
+            OnParticipantLeftEvent?.Invoke();
         }
 
         protected virtual void OnHumanPlayerJoined(PlayerInput obj)
@@ -258,13 +281,20 @@ namespace NobunAtelier
         protected override void OnSingletonAwake()
         {
             var manager = GetComponent<PlayerInputManager>();
+            manager.notificationBehavior = PlayerNotifications.InvokeCSharpEvents;
+            if (m_enableSplitScreen)
+            {
+                manager.splitScreen = false;
+            }
+
             if (m_playerPrefab != null)
             {
                 manager.playerPrefab = m_playerPrefab.gameObject;
             }
 
             m_addPlayerToGameModeOnPlayerJoin = m_addToGameModeOnPlayerJoin;
-            this.enabled = false;
+
+            Debug.Log($"{this.name}.OnSingletonAwake at [{Time.frameCount}].");
         }
 
         private void OnValidate()
@@ -290,6 +320,9 @@ namespace NobunAtelier
             {
                 DisablePlayerJoining();
             }
+
+            // If this is called in Awake, Start is not going to be call as the component will be disabled.
+            this.enabled = false;
         }
 
         private void FixedUpdate()
@@ -327,9 +360,86 @@ namespace NobunAtelier
                 AddPlayersToGameMode();
             }
 
-            OnPlayerJoinedEvent?.Invoke();
+            OnParticipantJoinedEvent?.Invoke();
+
+            if (m_enableSplitScreen)
+            {
+                RefreshSplitScreenCameras();
+            }
 
             this.enabled = false;
+        }
+
+        [Button(enabledMode: EButtonEnableMode.Playmode)]
+        private void ToggleSplitScreen()
+        {
+            // We don't want to use the Unity PlayerManager split-screen.
+            m_enableSplitScreen = !m_enableSplitScreen;
+            RefreshSplitScreenCameras();
+        }
+
+        [Button]
+        private void RefreshSplitScreenCameras()
+        {
+            if (!m_enableSplitScreen)
+            {
+                foreach (var p in m_participants)
+                {
+                    Camera camera = p.GetComponentInChildren<Camera>();
+                    if (!camera)
+                    {
+                        continue;
+                    }
+
+                    camera.enabled = false;
+                }
+            }
+
+            if (m_splitScreenViewportCollection == null)
+            {
+                Debug.LogWarning($"{this.name}: No {typeof(SplitScreenRatioDefinition).Name} collection supplied." +
+                    $"Cannot update camera viewports.", this);
+                return;
+            }
+
+            Debug.Assert(m_splitScreenViewportCollection.DataDefinitions.Length >= m_participants.Count,
+            $"{this.name}: {m_participants.Count} participant(s) and only {m_splitScreenViewportCollection.DataDefinitions.Length} " +
+            $"viewport element in the {m_splitScreenViewportCollection.name} collection.", this);
+
+            int i = 0;
+            foreach (var p in m_participants)
+            {
+                // Every participant need to have it's own Camera.
+                Camera camera = p.GetComponentInChildren<Camera>();
+                if (!camera)
+                {
+                    Debug.LogWarning($"{this.name}: {p.name} doesn't have a Camera in its children, cannot split-screen" +
+                        $"this participant.", this);
+                    continue;
+                }
+
+                camera.enabled = true;
+
+                SplitScreenRatioDefinition definition = m_splitScreenViewportCollection.GetData()[m_participants.Count];
+                Debug.Assert(definition.Viewports.Count >= i,
+                    $"{this.name}: Not enough viewport rect in {definition.name}, expecting at least {i + 1}.", this);
+
+                camera.rect = m_splitScreenViewportCollection.GetData()[m_participants.Count - 1].Viewports[i];
+
+                CinemachineBrain cmBrain = camera.GetComponent<CinemachineBrain>();
+                if (cmBrain)
+                {
+                    cmBrain.ChannelMask = (OutputChannels)((int)OutputChannels.Channel01 << i);
+
+                    CinemachineCamera targetCm = p.GetComponentInChildren<CinemachineCamera>();
+                    if (targetCm)
+                    {
+                        targetCm.OutputChannel = cmBrain.ChannelMask;
+                    }
+                }
+
+                ++i;
+            }
         }
     }
 }
