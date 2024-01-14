@@ -30,6 +30,8 @@ namespace NobunAtelier.Gameplay
             }
         }
 
+        public bool HasAvailableItem => m_backpackQueue.Count > 0;
+
         public bool HasAvailableSocket => m_isUsable && m_socketUsageMaxCount > m_backpackQueue.Count && m_backpackSockets.Length > m_backpackQueue.Count;
 
         private Queue<TransportableObjectBehaviour> m_backpackQueue = new Queue<TransportableObjectBehaviour>();
