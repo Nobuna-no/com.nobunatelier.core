@@ -32,7 +32,8 @@ namespace NobunAtelier
         public UnityEvent OnParticipantLeftEvent;
 
         [Header("Split-Screen")]
-        [SerializeField, Tooltip("Override PlayerInputManager splitscreen behavior for Cinemachine camera.")]
+        [SerializeField, Tooltip("Override PlayerInputManager splitscreen behavior." +
+            "This allows AI participant to be handled.")]
         private bool m_enableSplitScreen = false;
 
         [SerializeField] private SplitScreenRatioCollection m_splitScreenViewportCollection;
@@ -293,8 +294,6 @@ namespace NobunAtelier
             }
 
             m_addPlayerToGameModeOnPlayerJoin = m_addToGameModeOnPlayerJoin;
-
-            Debug.Log($"{this.name}.OnSingletonAwake at [{Time.frameCount}].");
         }
 
         private void OnValidate()
