@@ -1,3 +1,4 @@
+using UnityEditor;
 using UnityEngine;
 
 namespace NobunAtelier
@@ -9,10 +10,13 @@ namespace NobunAtelier
     public abstract class GameModeParticipant : MonoBehaviour
     {
         [SerializeField]
-        private CharacterControllerBase m_controllerPrefab;
+        private CharacterControllerBase m_controllerReference;
 
         [SerializeField]
-        private Character m_characterPrefab;
+        private Character m_characterReference;
+
+        [SerializeField]
+        private bool m_useReferenceAsPrefabToInstantiate = false;
 
         public CharacterControllerBase Controller { get; private set; }
         public Character Character { get; private set; }
@@ -20,13 +24,18 @@ namespace NobunAtelier
 
         protected virtual void Awake()
         {
-            if (m_characterPrefab != null)
+            if (!m_useReferenceAsPrefabToInstantiate)
             {
-                InstantiateCharacter(m_characterPrefab);
+                return;
             }
-            if (m_controllerPrefab != null)
+
+            if (m_characterReference != null)
             {
-                InstantiateController(m_controllerPrefab);
+                InstantiateCharacter(m_characterReference);
+            }
+            if (m_controllerReference != null)
+            {
+                InstantiateController(m_controllerReference);
             }
         }
 
