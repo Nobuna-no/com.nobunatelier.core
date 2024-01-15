@@ -1,6 +1,7 @@
 using NaughtyAttributes;
 using System.Collections.Generic;
 using UnityEngine;
+using static Unity.Cinemachine.CinemachineTargetGroup;
 
 namespace NobunAtelier
 {
@@ -30,6 +31,9 @@ namespace NobunAtelier
 
         [SerializeField, ReadOnly]
         private Vector3 currentVel = Vector3.zero;
+
+        [SerializeField]
+        private bool m_ignoreMissingModule = false;
 
         public bool TryGetAbilityModule<T>(out T outModule) where T : CharacterAbilityModuleBase
         {
@@ -109,13 +113,16 @@ namespace NobunAtelier
 
         public void Rotate(Vector3 direction)
         {
-            var rotationModule = GetBestRotationModule();
-            if (rotationModule == null)
+            var rotationModules = GetBestRotationModules();
+            if (rotationModules == null)
             {
                 return;
             }
 
-            rotationModule.RotateInput(direction);
+            foreach (var module in rotationModules)
+            {
+                module.RotateInput(direction);
+            }
         }
 
         public void ResetCharacter(Vector3 position, Quaternion rotation)
@@ -145,18 +152,24 @@ namespace NobunAtelier
                 Debug.LogWarning($"No physics module found on {this}, instancing a default CharacterUnityCharacterController.");
             }
 
-            if (m_velocityModules == null || m_velocityModules.Count == 0)
+            if (!m_ignoreMissingModule)
             {
-                Debug.LogWarning($"No velocity module found on {this}.");
-            }
-            if (m_rotationModules == null || m_rotationModules.Count == 0)
-            {
-                Debug.LogWarning($"No rotation module found on {this}.");
+                if (m_velocityModules == null || m_velocityModules.Count == 0)
+                {
+                    Debug.LogWarning($"No velocity module found on {this}.");
+                }
+                if (m_rotationModules == null || m_rotationModules.Count == 0)
+                {
+                    Debug.LogWarning($"No rotation module found on {this}.");
+                }
             }
 #else
             Debug.Assert(m_physicsModule, $"{this} doesn't have a Physics module!");
-            Debug.Assert(m_velocityModules != null && m_velocityModules.Count > 0, $"{this} doesn't have any Velocity module!");
-            Debug.Assert(m_rotationModules != null && m_rotationModules.Count > 0, $"{this} doesn't have any Rotation module!");
+            if (!m_ignoreMissingModule)
+            {
+                Debug.Assert(m_velocityModules != null && m_velocityModules.Count > 0, $"{this} doesn't have any Velocity module!");
+                Debug.Assert(m_rotationModules != null && m_rotationModules.Count > 0, $"{this} doesn't have any Rotation module!");
+            }
 #endif
 
             m_physicsModule.ModuleInit(this);
@@ -171,8 +184,11 @@ namespace NobunAtelier
         {
             float deltaTime = Time.deltaTime;
 
-            var rotationModule = GetBestRotationModule();
-            rotationModule?.RotationUpdate(deltaTime);
+            var rotationModules = GetBestRotationModules();
+            foreach (var module in rotationModules)
+            {
+                module.RotationUpdate(deltaTime);
+            }
 
             AbilityProcessing(deltaTime);
 
@@ -247,25 +263,39 @@ namespace NobunAtelier
             }
         }
 
-        private CharacterRotationModuleBase GetBestRotationModule()
+        // For rotation, we only want to get the most suitable module as in general using multiple at the same
+        // time would end up in wanted behavior.
+        // However, if all modules with the same highest priority will be computed.
+        private CharacterRotationModuleBase[] GetBestRotationModules()
         {
             if (m_rotationModules == null || m_rotationModules.Count == 0)
             {
                 return null;
             }
 
+
             int bestPriority = -1;
-            CharacterRotationModuleBase bestModule = null;
+            List<CharacterRotationModuleBase> bestModules = new List<CharacterRotationModuleBase>();
+            // Sort ascending order (lower first).
+            m_rotationModules.Sort((x, y) => x.Priority.CompareTo(y.Priority));
+
             for (int i = 0, c = m_rotationModules.Count; i < c; i++)
             {
-                if (m_rotationModules[i].CanBeExecuted() && m_rotationModules[i].Priority > bestPriority)
+                if (!m_rotationModules[i].CanBeExecuted())
                 {
-                    bestModule = m_rotationModules[i];
-                    bestPriority = bestModule.Priority;
+                    continue;
                 }
+
+                if (bestModules.Count > 0 && m_rotationModules[i].Priority < bestPriority)
+                {
+                    break;
+                }
+
+                bestModules.Add(m_rotationModules[i]);
+                bestPriority = m_rotationModules[i].Priority;
             }
 
-            return bestModule;
+            return bestModules.ToArray();
         }
 
         private void MovementProcessing(float deltaTime)

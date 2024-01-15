@@ -1,3 +1,4 @@
+using NaughtyAttributes;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -5,12 +6,27 @@ namespace NobunAtelier.Gameplay
 {
     public class PickupBehaviour : TriggerBehaviour
     {
+        [SerializeField] private SocketStorageBehaviour m_storageComponent;
         public List<TransportableObjectBehaviour> GatherableObjects => m_baseGatherableObjects;
         private List<TransportableObjectBehaviour> m_baseGatherableObjects = new List<TransportableObjectBehaviour>();
 
         public event System.Action OnGatherableObjectAdded;
 
         public event System.Action OnGatherableObjectRemoved;
+
+        [Button]
+        public void TryGather()
+        {
+            if (m_storageComponent == null)
+            {
+                return;
+            }
+
+            if (GatherTry(out var obj))
+            {
+                m_storageComponent.ItemTryAdd(obj);
+            }
+        }
 
         public bool GatherTry(out TransportableObjectBehaviour obj)
         {

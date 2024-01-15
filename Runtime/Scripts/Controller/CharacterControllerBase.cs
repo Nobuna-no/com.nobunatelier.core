@@ -9,6 +9,7 @@ namespace NobunAtelier
         {
             OnAwake,
             OnEnable,
+            OnStart,
             Manual
         }
 
@@ -39,6 +40,11 @@ namespace NobunAtelier
         [Button(enabledMode: EButtonEnableMode.Playmode)]
         public abstract void DisableInput();
 
+        public virtual void SetCharacterReference(Character character)
+        {
+            m_controlledCharacter = character;
+        }
+
         protected virtual void Awake()
         {
             if (m_enableInputBehaviour == EnableInputBehaviour.OnAwake)
@@ -49,10 +55,10 @@ namespace NobunAtelier
 
         protected virtual void Start()
         {
-            // if (!m_mountCharacterOnStart)
-            // {
-            //     return;
-            // }
+            if (m_enableInputBehaviour == EnableInputBehaviour.OnStart)
+            {
+                EnableInput();
+            }
 
             m_controlledCharacter?.SetController(this);
         }

@@ -99,7 +99,8 @@ namespace NobunAtelier.Gameplay
 
             var hpBehaviour = other.GetComponent<HealthBehaviour>();
 
-            if (!hpBehaviour || hpBehaviour.IsDead || !m_team.IsTargetValid(m_target, hpBehaviour.Team))
+            bool cannotHitSelf = (m_target & TeamDefinition.Target.Self) == 0 && m_hitOriginTeam == other.GetComponent<TeamModule>();
+            if (cannotHitSelf || !hpBehaviour || hpBehaviour.IsDead || !m_team.IsTargetValid(m_target, hpBehaviour.Team))
             {
                 return false;
             }

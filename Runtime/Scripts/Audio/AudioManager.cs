@@ -461,7 +461,11 @@ namespace NobunAtelier
                 return;
             }
 
-            Debug.LogWarning($"{this.name}: {audioStitcherDefinition.name} hasn't been loaded yet. Nothing to unload.");
+
+            if (m_logDebug)
+            {
+                Debug.Log($"{this.name}: {audioStitcherDefinition.name} hasn't been loaded yet. Nothing to unload.");
+            }
         }
 
         public void UnloadAudio(AudioDefinition audioDefinition)
@@ -479,7 +483,11 @@ namespace NobunAtelier
                 return;
             }
 
-            Debug.LogWarning($"{this.name}: {audioDefinition.name} hasn't been loaded yet. Nothing to unload.");
+            if (m_logDebug)
+            {
+                // Not really important here as the resource is already unloaded, but still good to keep some log.
+                Debug.Log($"{this.name}: {audioDefinition.name} hasn't been loaded yet. Nothing to unload.");
+            }
         }
 
         public void UnloadAudioCollection(AudioCollection audioCollection)

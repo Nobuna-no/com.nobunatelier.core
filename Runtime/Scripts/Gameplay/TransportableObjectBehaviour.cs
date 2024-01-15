@@ -14,6 +14,12 @@ namespace NobunAtelier.Gameplay
 
         public bool IsPickable { get; set; } = true;
 
+        [Header("Drop Effect")]
+        [SerializeField] private float m_dropEffectForce = 5;
+        [SerializeField] private Vector3 m_dropEffectOrigin = Vector3.one;
+
+        private const float k_ExplosiveForce = 100;
+
         public virtual bool Pick()
         {
             if (!IsPickable)
@@ -25,15 +31,29 @@ namespace NobunAtelier.Gameplay
             return true;
         }
 
-        public virtual void Drop()
+        protected Vector3 GetLocalSpawnPointInSphere()
+        {
+            Vector3 vec = Random.insideUnitSphere * k_ExplosiveForce;
+            vec.x *= m_dropEffectOrigin.x;
+            vec.z *= m_dropEffectOrigin.z;
+            vec.y = -m_dropEffectOrigin.y;
+            return vec;
+        }
+
+        public virtual void Drop(bool withExplosiveForce = false)
         {
             EnablePhysics(true);
+
+            if (withExplosiveForce)
+            {
+                RigidBody.AddExplosionForce(RigidBody.mass * m_dropEffectForce * k_ExplosiveForce, RigidBody.position + GetLocalSpawnPointInSphere(), k_ExplosiveForce * m_dropEffectForce);
+            }
         }
 
         public virtual void Throw(Vector3 dir, float force)
         {
             Drop();
-            RigidBody.AddForce(dir * force, ForceMode.Impulse);
+            RigidBody.AddForce(dir * force * RigidBody.mass, ForceMode.Impulse);
         }
 
         protected override void OnActivation()

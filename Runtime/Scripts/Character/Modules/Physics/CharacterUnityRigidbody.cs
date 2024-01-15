@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Character/PhysicsModule Rigidbody")]
+    [AddComponentMenu("NobunAtelier/Character/Physics/PhysicsModule: Rigidbody")]
     public class CharacterUnityRigidBody : CharacterPhysicsModule
     {
         [SerializeField]
