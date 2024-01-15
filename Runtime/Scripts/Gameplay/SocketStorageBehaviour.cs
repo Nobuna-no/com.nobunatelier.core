@@ -1,4 +1,6 @@
+using NaughtyAttributes;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace NobunAtelier.Gameplay
@@ -6,7 +8,7 @@ namespace NobunAtelier.Gameplay
     // TODO: move all animation related info to character or controller logic
     public class SocketStorageBehaviour : MonoBehaviour
     {
-        [NaughtyAttributes.InfoBox("IMPORTANT:\n The maximum size of the backpack is determined by the amount of sockets")]
+        [NaughtyAttributes.InfoBox("IMPORTANT:\n The maximum size of the storage is determined by the amount of sockets")]
         [SerializeField]
         private Transform[] m_backpackSockets;
 
@@ -18,6 +20,9 @@ namespace NobunAtelier.Gameplay
 
         [SerializeField]
         private int m_socketUsageMaxCount = 3;
+
+        [SerializeField]
+        private float m_throwForce = 10;
 
         public int ActiveSocketCount
         {
@@ -86,13 +91,14 @@ namespace NobunAtelier.Gameplay
             return false;
         }
 
+        [Button]
         public void ItemsDropBegin()
         {
             m_isUsable = false;
 
             foreach (var item in m_backpackQueue)
             {
-                item.Drop();
+                item.Drop(true);
             }
             m_backpackQueue.Clear();
 
@@ -102,11 +108,13 @@ namespace NobunAtelier.Gameplay
             //}
         }
 
+        [Button]
         public void ItemsDropEnd()
         {
             m_isUsable = true;
         }
 
+        [Button]
         public void FirstItemDrop()
         {
             if (m_backpackQueue.Count == 0)
@@ -115,12 +123,22 @@ namespace NobunAtelier.Gameplay
             }
 
             var item = m_backpackQueue.Dequeue();
-            item.Drop();
+            item.Drop(true);
 
             //if (m_animator && m_seedCountIntName != string.Empty)
             //{
             //    m_animator.SetInteger(m_seedCountIntName, m_backpackQueue.Count);
             //}
+        }
+
+        [SerializeField]private float m_throwUpwardForce = 1f;
+        [Button]
+        public void ThrowFirstItem()
+        {
+            if (ItemTryConsume(out var item))
+            {
+                item.Throw((transform.forward + Vector3.up * m_throwUpwardForce).normalized, m_throwForce);
+            }
         }
 
         private void FixedUpdate()
@@ -146,7 +164,7 @@ namespace NobunAtelier.Gameplay
                 //{
                 float indexRatio = (float)index / (float)m_backpackSockets.Length;
                 rb.position = Vector3.SlerpUnclamped(rb.position, m_backpackSockets[index].position, Time.fixedDeltaTime * m_lerpSpeed * m_lerpSpeedFactorPerIndex.Evaluate(indexRatio));
-
+                rb.rotation = Quaternion.Slerp(rb.rotation, transform.rotation, Time.fixedDeltaTime * m_lerpSpeed);
                 ++index;
             }
         }
