@@ -69,6 +69,9 @@ namespace NobunAtelier
         [SerializeField, ReadOnly]
         private Vector3 m_velocity;
 
+        [SerializeField]
+        private bool m_ignoreThirdAxis = false;
+
 #if UNITY_EDITOR
 
         private bool DisplayCustomMovementAxisFields()
@@ -203,20 +206,22 @@ namespace NobunAtelier
                     break;
             }
 
-            // What was that for? xD
-            //var diffVec = Vector3.one - GetMovementSpace();
-            //if (diffVec.x != 0)
-            //{
-            //    m_velocity.x = currentVel.x;
-            //}
-            //if (diffVec.y != 0)
-            //{
-            //    m_velocity.y = currentVel.y;
-            //}
-            //if (diffVec.z != 0)
-            //{
-            //    m_velocity.z = currentVel.z;
-            //}
+            if (m_ignoreThirdAxis)
+            {
+                var diffVec = Vector3.one - GetMovementSpace();
+                if (diffVec.x != 0)
+                {
+                    m_velocity.x = currentVel.x;
+                }
+                if (diffVec.y != 0)
+                {
+                    m_velocity.y = currentVel.y;
+                }
+                if (diffVec.z != 0)
+                {
+                    m_velocity.z = currentVel.z;
+                }
+            }
 
             m_movementVector = Vector3.zero;
 

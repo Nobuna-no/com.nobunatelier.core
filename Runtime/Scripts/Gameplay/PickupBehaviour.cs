@@ -17,7 +17,7 @@ namespace NobunAtelier.Gameplay
         [Button]
         public void TryGather()
         {
-            if (m_storageComponent == null)
+            if (!enabled && m_storageComponent == null)
             {
                 return;
             }
@@ -30,6 +30,12 @@ namespace NobunAtelier.Gameplay
 
         public bool GatherTry(out TransportableObjectBehaviour obj)
         {
+            if (!enabled)
+            {
+                obj = null;
+                return false;
+            }
+
             obj = null;
 
             if (m_baseGatherableObjects.Count == 0)

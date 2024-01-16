@@ -105,6 +105,22 @@ namespace NobunAtelier
             }
             else
             {
+                if (m_useGravity)
+                {
+                    if (Physics.gravity.x != 0)
+                    {
+                        newVelocity.x = m_targetRigidbody.velocity.x;
+                    }
+                    if (Physics.gravity.y != 0)
+                    {
+                        newVelocity.y = m_targetRigidbody.velocity.y;
+                    }
+                    if (Physics.gravity.z != 0)
+                    {
+                        newVelocity.z = m_targetRigidbody.velocity.z;
+                    }
+                }
+
                 m_targetRigidbody.velocity = newVelocity;
             }
 

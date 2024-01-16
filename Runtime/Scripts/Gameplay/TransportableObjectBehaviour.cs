@@ -1,59 +1,67 @@
+using NaughtyAttributes;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace NobunAtelier.Gameplay
 {
-    [RequireComponent(typeof(Collider), typeof(Rigidbody))]
     public class TransportableObjectBehaviour : PoolableBehaviour
     {
+        protected const float k_ExplosiveForce = 100;
+
         [Header("Transportable Object")]
-        [SerializeField]
-        private bool m_usePhysics = true;
-
-        public Rigidbody RigidBody { get; private set; }
-        public Collider Collider { get; private set; }
-
-        public bool IsPickable { get; set; } = true;
+        [SerializeField] private bool m_isPickable = true;
+        [SerializeField] private Rigidbody m_targetRigidbody = null;
+        [SerializeField] private Collider m_targetInteractionCollider = null;
+        [SerializeField] private bool m_usePhysics = true;
 
         [Header("Drop Effect")]
-        [SerializeField] private float m_dropEffectForce = 5;
-        [SerializeField] private Vector3 m_dropEffectOrigin = Vector3.one;
+        [SerializeField] private bool m_dropEffect = true;
+        [ShowIf("m_dropEffect"), SerializeField] private float m_dropEffectForce = 5;
+        [ShowIf("m_dropEffect"), SerializeField] private Vector3 m_dropEffectOrigin = Vector3.one;
 
-        private const float k_ExplosiveForce = 100;
+        [Header("Events")]
+        public UnityEvent OnPickedEvent;
+        public UnityEvent OnDroppedEvent;
+        public UnityEvent OnThrownEvent;
+
+        public Rigidbody TargetRigidbody => m_targetRigidbody;
+        public Collider Collider => m_targetInteractionCollider;
+        public bool IsPickable
+        {
+            get => m_isPickable;
+            set => m_isPickable = value;
+        }
+        public bool HasDropEffect => m_dropEffect;
+        public float DropEffectForce => m_dropEffectForce;
 
         public virtual bool Pick()
         {
-            if (!IsPickable)
+            if (!m_isPickable)
             {
                 return false;
             }
 
             EnablePhysics(false);
+            OnPickedEvent?.Invoke();
             return true;
-        }
-
-        protected Vector3 GetLocalSpawnPointInSphere()
-        {
-            Vector3 vec = Random.insideUnitSphere * k_ExplosiveForce;
-            vec.x *= m_dropEffectOrigin.x;
-            vec.z *= m_dropEffectOrigin.z;
-            vec.y = -m_dropEffectOrigin.y;
-            return vec;
         }
 
         public virtual void Drop(bool withExplosiveForce = false)
         {
             EnablePhysics(true);
+            OnDroppedEvent?.Invoke();
 
-            if (withExplosiveForce)
+            if (m_dropEffect && withExplosiveForce)
             {
-                RigidBody.AddExplosionForce(RigidBody.mass * m_dropEffectForce * k_ExplosiveForce, RigidBody.position + GetLocalSpawnPointInSphere(), k_ExplosiveForce * m_dropEffectForce);
+                TargetRigidbody.AddExplosionForce(TargetRigidbody.mass * m_dropEffectForce * k_ExplosiveForce, TargetRigidbody.position + GetLocalSpawnPointInSphere(), k_ExplosiveForce * m_dropEffectForce);
             }
         }
 
         public virtual void Throw(Vector3 dir, float force)
         {
-            Drop();
-            RigidBody.AddForce(dir * force * RigidBody.mass, ForceMode.Impulse);
+            EnablePhysics(true);
+            OnThrownEvent?.Invoke();
+            TargetRigidbody.AddForce(dir * force * TargetRigidbody.mass, ForceMode.Impulse);
         }
 
         protected override void OnActivation()
@@ -66,23 +74,39 @@ namespace NobunAtelier.Gameplay
             EnablePhysics(false);
         }
 
-        private void EnablePhysics(bool enable)
+        protected void EnablePhysics(bool enable)
         {
             enable &= m_usePhysics;
 
-            IsPickable = enable;
+            m_isPickable = enable;
             Collider.enabled = enable;
-            RigidBody.isKinematic = !enable;
-            RigidBody.useGravity = enable;
-            RigidBody.detectCollisions = enable;
+            TargetRigidbody.isKinematic = !enable;
+            TargetRigidbody.useGravity = enable;
+            TargetRigidbody.detectCollisions = enable;
         }
 
         protected override void Awake()
         {
             base.Awake();
 
-            Collider = GetComponent<Collider>();
-            RigidBody = GetComponent<Rigidbody>();
+            if (m_targetInteractionCollider == null)
+            {
+                m_targetInteractionCollider = GetComponent<Collider>();
+            }
+
+            if (m_targetRigidbody == null)
+            {
+                m_targetRigidbody = GetComponent<Rigidbody>();
+            }
+        }
+
+        protected Vector3 GetLocalSpawnPointInSphere()
+        {
+            Vector3 vec = Random.insideUnitSphere * k_ExplosiveForce;
+            vec.x *= m_dropEffectOrigin.x;
+            vec.z *= m_dropEffectOrigin.z;
+            vec.y = -m_dropEffectOrigin.y;
+            return vec;
         }
     }
 }

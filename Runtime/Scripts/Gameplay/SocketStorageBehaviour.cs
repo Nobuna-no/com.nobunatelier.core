@@ -151,7 +151,7 @@ namespace NobunAtelier.Gameplay
             int index = 0;
             foreach (var item in m_backpackQueue)
             {
-                Rigidbody rb = item.GetComponent<Rigidbody>();
+                Rigidbody rb = item.TargetRigidbody;
                 //if (m_useInverseLerping)
                 //{
                 //    Vector3 targetDes = m_backpackSockets[index].position;
