@@ -16,6 +16,8 @@ namespace NobunAtelier
 
         [SerializeField]
         private RotationAxis m_rotationAxis = RotationAxis.Y;
+        [SerializeField, Range(0, 10f)]
+        private float m_rotationSpeed = 1f;
 
         private Vector3 m_lastDirection;
 
@@ -26,7 +28,8 @@ namespace NobunAtelier
 
         public override void RotationUpdate(float deltaTime)
         {
-            ModuleOwner.transform.rotation = TowDownDirectionToQuaternion(m_lastDirection);
+            var rot = TowDownDirectionToQuaternion(m_lastDirection);
+            ModuleOwner.transform.rotation = Quaternion.Slerp(ModuleOwner.transform.rotation, rot, m_rotationSpeed * deltaTime);
         }
 
         private Quaternion TowDownDirectionToQuaternion(Vector3 normalizedDirection)
