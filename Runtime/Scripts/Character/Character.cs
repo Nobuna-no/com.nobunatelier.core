@@ -286,7 +286,7 @@ namespace NobunAtelier
                     continue;
                 }
 
-                if (bestModules.Count > 0 && m_rotationModules[i].Priority < bestPriority)
+                if (bestModules.Count > 0 && m_rotationModules[i].Priority > bestPriority)
                 {
                     break;
                 }
