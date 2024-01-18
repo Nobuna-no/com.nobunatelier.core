@@ -17,7 +17,7 @@ namespace NobunAtelier.Gameplay
         [Button]
         public void TryGather()
         {
-            if (!enabled && m_storageComponent == null)
+            if (!enabled && m_storageComponent == null || !m_storageComponent.HasAvailableSocket)
             {
                 return;
             }

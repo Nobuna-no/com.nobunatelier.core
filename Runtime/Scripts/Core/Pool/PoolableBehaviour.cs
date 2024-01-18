@@ -4,10 +4,6 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class PoolableBehaviour : VirtualBehaviour
 {
-    //[SerializeField]
-    //private PoolObjectDefinition m_objectID;
-    //public PoolObjectDefinition ID => m_objectID;
-
     // Called when the object is reset by the pool.
     public event Action onReset = null;
 

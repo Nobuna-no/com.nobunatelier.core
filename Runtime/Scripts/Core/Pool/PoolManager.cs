@@ -4,20 +4,8 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    public abstract class PoolManager<T> : MonoBehaviour
-        where T : class
+    public class PoolManager : MonoBehaviour
     {
-        //[System.Serializable]
-        //protected class PoolObjectConfig
-        //{
-        //    public PoolableBehaviour poolObject;
-
-        //    [Tooltip("Size of the initial reserve. Number of inactive object to instantiate by default.")]
-        //    public int reserveSize;
-        //}
-
-        //protected abstract T GetInstance();
-
         // Parent object of where the instantiate objects are placed.
         [SerializeField]
         protected Transform m_reserveParent = null;
@@ -37,7 +25,6 @@ namespace NobunAtelier
         [SerializeField, Foldout("Debug")]
         private bool m_debugSpawnPositionDisplay = false;
 
-        // protected List<IPoolableObject> m_pool = new List<IPoolableObject>();
         protected Dictionary<PoolObjectDefinition, List<PoolableBehaviour>> m_objectPoolPerID = new Dictionary<PoolObjectDefinition, List<PoolableBehaviour>>();
 
         public void ResetManager()
@@ -157,5 +144,21 @@ namespace NobunAtelier
                 ResetManager();
             }
         }
+
+#if UNITY_EDITOR
+        [Button(enabledMode: EButtonEnableMode.Playmode)]
+        private void SpawnOneElementOfEachDefinition()
+        {
+            if (m_objectsDefinition.Length == 0)
+            {
+                return;
+            }
+
+            foreach (var def in m_objectsDefinition)
+            {
+                SpawnObject(def, transform.position, 1, 1);
+            }
+        }
+#endif
     }
 }

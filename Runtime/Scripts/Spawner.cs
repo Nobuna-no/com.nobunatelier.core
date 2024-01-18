@@ -26,7 +26,8 @@ public class Spawner : MonoBehaviour
     [HorizontalLine(1)]
     [SerializeField]
     private SpawnDefinition[] m_objectToSpawn;
-
+    [SerializeField]
+    private Vector3 m_spawnAxisScales = Vector3.one;
     [SerializeField]
     private float m_spawnRadius = 1f;
 
@@ -84,7 +85,11 @@ public class Spawner : MonoBehaviour
 
     protected Vector3 GetLocalSpawnPointInSphere(float radius)
     {
-        return Random.insideUnitSphere * radius;
+        Vector3 v = Random.insideUnitSphere * radius;
+        v.x *= m_spawnAxisScales.x;
+        v.y *= m_spawnAxisScales.y;
+        v.z *= m_spawnAxisScales.z;
+        return v;
     }
 
     private void OnDrawGizmosSelected()
