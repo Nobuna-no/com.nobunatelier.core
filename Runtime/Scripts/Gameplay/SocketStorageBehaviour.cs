@@ -42,6 +42,8 @@ namespace NobunAtelier.Gameplay
         private Queue<TransportableObjectBehaviour> m_backpackQueue = new Queue<TransportableObjectBehaviour>();
         private bool m_isUsable = true;
 
+        public IReadOnlyList<Transform> Sockets => m_backpackSockets;
+
         public bool ItemTryPeekFirst(out TransportableObjectBehaviour item)
         {
             item = null;

@@ -3,15 +3,6 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 
-//[System.Serializable, System.Flags]
-//public enum TeamPlaceholder
-//{
-//    Player = 1 << 1,
-//    Flowers = 1 << 2,
-//    Moles = 1 << 3,
-//    Seeds = 1 << 4
-//}
-
 namespace NobunAtelier.Gameplay
 {
     [RequireComponent(typeof(Collider), typeof(Rigidbody))]
