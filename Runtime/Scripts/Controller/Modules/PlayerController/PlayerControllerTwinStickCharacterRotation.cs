@@ -11,6 +11,8 @@ namespace NobunAtelier
 
         [SerializeField]
         private string m_lookActionName = "Look";
+        [SerializeField]
+        private bool m_useMouseWorldToScreen = true;
 
         private InputAction m_lookAction;
         private Vector2 m_lastLookInputValue;
@@ -44,7 +46,7 @@ namespace NobunAtelier
 
             if (m_lastLookInputValue != Vector2.zero)
             {
-                if (PlayerInput.currentControlScheme == "Gamepad")
+                if (!m_useMouseWorldToScreen || PlayerInput.currentControlScheme == "Gamepad")
                 {
                     ControlledCharacter.Rotate(m_lastLookInputValue);
                 }
