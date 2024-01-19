@@ -44,6 +44,9 @@ namespace NobunAtelier.Gameplay
         [SerializeField, Required]
         private HealthDefinition m_definition;
 
+        [SerializeField]
+        private bool m_resetOnStart = false;
+
         [SerializeField, Header("Death")]
         private GameObject m_objectToMakeDisappear;
 
@@ -95,11 +98,17 @@ namespace NobunAtelier.Gameplay
 
         public event OnHealthChangedDelegate OnHealthChanged;
 
+        private void Start()
+        {
+            if (m_resetOnStart)
+            {
+                Reset();
+            }
+        }
+
         public override void ModuleInit(Character character)
         {
             base.ModuleInit(character);
-
-            m_teamModule = GetComponent<TeamModule>();
 
             Reset();
             Debug.Assert(m_definition != null);
@@ -113,6 +122,7 @@ namespace NobunAtelier.Gameplay
             }
 
             base.Reset();
+            m_teamModule = GetComponent<TeamModule>();
 
             OnReset?.Invoke();
 
