@@ -21,18 +21,18 @@ namespace NobunAtelier
 
         public override void RotateInput(Vector3 normalizedDirection)
         {
-
-
             switch (m_targetAxis)
             {
                 case Axis.X:
                     m_lastInputDirection.z = normalizedDirection.x;
                     m_lastInputDirection.y = normalizedDirection.y;
                     break;
+
                 case Axis.Y:
                     m_lastInputDirection.x = normalizedDirection.x;
                     m_lastInputDirection.z = normalizedDirection.y;
                     break;
+
                 case Axis.Z:
                     m_lastInputDirection.x = normalizedDirection.x;
                     m_lastInputDirection.y = normalizedDirection.y;
@@ -54,9 +54,11 @@ namespace NobunAtelier
                 case Axis.X:
                     currentEulerAngles.x = Mathf.Round(currentEulerAngles.x / angleStep) * angleStep;
                     break;
+
                 case Axis.Y:
                     currentEulerAngles.y = Mathf.Round(currentEulerAngles.y / angleStep) * angleStep;
                     break;
+
                 case Axis.Z:
                     currentEulerAngles.z = Mathf.Round(currentEulerAngles.z / angleStep) * angleStep;
                     break;
@@ -75,6 +77,11 @@ namespace NobunAtelier
             else
             {
                 dir = m_lastInputDirection;
+            }
+
+            if (dir == Vector3.zero)
+            {
+                return;
             }
 
             SetForward(dir.normalized, deltaTime);
