@@ -38,7 +38,6 @@ namespace NobunAtelier.Gameplay
         private static HitDefinition s_killHit = null;
 
         public TeamDefinition Team => m_teamModule.Team;
-        public bool IsVulnerable => IsVulnerable;
 
         [Header("Definition")]
         [SerializeField, Required]
@@ -90,6 +89,12 @@ namespace NobunAtelier.Gameplay
         private bool m_isDead = false;
 
         private bool m_isVulnerable = true;
+
+        public bool IsVulnerable
+        {
+            get => m_isVulnerable;
+            set => m_isVulnerable = value;
+        }
 
         private float m_currentInvulnerabilityDuration = 0f;
         private TeamModule m_teamModule;
