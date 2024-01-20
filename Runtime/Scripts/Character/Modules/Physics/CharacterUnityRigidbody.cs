@@ -100,8 +100,17 @@ namespace NobunAtelier
 
             if (m_targetRigidbody.isKinematic)
             {
-                m_targetRigidbody.position += newVelocity * deltaTime;
-                m_kinematicVelocity = newVelocity;
+                // If it there is an incoherence between the rigidbody and this module,
+                // assume that the player wanted to prevent physics movement.
+                if (m_isKinematic == false)
+                {
+                    m_kinematicVelocity = Vector3.zero;
+                }
+                else
+                {
+                    m_targetRigidbody.position += newVelocity * deltaTime;
+                    m_kinematicVelocity = newVelocity;
+                }
             }
             else
             {

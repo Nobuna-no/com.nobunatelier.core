@@ -301,7 +301,6 @@ namespace NobunAtelier
         private void MovementProcessing(float deltaTime)
         {
             m_velocityModules.Sort((x, y) => x.Priority.CompareTo(y.Priority));
-            // m_velocityModules.Reverse();
 
             currentVel = m_physicsModule.Velocity;
             bool isGrounded = m_physicsModule.IsGrounded;
