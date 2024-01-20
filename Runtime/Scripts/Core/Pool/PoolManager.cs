@@ -70,7 +70,7 @@ namespace NobunAtelier
                 if (m_canForceInstantiateInEmergency)
                 {
                     Debug.LogWarning("Instantiating new batch in emergency!");
-                    m_objectPoolPerID[id].AddRange(InstantiateBatch(m_objectPoolPerID[id][0], m_objectPoolPerID[id].Count / 2));
+                    m_objectPoolPerID[id].AddRange(InstantiateBatch(m_objectPoolPerID[id][0], m_objectPoolPerID[id].Count + id.ReserveGrowCount));
                     return SpawnObject(id, position);
                 }
 
