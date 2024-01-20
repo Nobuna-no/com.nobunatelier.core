@@ -52,14 +52,17 @@ namespace NobunAtelier
             switch (m_targetAxis)
             {
                 case Axis.X:
+                    currentEulerAngles.y = currentEulerAngles.z = 0;
                     currentEulerAngles.x = Mathf.Round(currentEulerAngles.x / angleStep) * angleStep;
                     break;
 
                 case Axis.Y:
+                    currentEulerAngles.x = currentEulerAngles.z = 0;
                     currentEulerAngles.y = Mathf.Round(currentEulerAngles.y / angleStep) * angleStep;
                     break;
 
                 case Axis.Z:
+                    currentEulerAngles.x = currentEulerAngles.y = 0;
                     currentEulerAngles.z = Mathf.Round(currentEulerAngles.z / angleStep) * angleStep;
                     break;
             }

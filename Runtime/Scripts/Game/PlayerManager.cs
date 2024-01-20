@@ -430,10 +430,11 @@ namespace NobunAtelier
                 {
                     cmBrain.ChannelMask = (OutputChannels)((int)OutputChannels.Channel01 << i);
 
-                    CinemachineCamera targetCm = p.GetComponentInChildren<CinemachineCamera>();
-                    if (targetCm)
+                    CinemachineCamera[] targetCm = p.GetComponentsInChildren<CinemachineCamera>(true);
+
+                    foreach (var c in targetCm)
                     {
-                        targetCm.OutputChannel = cmBrain.ChannelMask;
+                        c.OutputChannel = cmBrain.ChannelMask;
                     }
                 }
 
