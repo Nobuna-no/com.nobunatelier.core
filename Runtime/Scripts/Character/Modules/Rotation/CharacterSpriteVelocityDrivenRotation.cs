@@ -7,8 +7,6 @@ namespace NobunAtelier
     public class CharacterSpriteVelocityDrivenRotation : CharacterRotationModuleBase
     {
         [SerializeField, Required] SpriteRenderer m_targetSprite;
-        [SerializeField] Camera m_targetCamera;
-        [SerializeField] private bool m_freezeXZAxis = false;
         [SerializeField] private float m_moveTreshold = 0.1f;
 
         private float m_previousMoveSign = 1f;
@@ -19,11 +17,6 @@ namespace NobunAtelier
             base.ModuleInit(character);
 
             Transform parent = transform.parent;
-            while (m_targetCamera == null && parent != null)
-            {
-                m_targetCamera = parent.GetComponentInChildren<Camera>();
-                parent = parent.parent;
-            }
 
             Debug.Assert(m_targetSprite != null);
             m_originalFlipX = m_targetSprite.flipX;
@@ -32,20 +25,6 @@ namespace NobunAtelier
         public override void RotationUpdate(float deltaTime)
         {
             Vector3 dir = ModuleOwner.GetMoveVector();
-
-            if (m_targetCamera == null)
-            {
-                return;
-            }
-
-            if (m_freezeXZAxis)
-            {
-                m_targetSprite.transform.rotation = Quaternion.Euler(0f, m_targetCamera.transform.rotation.eulerAngles.y, 0f);
-            }
-            else
-            {
-                m_targetSprite.transform.rotation = m_targetCamera.transform.rotation;
-            }
 
             if (Mathf.Abs(dir.x) < m_moveTreshold)
             {
