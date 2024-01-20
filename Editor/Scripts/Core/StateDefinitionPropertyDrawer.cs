@@ -99,6 +99,20 @@ namespace NobunAtelier.Editor
                                 s_names[i] += $" [{useCount} refs]";
                             }
                         }
+
+                        if (m_definitionIndex == -1)
+                        {
+                            // Seems like we lost reference to the definition, regenerate the names array.
+                            ResetWorkingCollection();
+                            return;
+                        }
+                        else if (m_definitionIndex > 0)
+                        {
+                            if (m_targetComponent.StateDefinition == property.objectReferenceValue && m_targetComponent.gameObject.name != $"state-{property.objectReferenceValue.name}")
+                            {
+                                m_targetComponent.gameObject.name = $"state-{property.objectReferenceValue.name}";
+                            }
+                        }
                     }
                     else
                     {
