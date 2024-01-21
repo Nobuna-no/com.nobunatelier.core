@@ -7,17 +7,17 @@ namespace NobunAtelier.Gameplay
     {
         private Collider m_collider;
 
-        private void Awake()
+        protected virtual void Awake()
         {
             m_collider = GetComponent<Collider>();
         }
 
-        private void OnEnable()
+        protected virtual void OnEnable()
         {
             m_collider.isTrigger = true;
         }
 
-        private void OnDisable()
+        protected virtual void OnDisable()
         {
         }
 

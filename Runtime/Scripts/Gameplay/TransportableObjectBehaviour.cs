@@ -14,6 +14,9 @@ namespace NobunAtelier.Gameplay
         [SerializeField] private Collider m_targetInteractionCollider = null;
         [SerializeField] private bool m_usePhysics = true;
 
+        [Header("Throw Effect")]
+        [SerializeField] private bool m_scaleThrowWithRigidbodyMass = false;
+
         [Header("Drop Effect")]
         [SerializeField] private bool m_dropEffect = true;
         [ShowIf("m_dropEffect"), SerializeField] private float m_dropEffectForce = 5;
@@ -61,7 +64,14 @@ namespace NobunAtelier.Gameplay
         {
             EnablePhysics(true);
             OnThrownEvent?.Invoke();
-            TargetRigidbody.AddForce(dir * force * TargetRigidbody.mass, ForceMode.Impulse);
+            if (m_scaleThrowWithRigidbodyMass)
+            {
+                TargetRigidbody.AddForce(dir * force * TargetRigidbody.mass, ForceMode.Impulse);
+            }
+            else
+            {
+                TargetRigidbody.AddForce(dir * force, ForceMode.Impulse);
+            }
         }
 
         protected override void OnActivation()
