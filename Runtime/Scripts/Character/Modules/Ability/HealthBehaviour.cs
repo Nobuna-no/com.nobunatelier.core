@@ -88,6 +88,7 @@ namespace NobunAtelier.Gameplay
         public bool IsDead => m_isDead;
         private bool m_isDead = false;
 
+        [SerializeField]
         private bool m_isVulnerable = true;
 
         public bool IsVulnerable
