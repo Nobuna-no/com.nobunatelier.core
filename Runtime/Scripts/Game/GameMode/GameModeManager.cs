@@ -170,7 +170,7 @@ namespace NobunAtelier
                 Debug.Assert(humanPlayer, $"{this.name}: {participant.name} is not a Human Player!");
             }
 
-            if (m_enableInputOnJoin)
+            if (m_instantiateController && m_enableInputOnJoin)
             {
                 participant.Controller.EnableInput();
             }
