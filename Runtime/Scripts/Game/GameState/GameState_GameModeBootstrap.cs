@@ -39,9 +39,15 @@ namespace NobunAtelier
         public override void Enter()
         {
             base.Enter();
-            var gamemode = FindFirstObjectByType<LegacyGameModeManager>();
+
+            var gamemode = FindFirstObjectByType<GameModeManager>();
             if (!gamemode)
             {
+                if (InitLegacyGameMode())
+                {
+                    return;
+                }
+
                 Debug.LogWarning($"{this}: No game mode found");
                 return;
             }
@@ -65,6 +71,38 @@ namespace NobunAtelier
                 gamemode.GameModeStart();
                 OnGameModeStartEvent?.Invoke();
             }
+
+        }
+
+        private bool InitLegacyGameMode()
+        {
+            var legacyGamemode = FindFirstObjectByType<LegacyGameModeManager>();
+            if (!legacyGamemode)
+            {
+                return false;
+            }
+
+            if (IsInitializingGameMode())
+            {
+                legacyGamemode.GameModeInit();
+                OnGameModeInitEvent?.Invoke();
+
+                if (m_addPlayersToGameModeOnInit)
+                {
+                    LegacyPlayerManager.Instance.AddPlayersToGameMode();
+                }
+            }
+            if (IsTransitioningOnGameModeStop())
+            {
+                legacyGamemode.OnGameModeEnd.AddListener(OnGameModeEnd);
+            }
+            if (IsStartingGameMode())
+            {
+                legacyGamemode.GameModeStart();
+                OnGameModeStartEvent?.Invoke();
+            }
+
+            return true;
         }
 
         private bool IsTransitioningOnGameModeStop()

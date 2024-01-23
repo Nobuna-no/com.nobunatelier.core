@@ -51,7 +51,7 @@ namespace NobunAtelier
         {
             if (m_logDebug)
             {
-                Debug.Log($"{this.name}.Enter");
+                Debug.Log($"{this.name}.Enter", this);
             }
 
             if (!HasStateModule)
@@ -60,7 +60,7 @@ namespace NobunAtelier
             }
             else if (m_logDebug)
             {
-                Debug.Log($"{this.name}.Enter: Has {m_stateModules.Length} state module(s).");
+                Debug.Log($"{this.name}.Enter: Has {m_stateModules.Length} state module(s).", this);
             }
 
             for (int i = 0, c = m_stateModules.Length; i < c; i++)
@@ -86,7 +86,7 @@ namespace NobunAtelier
         {
             if (m_logDebug)
             {
-                Debug.Log($"{this.name}.Exit");
+                Debug.Log($"{this.name}.Exit", this);
             }
 
             if (!HasStateModule)
@@ -104,7 +104,7 @@ namespace NobunAtelier
         {
             if (m_parentStateMachine == null)
             {
-                Debug.LogError($"Failed to set new state [{newState}].");
+                Debug.LogError($"Failed to set new state [{newState}].", this);
                 return;
             }
 
@@ -116,7 +116,7 @@ namespace NobunAtelier
             // Check if the specified newStateType matches the StateDefinition type
             if (m_stateDefinitionType != newStateType)
             {
-                Debug.LogError($"Types mismatched! StateDefinition[{m_stateDefinitionType}] is different from {newStateType}!");
+                Debug.LogError($"Types mismatched! StateDefinition[{m_stateDefinitionType}] is different from {newStateType}!", this);
                 return;
             }
 
@@ -128,7 +128,7 @@ namespace NobunAtelier
             }
             else
             {
-                Debug.LogWarning($"Specified StateDefinition [{newStateType}] does not match the StateComponent type.");
+                Debug.LogWarning($"Specified StateDefinition [{newStateType}] does not match the StateComponent type.", this);
             }
         }
 
@@ -141,7 +141,7 @@ namespace NobunAtelier
 
             if (m_parentStateMachine != null)
             {
-                Debug.Assert(m_stateDefinition, $"{this} doesn't have a StateDefinition.");
+                Debug.Assert(m_stateDefinition, $"{this} doesn't have a StateDefinition.", this);
                 m_parentStateMachine.RegisterStateComponent(this);
             }
 
@@ -157,7 +157,7 @@ namespace NobunAtelier
                 var availableSM = GetComponents<StateComponentModule>();
                 if (availableSM != null && availableSM.Length > 0)
                 {
-                    Debug.LogWarning($"{this.name}: Doesn't have any of the {availableSM.Length} available state module(s).");
+                    Debug.LogWarning($"{this.name}: Doesn't have any of the {availableSM.Length} available state module(s).", this);
                 }
                 return;
             }

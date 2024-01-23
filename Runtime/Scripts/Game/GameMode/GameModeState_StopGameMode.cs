@@ -8,7 +8,14 @@ namespace NobunAtelier
         public override void Enter()
         {
             base.Enter();
-            LegacyGameModeManager.Instance.GameModeStop();
+            if (LegacyGameModeManager.Instance)
+            {
+                LegacyGameModeManager.Instance.GameModeStop();
+            }
+            else
+            {
+                GameModeManager.Instance.GameModeStop();
+            }
         }
     }
 }
