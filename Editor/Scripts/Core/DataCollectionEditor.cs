@@ -226,11 +226,6 @@ namespace NobunAtelier.Editor
                     EditorGUILayout.HelpBox($"Original asset will be move to trash! Drag and dropping from another collection with move the entire collection to trash!", MessageType.Warning);
                     DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
                 }
-                else
-                {
-                    EditorGUILayout.HelpBox($"Invalid asset type. Cannot add to the collection.", MessageType.Error);
-                    DragAndDrop.visualMode = DragAndDropVisualMode.Rejected;
-                }
             }
         }
     }
