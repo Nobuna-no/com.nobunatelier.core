@@ -39,7 +39,7 @@ namespace NobunAtelier
             Vector3 destination = m_target.position;
             Vector3 dir = destination - origin;
 
-            m_movementModule.MoveInput(dir);
+            m_movementModule.MoveInput(dir.normalized);
         }
     }
 }

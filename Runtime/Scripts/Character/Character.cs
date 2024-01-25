@@ -185,9 +185,12 @@ namespace NobunAtelier
             float deltaTime = Time.deltaTime;
 
             var rotationModules = GetBestRotationModules();
-            foreach (var module in rotationModules)
+            if (rotationModules != null)
             {
-                module.RotationUpdate(deltaTime);
+                foreach (var module in rotationModules)
+                {
+                    module.RotationUpdate(deltaTime);
+                }
             }
 
             AbilityProcessing(deltaTime);
