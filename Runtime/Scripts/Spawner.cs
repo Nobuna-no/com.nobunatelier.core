@@ -29,12 +29,19 @@ public class Spawner : MonoBehaviour
     [SerializeField]
     private Vector3 m_spawnAxisScales = Vector3.one;
     [SerializeField]
+    private Vector3 m_spawnOffset = Vector3.zero;
+    [SerializeField]
     private float m_spawnRadius = 1f;
+
+    [SerializeField]
+    private bool spawnOnStart = false;
 
     private Dictionary<SpawnDefinition, Vector3[]> m_previews = new Dictionary<SpawnDefinition, Vector3[]>();
 
     private void Start()
     {
+        if (spawnOnStart)
+            Spawn();
         Destroy(this);
     }
 
@@ -89,6 +96,7 @@ public class Spawner : MonoBehaviour
         v.x *= m_spawnAxisScales.x;
         v.y *= m_spawnAxisScales.y;
         v.z *= m_spawnAxisScales.z;
+        v += m_spawnOffset;
         return v;
     }
 
