@@ -90,10 +90,13 @@ namespace NobunAtelier
         [SerializeField]
         protected T[] m_modules;
 
-        [SerializeField]
-        private bool m_autoCaptureModule = true;
+        [SerializeField] private bool m_autoCaptureModule = true;
+
+        [SerializeField, Tooltip("Is the controller use in standalone without a character?")]
+        private bool m_isStandalone = false;
 
         public abstract bool IsAI { get; }
+        public bool IsStandalone => m_isStandalone;
 
         public bool TryGetModule<ModuleType>(out ModuleType outModule) where ModuleType : CharacterControllerModuleBase
         {
@@ -113,7 +116,7 @@ namespace NobunAtelier
 
         protected override void Awake()
         {
-            if (!m_controlledCharacter)
+            if (!m_controlledCharacter && !m_isStandalone)
             {
                 Debug.LogWarning($"No Character set on {this}, searching for one in the parent hierarchy...");
                 m_controlledCharacter = transform.parent.GetComponentInChildren<Character>();
@@ -140,7 +143,7 @@ namespace NobunAtelier
 
         protected override void UpdateController(float deltaTime)
         {
-            if (m_controlledCharacter == null)
+            if (!m_isStandalone && m_controlledCharacter == null)
             {
                 return;
             }
