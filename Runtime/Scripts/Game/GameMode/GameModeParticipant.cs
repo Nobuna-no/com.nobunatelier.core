@@ -26,6 +26,8 @@ namespace NobunAtelier
         {
             if (!m_useReferenceAsPrefabToInstantiate)
             {
+                Controller = m_controllerReference;
+                Character = m_characterReference;
                 return;
             }
 
