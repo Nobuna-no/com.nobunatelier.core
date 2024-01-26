@@ -6,6 +6,8 @@ namespace NobunAtelier
 {
     public class PoolManager : MonoBehaviour
     {
+        public static PoolManager Instance { get; private set; }
+
         // Parent object of where the instantiate objects are placed.
         [SerializeField]
         protected Transform m_reserveParent = null;
@@ -65,11 +67,9 @@ namespace NobunAtelier
 
             if (target == null)
             {
-                Debug.Log($"Pool overflow for object id: {id}!");
-
                 if (m_canForceInstantiateInEmergency)
                 {
-                    Debug.LogWarning("Instantiating new batch in emergency!");
+                    Debug.Log($"Instantiating new batch of {id}");
                     m_objectPoolPerID[id].AddRange(InstantiateBatch(m_objectPoolPerID[id][0], m_objectPoolPerID[id].Count + id.ReserveGrowCount));
                     return SpawnObject(id, position);
                 }
@@ -135,6 +135,11 @@ namespace NobunAtelier
                     m_objectPoolPerID[workingObject].AddRange(InstantiateBatch(def.PoolableObject, reserveCountTarget));
                 }
             }
+        }
+
+        private void Awake()
+        {
+            Instance = this;
         }
 
         protected virtual void Start()
