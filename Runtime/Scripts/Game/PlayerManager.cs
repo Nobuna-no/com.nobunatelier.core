@@ -419,7 +419,7 @@ namespace NobunAtelier
 
                 camera.enabled = true;
 
-                SplitScreenRatioDefinition definition = m_splitScreenViewportCollection.GetData()[m_participants.Count];
+                SplitScreenRatioDefinition definition = m_splitScreenViewportCollection.GetData()[m_participants.Count - 1];
                 Debug.Assert(definition.Viewports.Count >= i,
                     $"{this.name}: Not enough viewport rect in {definition.name}, expecting at least {i + 1}.", this);
 
