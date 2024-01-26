@@ -133,21 +133,36 @@ namespace NobunAtelier
                 m_targetRigidbody.velocity = newVelocity;
             }
 
-            m_isGrounded = false;
+            // m_isGrounded = false;
         }
 
         public override void OnModuleCollisionEnter(Collision collision)
         {
-            m_isGrounded = collision.collider.gameObject.layer == m_groundLayer;
+            if (collision.gameObject.layer != m_groundLayer)
+            {
+                return;
+            }
+
+            m_isGrounded = true;
         }
 
         public override void OnModuleCollisionStay(Collision collision)
         {
-            m_isGrounded = collision.collider.gameObject.layer == m_groundLayer;
+            if (collision.gameObject.layer != m_groundLayer)
+            {
+                return;
+            }
+
+            m_isGrounded = true;
         }
 
         public override void OnModuleCollisionExit(Collision collision)
         {
+            if (collision.gameObject.layer != m_groundLayer)
+            {
+                return;
+            }
+
             m_isGrounded = false;
         }
     }
