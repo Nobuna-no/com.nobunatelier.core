@@ -43,7 +43,7 @@ namespace NobunAtelier
         {
             if (info.Hit == null || info.Hit.PushBackDefinition == null)
             {
-                // Debug.LogWarning($"Can't use {this} with null HitDefinition.");
+                Debug.LogWarning($"Can't use {this} with null HitDefinition.");
                 return;
             }
 
@@ -76,13 +76,8 @@ namespace NobunAtelier
         public override void ModuleInit(Character character)
         {
             base.ModuleInit(character);
-            Debug.Assert(character.TryGetAbilityModule(out m_healthComponent), "Fail to get HealthBehaviour", this);
 
-            if (m_healthComponent != null)
-            {
-                m_healthComponent.OnHit.AddListener(HitPush);
-                // m_healthComponent.OnDeath.AddListener(HitPush);
-            }
+            CaptureHealthBehaviour();
         }
 
         public override bool CanBeExecuted()
@@ -92,37 +87,58 @@ namespace NobunAtelier
 
         public override Vector3 VelocityUpdate(Vector3 currentVel, float deltaTime)
         {
-            m_currentTime += deltaTime;
             currentVel -= m_velocity;
-            if (m_currentTime > m_pushBack.DurationInSeconds)
-            {
-                ResetDash();
-                OnPushBackEnd?.Invoke();
-            }
-            else
-            {
-                Vector3 frameDest = Vector3.Lerp(m_origin, m_destination, m_pushBack.MovementAnimationCurve.Evaluate(m_currentTime / m_pushBack.DurationInSeconds));
-                Vector3 frameDistance = frameDest - ModuleOwner.Position;
-                frameDistance.y = 0;
-                m_velocity = frameDistance / deltaTime;
-                currentVel += m_velocity;
-            }
+
+            Vector3 frameDest = Vector3.Lerp(m_origin, m_destination, m_pushBack.MovementAnimationCurve.Evaluate(m_currentTime));
+            Vector3 frameDistance = frameDest - ModuleOwner.Position;
+            frameDistance.y = 0;
+            m_velocity = frameDistance / deltaTime;
+            currentVel += m_velocity;
+
+            m_currentTime += deltaTime / m_pushBack.DurationInSeconds;
 
             if (m_currentTime > 1f)
             {
+                m_velocity = Vector3.zero;
                 m_isPushingBack = false;
-                currentVel = Vector3.zero;
+                m_currentTime = 0;
                 OnPushBackEnd?.Invoke();
             }
 
             return currentVel;
         }
 
-        private void ResetDash()
+        private void OnEnable()
         {
-            m_velocity = Vector3.zero;
-            m_isPushingBack = false;
-            m_currentTime = 0;
+            if (ModuleOwner == null)
+            {
+                return;
+            }
+
+            CaptureHealthBehaviour();
+        }
+
+        private void OnDisable()
+        {
+            if (m_healthComponent == null)
+            {
+                return;
+            }
+
+            m_healthComponent.OnHit.RemoveListener(HitPush);
+            m_healthComponent = null;
+        }
+
+        private void CaptureHealthBehaviour()
+        {
+            if (ModuleOwner.TryGetAbilityModule(out m_healthComponent))
+            {
+                m_healthComponent.OnHit.AddListener(HitPush);
+            }
+            else
+            {
+                Debug.LogError($"[{Time.frameCount}] {this.name}: character doesn't have a {typeof(HealthBehaviour).Name}.", this);
+            }
         }
     }
 }
