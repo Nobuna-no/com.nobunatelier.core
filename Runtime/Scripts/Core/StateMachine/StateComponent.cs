@@ -177,6 +177,15 @@ namespace NobunAtelier
                 m_parentStateMachine = transform.parent.GetComponentInParent<NobunAtelier.StateMachineComponent<T, TCollection>>(true);
             }
 
+            var otherComponent = GetComponent<StateComponent<T, TCollection>>();
+            if (otherComponent != null && this != otherComponent && otherComponent.StateDefinition != m_stateDefinition)
+            {
+                Debug.LogWarning($"Several '{typeof(StateComponent).Name}<{typeof(T).Name},{typeof(TCollection).Name}>' detected " +
+                    $"on '{gameObject.name}'.\n" +
+                    $"Copying the first definition. Only one state component should be present on a given GameObject.", this);
+                m_stateDefinition = otherComponent.m_stateDefinition;
+            }
+
             if (m_stateDefinition != null)
             {
                 // if first frame we force the state definition description except if it is empty
