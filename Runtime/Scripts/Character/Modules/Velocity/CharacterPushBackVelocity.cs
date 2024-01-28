@@ -37,13 +37,17 @@ namespace NobunAtelier
 
         public UnityEvent OnPushBackBegin;
         public UnityEvent OnPushBackEnd;
+        [SerializeField] private bool m_logDebug = false;
 
         // TODO: Handle several pushback in a row!
         public void HitPush(HitInfo info)
         {
             if (info.Hit == null || info.Hit.PushBackDefinition == null)
             {
-                Debug.LogWarning($"Can't use {this} with null HitDefinition.");
+                if (m_logDebug)
+                {
+                    Debug.LogWarning($"Can't use {this} with null HitDefinition.");
+                }
                 return;
             }
 

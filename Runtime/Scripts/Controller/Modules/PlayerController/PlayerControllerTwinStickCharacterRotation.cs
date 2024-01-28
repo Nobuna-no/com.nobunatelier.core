@@ -19,9 +19,9 @@ namespace NobunAtelier
 
         public override void EnableModuleInput(PlayerInput playerInput, InputActionMap activeActionMap)
         {
-            if (m_camera == null)
+            if (m_useMouseWorldToScreen && m_camera == null)
             {
-                Debug.LogWarning("No camera set, using main camera as reference...");
+                Debug.LogWarning("No camera set, using main camera as reference...", this);
                 m_camera = Camera.main;
             }
 
