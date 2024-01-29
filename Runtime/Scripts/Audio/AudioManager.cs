@@ -553,8 +553,13 @@ namespace NobunAtelier
                 audioHandle.Play(0.0);
             }
 
+            if (audioHandle.IsLooping)
+            {
+                yield break;
+            }
+
             // wait for the one shot to end before releasing resource
-            while (audioHandle.IsPlaying)
+            while (!audioHandle.HasBeenStopped && audioHandle.IsPlaying)
             {
                 yield return new WaitForFixedUpdate();
             }
@@ -658,12 +663,6 @@ namespace NobunAtelier
 
         private void AudioHandle_ReleaseAudio(AudioHandle audioHandle)
         {
-            // If resource already released (or releasing), no more work needed.
-            // if (audioHandle.IsResourceReleased || audioHandle.IsFadingOut)
-            // {
-            //     return;
-            // }
-
             if (!audioHandle.IsResourceReleased)
             {
                 // If audio has been stopped already, only need to release resource.
@@ -738,6 +737,7 @@ namespace NobunAtelier
             public bool IsResourceReleased => !resourceHandle.IsValid();
             public bool IsPlaying => audioSource.isPlaying;
             public bool IsLoading => resourceHandle.IsValid();
+            public bool IsLooping => this.audioSource.loop;
             public bool ReleaseResourceOnStop { get; private set; }
 
             public AudioHandle(AudioDefinition audioDefinition, AudioSource audioSource)
@@ -813,7 +813,7 @@ namespace NobunAtelier
 
             public void SetAudioSourceVolume(float volume)
             {
-                this.audioSource.volume = volume;
+                this.audioSource.volume = originalAudioVolume * volume;
             }
 
             public void ResetAudioSourceVolume()
@@ -833,6 +833,11 @@ namespace NobunAtelier
 
             public void Stop()
             {
+                if (HasBeenStopped)
+                {
+                    return;
+                }
+
                 if (ReleaseResourceOnStop)
                 {
                     StopAndReleaseResource();
@@ -852,6 +857,11 @@ namespace NobunAtelier
 
             public void StopAndReleaseResource()
             {
+                if (HasBeenStopped)
+                {
+                    return;
+                }
+
                 IsFadingOut = false;
                 HasBeenStopped = true;
                 this.audioSource.Stop();
