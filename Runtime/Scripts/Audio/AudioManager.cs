@@ -19,7 +19,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 namespace NobunAtelier
 {
     /// <summary>
-    /// Provides methods for loading, playing, pausing, resuming, and unloading audio resources. 
+    /// Provides methods for loading, playing, pausing, resuming, and unloading audio resources.
     /// It also handles 3D audio and audio fading in and out (using Unity's AudioMixerSnapshot).
     /// </summary>
     public class AudioManager : Singleton<AudioManager>
@@ -70,10 +70,6 @@ namespace NobunAtelier
         [Header("Debug")]
         [SerializeField]
         private bool m_logDebug = false;
-
-        private AsyncOperationHandle<AudioClip>[] m_audioToRelease = new AsyncOperationHandle<AudioClip>[2];
-
-        private AudioHandle[] m_audioHandles;
 
         private Dictionary<AudioDefinition, AudioHandle> m_audioHandlesDictionary = new Dictionary<AudioDefinition, AudioHandle>();
 
@@ -522,6 +518,18 @@ namespace NobunAtelier
             }
 
             m_muteAudioSnapshot.TransitionTo(m_muteSnapshotTransitionInSeconds);
+        }
+
+        private void OnDestroy()
+        {
+            var definitions = new List<AudioDefinition>(m_audioHandlesDictionary.Keys);
+
+            foreach (var key in definitions)
+            {
+                AudioHandle_ReleaseAudio(m_audioHandlesDictionary[key]);
+            }
+            m_audioHandlesDictionary.Clear();
+            m_audioStitchers.Clear();
         }
 
         private IEnumerator AudioHandle_PlayAudio_Coroutine(AudioHandle audioHandle, bool canStartDelayed)
