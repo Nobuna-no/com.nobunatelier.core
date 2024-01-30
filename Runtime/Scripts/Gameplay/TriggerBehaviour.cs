@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace NobunAtelier.Gameplay
@@ -6,6 +7,9 @@ namespace NobunAtelier.Gameplay
     public class TriggerBehaviour : MonoBehaviour
     {
         private Collider m_collider;
+
+        public event Action OnTriggerEnterEvent;
+        public event Action OnTriggerExitEvent;
 
         protected virtual void Awake()
         {
@@ -23,10 +27,12 @@ namespace NobunAtelier.Gameplay
 
         protected virtual void OnTriggerEnter(Collider other)
         {
+            OnTriggerEnterEvent?.Invoke();
         }
 
         protected virtual void OnTriggerExit(Collider other)
         {
+            OnTriggerExitEvent?.Invoke();
         }
     }
 }
