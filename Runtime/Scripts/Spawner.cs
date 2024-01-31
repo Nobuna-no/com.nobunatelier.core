@@ -9,10 +9,7 @@ public class Spawner : MonoBehaviour
     {
         public GameObject Prefab;
 
-        [Required]
-        public Transform InSceneParent;
-
-        [NaughtyAttributes.MinMaxSlider(1, 20)]
+        [NaughtyAttributes.MinMaxSlider(0, 20)]
         public Vector2Int InRangeSpawnCount = new Vector2Int(1, 10);
 
         public Color PreviewColor = Color.red;
@@ -35,25 +32,60 @@ public class Spawner : MonoBehaviour
 
     [SerializeField]
     private bool spawnOnStart = false;
+    [SerializeField]
+    private bool m_useRandomRotation = false;
+    public Transform InSceneParent;
 
-    private Dictionary<SpawnDefinition, Vector3[]> m_previews = new Dictionary<SpawnDefinition, Vector3[]>();
+    private Dictionary<SpawnDefinition, Vector3[]> m_spawningPoints = new Dictionary<SpawnDefinition, Vector3[]>();
 
     private void Start()
     {
-        if (spawnOnStart)
-            Spawn();
-        Destroy(this);
+        if (!spawnOnStart)
+        {
+            return;
+        }
+
+        SpawnAndDestroySpawner();
     }
 
     [Button]
     private void GeneratePreview()
+    {
+        Randomize();
+    }
+
+    [Button]
+    public void SpawnAndDestroySpawner()
     {
         if (m_objectToSpawn == null || m_objectToSpawn.Length == 0)
         {
             return;
         }
 
-        m_previews.Clear();
+        if (m_spawningPoints.Count == 0)
+        {
+            GeneratePreview();
+        }
+
+        foreach (var spawn in m_spawningPoints)
+        {
+            for (int i = 0, c = spawn.Value.Length; i < c; ++i)
+            {
+                Instantiate(spawn.Key.Prefab, transform.position + spawn.Value[i], m_useRandomRotation ? Random.rotation : Quaternion.identity, InSceneParent);
+            }
+        }
+
+        Destroy(gameObject);
+    }
+
+    public void Randomize()
+    {
+        if (m_objectToSpawn == null || m_objectToSpawn.Length == 0)
+        {
+            return;
+        }
+
+        m_spawningPoints.Clear();
         foreach (var spawn in m_objectToSpawn)
         {
             int count = Random.Range(spawn.InRangeSpawnCount.x, spawn.InRangeSpawnCount.y);
@@ -64,29 +96,7 @@ public class Spawner : MonoBehaviour
                 array[i] = GetLocalSpawnPointInSphere(m_spawnRadius);
             }
 
-            m_previews.Add(spawn, array);
-        }
-    }
-
-    [Button]
-    private void Spawn()
-    {
-        if (m_objectToSpawn == null || m_objectToSpawn.Length == 0)
-        {
-            return;
-        }
-
-        if (m_previews.Count == 0)
-        {
-            GeneratePreview();
-        }
-
-        foreach (var spawn in m_previews)
-        {
-            for (int i = 0, c = spawn.Value.Length; i < c; ++i)
-            {
-                Instantiate(spawn.Key.Prefab, transform.position + spawn.Value[i], Random.rotation, spawn.Key.InSceneParent);
-            }
+            m_spawningPoints.Add(spawn, array);
         }
     }
 
@@ -102,7 +112,7 @@ public class Spawner : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        if (m_previews == null || m_previews.Count == 0)
+        if (m_spawningPoints == null || m_spawningPoints.Count == 0)
         {
             return;
         }
@@ -110,7 +120,7 @@ public class Spawner : MonoBehaviour
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(transform.position, m_spawnRadius);
 
-        foreach (var spawn in m_previews)
+        foreach (var spawn in m_spawningPoints)
         {
             Gizmos.color = spawn.Key.PreviewColor;
 
