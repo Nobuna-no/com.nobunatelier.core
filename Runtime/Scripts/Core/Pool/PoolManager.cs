@@ -4,10 +4,12 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    public class PoolManager : MonoBehaviour
+    // This PoolManager has been designed to be used with PoolableBehaviour.
+    // As each poolable object can define it's own creation and spawned implementation,
+    // it's possible to use a single PoolManager to handle any object type.
+    // There is also no need to specialized the manager for the spawning method.
+    public class PoolManager : Singleton<PoolManager>
     {
-        public static PoolManager Instance { get; private set; }
-
         // Parent object of where the instantiate objects are placed.
         [SerializeField]
         protected Transform m_reserveParent = null;
@@ -18,8 +20,8 @@ namespace NobunAtelier
         [SerializeField]
         private bool m_resetPoolOnStart = true;
 
-        [SerializeField]
-        protected PoolObjectDefinition[] m_objectsDefinition = null;
+        [SerializeField] private PoolObjectCollection[] m_initialCollections = null;
+        [SerializeField] private PoolObjectDefinition[] m_objectsDefinition = null;
 
         [SerializeField]
         private Vector3 m_spawnRadiusAxis = Vector3.one;
@@ -29,7 +31,17 @@ namespace NobunAtelier
 
         protected Dictionary<PoolObjectDefinition, List<PoolableBehaviour>> m_objectPoolPerID = new Dictionary<PoolObjectDefinition, List<PoolableBehaviour>>();
 
+        // From a user perspective, not sure what this is doing....
         public void ResetManager()
+        {
+            ResetPoolObjects();
+
+            FillInitialReserves();
+
+            OnPoolManagerReset();
+        }
+
+        private void ResetPoolObjects()
         {
             foreach (var key in m_objectPoolPerID.Keys)
             {
@@ -38,29 +50,26 @@ namespace NobunAtelier
                     val.ResetObject();
                 }
             }
-
-            FillReserves();
-
-            OnPoolManagerReset();
         }
 
         // Called once all the object has been reset.
         protected virtual void OnPoolManagerReset()
         { }
 
-        // Useful to initialize the new object and bind method to IPoolableObject.onActivation for instance.
-        protected virtual void OnObjectCreation(PoolableBehaviour obj)
-        { }
+        //// Useful to initialize the new object and bind method to IPoolableObject.onActivation for instance.
+        //protected virtual void OnObjectCreation(PoolableBehaviour obj)
+        //{ }
 
-        protected virtual void OnObjectSpawned(PoolableBehaviour obj)
-        { }
+        //protected virtual void OnObjectSpawned(PoolableBehaviour obj)
+        //{ }
 
         public PoolableBehaviour SpawnObject(PoolObjectDefinition id, Vector3 position)
         {
             if (!m_objectPoolPerID.ContainsKey(id))
             {
-                Debug.LogWarning($"Trying to instantiate unknown object of id: {id}. Skipped...");
-                return null;
+
+                // Debug.LogWarning($"Trying to instantiate unknown object of id: {id}. Skipped...");
+                // return null;
             }
 
             PoolableBehaviour target = m_objectPoolPerID[id].Find((obj) => { return !obj.IsActive; });
@@ -85,7 +94,7 @@ namespace NobunAtelier
 
             target.Position = position;
             target.IsActive = true;
-            OnObjectSpawned(target);
+            //OnObjectSpawned(target);
             return target;
         }
 
@@ -112,15 +121,27 @@ namespace NobunAtelier
             {
                 out_array[i] = Instantiate(prefab.gameObject, Vector3.zero, Quaternion.identity, m_reserveParent).GetComponent<PoolableBehaviour>();
                 out_array[i].ResetObject();
-                OnObjectCreation(out_array[i]);
+                //OnObjectCreation(out_array[i]);
             }
 
             return out_array;
         }
 
-        private void FillReserves()
+        // Generate the pool of object of the initial definitions.
+        private void FillInitialReserves()
         {
-            foreach (var def in m_objectsDefinition)
+            foreach (var collection in m_initialCollections)
+            {
+                FillDefinitionsReserves(collection.DataDefinitions);
+
+            }
+
+            FillDefinitionsReserves(m_objectsDefinition);
+        }
+
+        private void FillDefinitionsReserves(IReadOnlyList<PoolObjectDefinition> definitions)
+        {
+            foreach (var def in definitions)
             {
                 PoolObjectDefinition workingObject = def;
                 if (!m_objectPoolPerID.ContainsKey(workingObject))
@@ -135,11 +156,6 @@ namespace NobunAtelier
                     m_objectPoolPerID[workingObject].AddRange(InstantiateBatch(def.PoolableObject, reserveCountTarget));
                 }
             }
-        }
-
-        private void Awake()
-        {
-            Instance = this;
         }
 
         protected virtual void Start()

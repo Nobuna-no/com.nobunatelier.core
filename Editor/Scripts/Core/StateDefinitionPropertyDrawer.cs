@@ -72,11 +72,11 @@ namespace NobunAtelier.Editor
                         if (collection != null && s_workingCollection != collection)
                         {
                             s_workingCollection = collection;
-                            s_names = new List<string>(collection.DataDefinitions.Length + 1)
+                            s_names = new List<string>(collection.EditorDataDefinitions.Length + 1)
                             {
                                 "(none)",
                             };
-                            s_names.AddRange(collection.DataDefinitions.Select(x => x.name).ToArray());
+                            s_names.AddRange(collection.EditorDataDefinitions.Select(x => x.name).ToArray());
                             s_refCount = new int[s_names.Count];
                         }
 

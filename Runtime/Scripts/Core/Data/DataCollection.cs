@@ -12,11 +12,11 @@ namespace NobunAtelier
 {
     public abstract class DataCollection : ScriptableObject
     {
-        public abstract DataDefinition[] DataDefinitions { get; }
 
         public abstract DataDefinition GetRandomDefinition();
 
 #if UNITY_EDITOR
+        public abstract DataDefinition[] EditorDataDefinitions { get; }
 
         public abstract Type GetDefinitionType();
 
@@ -47,12 +47,7 @@ namespace NobunAtelier
         [SerializeField]
         protected List<T> m_dataDefinitions = new List<T>();
 
-        public override DataDefinition[] DataDefinitions => m_dataDefinitions.ToArray();
-
-        public IReadOnlyList<T> GetData()
-        {
-            return m_dataDefinitions;
-        }
+        public IReadOnlyList<T> DataDefinitions => m_dataDefinitions;
 
         public override DataDefinition GetRandomDefinition()
         {
@@ -65,7 +60,8 @@ namespace NobunAtelier
         }
 
 #if UNITY_EDITOR
-
+        public override DataDefinition[] EditorDataDefinitions => m_dataDefinitions.ToArray();
+        
         public override Type GetDefinitionType()
         {
             return typeof(T);

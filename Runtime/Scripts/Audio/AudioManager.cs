@@ -493,7 +493,7 @@ namespace NobunAtelier
                 Debug.Log($"{this.name}.UnloadAudioCollection(AudioCollection): {audioCollection.name}");
             }
 
-            foreach (var audio in audioCollection.GetData())
+            foreach (var audio in audioCollection.DataDefinitions)
             {
                 UnloadAudio(audio);
             }

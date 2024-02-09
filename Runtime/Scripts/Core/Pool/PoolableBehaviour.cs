@@ -5,7 +5,7 @@ using UnityEngine;
 public class PoolableBehaviour : VirtualBehaviour
 {
     // Called when the object is reset by the pool.
-    public event Action onReset = null;
+    public event Action onCreation = null;
 
     // Called each time the object is activated by the pool.
     public event Action onActivation = null;
@@ -57,11 +57,11 @@ public class PoolableBehaviour : VirtualBehaviour
 
     public void ResetObject()
     {
-        onReset?.Invoke();
+        onCreation?.Invoke();
         gameObject.SetActive(false);
     }
 
-    protected virtual void OnReset()
+    protected virtual void OnCreation()
     { }
 
     protected virtual void OnActivation()
@@ -73,7 +73,7 @@ public class PoolableBehaviour : VirtualBehaviour
     // Not reliable
     protected override void Awake()
     {
-        onReset += OnReset;
+        onCreation += OnCreation;
         onActivation += OnActivation;
         onDeactivation += OnDeactivation;
     }

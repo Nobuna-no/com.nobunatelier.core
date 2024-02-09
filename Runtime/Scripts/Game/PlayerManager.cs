@@ -401,8 +401,8 @@ namespace NobunAtelier
                 return;
             }
 
-            Debug.Assert(m_splitScreenViewportCollection.DataDefinitions.Length >= m_participants.Count,
-            $"{this.name}: {m_participants.Count} participant(s) and only {m_splitScreenViewportCollection.DataDefinitions.Length} " +
+            Debug.Assert(m_splitScreenViewportCollection.DataDefinitions.Count >= m_participants.Count,
+            $"{this.name}: {m_participants.Count} participant(s) and only {m_splitScreenViewportCollection.DataDefinitions.Count} " +
             $"viewport element in the {m_splitScreenViewportCollection.name} collection.", this);
 
             int i = 0;
@@ -419,11 +419,11 @@ namespace NobunAtelier
 
                 camera.enabled = true;
 
-                SplitScreenRatioDefinition definition = m_splitScreenViewportCollection.GetData()[m_participants.Count - 1];
+                SplitScreenRatioDefinition definition = m_splitScreenViewportCollection.DataDefinitions[m_participants.Count - 1];
                 Debug.Assert(definition.Viewports.Count >= i,
                     $"{this.name}: Not enough viewport rect in {definition.name}, expecting at least {i + 1}.", this);
 
-                camera.rect = m_splitScreenViewportCollection.GetData()[m_participants.Count - 1].Viewports[i];
+                camera.rect = definition.Viewports[i];
 
                 CinemachineBrain cmBrain = camera.GetComponent<CinemachineBrain>();
                 if (cmBrain)

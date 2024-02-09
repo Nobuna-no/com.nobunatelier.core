@@ -36,7 +36,7 @@ namespace NobunAtelier.Editor
 
         private void GenerateReorderableList()
         {
-            list = new ReorderableList(m_collection.DataDefinitions, typeof(DataDefinition), true, true, true, true);
+            list = new ReorderableList(m_collection.EditorDataDefinitions, typeof(DataDefinition), true, true, true, true);
 
             list.drawHeaderCallback =
                 (Rect rect) =>
@@ -63,7 +63,7 @@ namespace NobunAtelier.Editor
                         return;
                     }
 
-                    var element = m_collection.DataDefinitions[index];
+                    var element = m_collection.EditorDataDefinitions[index];
 
                     Rect r2 = rect;
                     // r2.x += 16f;
@@ -114,7 +114,7 @@ namespace NobunAtelier.Editor
                 (ReorderableList list) =>
                 {
                     m_workingIndex = list.index;
-                    m_currentElement = m_collection.DataDefinitions[m_workingIndex];
+                    m_currentElement = m_collection.EditorDataDefinitions[m_workingIndex];
                     m_currentEditor = UnityEditor.Editor.CreateEditor(m_currentElement);
                 };
 
@@ -155,20 +155,23 @@ namespace NobunAtelier.Editor
                 HandleDragAndDrop();
             }
 
-            if (m_workingIndex != -1)
+            if (m_workingIndex == -1)
             {
-                if (m_currentEditor != null)
-                {
-                    using (new EditorGUILayout.VerticalScope(GUI.skin.window))
-                    {
-                        m_titleBarExpand = EditorGUILayout.InspectorTitlebar(m_titleBarExpand, m_currentEditor);
+                serializedObject.ApplyModifiedProperties();
+                return;
+            }
 
-                        if (m_titleBarExpand)
-                        {
-                            EditorGUI.indentLevel++;
-                            m_currentEditor.OnInspectorGUI();
-                            EditorGUI.indentLevel--;
-                        }
+            if (m_currentEditor != null)
+            {
+                EditorGUILayout.Space();
+                EditorGUILayout.Space();
+                using (new EditorGUILayout.VerticalScope(GUI.skin.window))
+                {
+                    m_titleBarExpand = EditorGUILayout.InspectorTitlebar(m_titleBarExpand, m_currentEditor);
+
+                    if (m_titleBarExpand)
+                    {
+                        m_currentEditor.OnInspectorGUI();
                     }
                 }
             }
@@ -209,7 +212,17 @@ namespace NobunAtelier.Editor
                     {
                         if (item.GetType().IsAssignableFrom(m_collection.GetDefinitionType()))
                         {
-                            hasAtLeastOneValidAssetType = true;
+                            bool isAlreadyInCollection = false;
+                            foreach (var def in m_collection.EditorDataDefinitions)
+                            {
+                                if (def == item)
+                                {
+                                    isAlreadyInCollection = true;
+                                    break;
+                                }
+                            }
+
+                            hasAtLeastOneValidAssetType = !isAlreadyInCollection;
                             break;
                         }
                     }
