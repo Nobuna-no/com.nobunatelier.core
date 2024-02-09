@@ -132,7 +132,7 @@ namespace NobunAtelier
         {
             foreach (var collection in m_initialCollections)
             {
-                FillDefinitionsReserves(collection.DataDefinitions);
+                FillDefinitionsReserves(collection.Definitions);
 
             }
 

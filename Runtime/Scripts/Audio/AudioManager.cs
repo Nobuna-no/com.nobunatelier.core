@@ -192,7 +192,7 @@ namespace NobunAtelier
                 Debug.Log($"{this.name}.LoadAudioCollection: {audioCollection.name}");
             }
 
-            foreach (var audio in audioCollection.DataDefinitions)
+            foreach (var audio in audioCollection.Definitions)
             {
                 LoadAudio(audio as AudioDefinition);
             }
@@ -493,7 +493,7 @@ namespace NobunAtelier
                 Debug.Log($"{this.name}.UnloadAudioCollection(AudioCollection): {audioCollection.name}");
             }
 
-            foreach (var audio in audioCollection.DataDefinitions)
+            foreach (var audio in audioCollection.Definitions)
             {
                 UnloadAudio(audio);
             }

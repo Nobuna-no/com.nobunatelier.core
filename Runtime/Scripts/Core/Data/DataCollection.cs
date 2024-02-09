@@ -47,7 +47,7 @@ namespace NobunAtelier
         [SerializeField]
         protected List<T> m_dataDefinitions = new List<T>();
 
-        public IReadOnlyList<T> DataDefinitions => m_dataDefinitions;
+        public IReadOnlyList<T> Definitions => m_dataDefinitions;
 
         public override DataDefinition GetRandomDefinition()
         {

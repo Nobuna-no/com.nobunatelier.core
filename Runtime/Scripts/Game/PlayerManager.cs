@@ -401,8 +401,8 @@ namespace NobunAtelier
                 return;
             }
 
-            Debug.Assert(m_splitScreenViewportCollection.DataDefinitions.Count >= m_participants.Count,
-            $"{this.name}: {m_participants.Count} participant(s) and only {m_splitScreenViewportCollection.DataDefinitions.Count} " +
+            Debug.Assert(m_splitScreenViewportCollection.Definitions.Count >= m_participants.Count,
+            $"{this.name}: {m_participants.Count} participant(s) and only {m_splitScreenViewportCollection.Definitions.Count} " +
             $"viewport element in the {m_splitScreenViewportCollection.name} collection.", this);
 
             int i = 0;
@@ -419,7 +419,7 @@ namespace NobunAtelier
 
                 camera.enabled = true;
 
-                SplitScreenRatioDefinition definition = m_splitScreenViewportCollection.DataDefinitions[m_participants.Count - 1];
+                SplitScreenRatioDefinition definition = m_splitScreenViewportCollection.Definitions[m_participants.Count - 1];
                 Debug.Assert(definition.Viewports.Count >= i,
                     $"{this.name}: Not enough viewport rect in {definition.name}, expecting at least {i + 1}.", this);
 
