@@ -8,21 +8,41 @@ namespace NobunAtelier
     // As each poolable object can define it's own creation and spawned implementation,
     // it's possible to use a single PoolManager to handle any object type.
     // There is also no need to specialized the manager for the spawning method.
+    // This is a dynamic pool but is not yet optimized.
+
     public class PoolManager : Singleton<PoolManager>
     {
+        [System.Flags]
+        public enum PoolBehaviour
+        {
+            // Is the pool manager allowed to instantiate new object if there is no available object.
+            AllowsLazyInstancing = 1 << 1,
+
+            WarmsLazyInstancing = 1 << 2,
+            FillsPoolOnStart = 1 << 3,
+            LogDebug = 0x1 << 7,
+        }
+
         // Parent object of where the instantiate objects are placed.
-        [SerializeField]
-        protected Transform m_reserveParent = null;
+        // In build, it's set to null for optimization.
+        [SerializeField] protected Transform m_reserveParent = null;
 
         [SerializeField]
-        private bool m_canForceInstantiateInEmergency = true;
+        private PoolBehaviour m_behaviour =
+            PoolBehaviour.AllowsLazyInstancing
+            | PoolBehaviour.WarmsLazyInstancing
+            | PoolBehaviour.FillsPoolOnStart;
 
-        [SerializeField]
-        private bool m_resetPoolOnStart = true;
-
+        // This is probably the biggest flaw of this design.
+        // Custom DataDefinition<PoolObjectDefinition> cannot be register as collection.
         [SerializeField] private PoolObjectCollection[] m_initialCollections = null;
-        [SerializeField] private PoolObjectDefinition[] m_objectsDefinition = null;
 
+        // This can also be use by custom PoolObjectDefinition that can't be assigned to the collection.
+        [SerializeField] private PoolObjectDefinition[] m_initialDefinitions = null;
+
+        // TODO: Remove this responsibility - need a better options:
+        // - object definition.
+        // - New behaviour to allow to spawn object in a specific position (PoolSpawner).
         [SerializeField]
         private Vector3 m_spawnRadiusAxis = Vector3.one;
 
@@ -30,6 +50,42 @@ namespace NobunAtelier
         private bool m_debugSpawnPositionDisplay = false;
 
         protected Dictionary<PoolObjectDefinition, List<PoolableBehaviour>> m_objectPoolPerID = new Dictionary<PoolObjectDefinition, List<PoolableBehaviour>>();
+
+        // i.e. PoolManager.RegisterCollection<TileCollection, TileDefinition>(collection);
+        public void RegisterCollection<TCollection, TDefinition>(TCollection collection)
+            where TCollection : DataCollection<TDefinition>
+            where TDefinition : PoolObjectDefinition
+        {
+            Debug.Assert(collection, this);
+
+            FillReserves(collection.Definitions);
+        }
+
+        public void UnregisterCollection<TCollection, TDefinition>(TCollection collection)
+            where TCollection : DataCollection<TDefinition>
+            where TDefinition : PoolObjectDefinition
+        {
+            Debug.Assert(collection, this);
+
+            foreach (var definition in collection.Definitions)
+            {
+                ClearReserve(definition);
+            }
+        }
+
+        public void RegisterDefinition(PoolObjectDefinition definition)
+        {
+            Debug.Assert(definition, this);
+
+            FillReserve(definition);
+        }
+
+        public void UnregisterDefinition(PoolObjectDefinition definition)
+        {
+            Debug.Assert(definition, this);
+
+            ClearReserve(definition);
+        }
 
         // From a user perspective, not sure what this is doing....
         public void ResetManager()
@@ -56,35 +112,39 @@ namespace NobunAtelier
         protected virtual void OnPoolManagerReset()
         { }
 
-        //// Useful to initialize the new object and bind method to IPoolableObject.onActivation for instance.
-        //protected virtual void OnObjectCreation(PoolableBehaviour obj)
-        //{ }
-
-        //protected virtual void OnObjectSpawned(PoolableBehaviour obj)
-        //{ }
-
         public PoolableBehaviour SpawnObject(PoolObjectDefinition id, Vector3 position)
         {
             if (!m_objectPoolPerID.ContainsKey(id))
             {
+                FillReserve(id);
 
-                // Debug.LogWarning($"Trying to instantiate unknown object of id: {id}. Skipped...");
-                // return null;
+                if ((m_behaviour & PoolBehaviour.WarmsLazyInstancing) != 0)
+                {
+                    Debug.LogWarning($"{this}[WARM]: Lazy instantiate of object: {id}.", this);
+                }
             }
 
+            // Could be optimized for speed
+            // In the future, might be nice to provide a search method injection per object
+            // This way, high frequency life cycle object can spend a bit more memory to get
+            // a faster search (log(n) instead of n, using a second map to monitor inactive objects).
             PoolableBehaviour target = m_objectPoolPerID[id].Find((obj) => { return !obj.IsActive; });
 
             if (target == null)
             {
-                if (m_canForceInstantiateInEmergency)
+                if ((m_behaviour & PoolBehaviour.AllowsLazyInstancing) == 0)
                 {
-                    Debug.Log($"Instantiating new batch of {id}");
-                    m_objectPoolPerID[id].AddRange(InstantiateBatch(m_objectPoolPerID[id][0], m_objectPoolPerID[id].Count + id.ReserveGrowCount));
-                    return SpawnObject(id, position);
+                    Debug.LogWarning($"Cannot force instantiate, object of id: {id}. Skipped...");
+                    return null;
                 }
 
-                Debug.LogWarning($"Cannot force instantiate, object of id: {id}. Skipped...");
-                return null;
+                if ((m_behaviour & PoolBehaviour.LogDebug) != 0)
+                {
+                    Debug.Log($"Instantiating new batch of {id}");
+                }
+
+                m_objectPoolPerID[id].AddRange(InstantiateBatch(m_objectPoolPerID[id][0], m_objectPoolPerID[id].Count + id.ReserveGrowCount));
+                return SpawnObject(id, position);
             }
 
             if (m_debugSpawnPositionDisplay)
@@ -121,7 +181,6 @@ namespace NobunAtelier
             {
                 out_array[i] = Instantiate(prefab.gameObject, Vector3.zero, Quaternion.identity, m_reserveParent).GetComponent<PoolableBehaviour>();
                 out_array[i].ResetObject();
-                //OnObjectCreation(out_array[i]);
             }
 
             return out_array;
@@ -132,54 +191,74 @@ namespace NobunAtelier
         {
             foreach (var collection in m_initialCollections)
             {
-                FillDefinitionsReserves(collection.Definitions);
-
+                FillReserves(collection.Definitions);
             }
 
-            FillDefinitionsReserves(m_objectsDefinition);
+            FillReserves(m_initialDefinitions);
         }
 
-        private void FillDefinitionsReserves(IReadOnlyList<PoolObjectDefinition> definitions)
+        private void FillReserves(IReadOnlyList<PoolObjectDefinition> definitions)
         {
             foreach (var def in definitions)
             {
-                PoolObjectDefinition workingObject = def;
-                if (!m_objectPoolPerID.ContainsKey(workingObject))
-                {
-                    m_objectPoolPerID.Add(workingObject, new List<PoolableBehaviour>(def.ReserveSize));
-                }
+                FillReserve(def);
+            }
+        }
 
-                // it's ok if we have more object.
-                int reserveCountTarget = def.ReserveSize - m_objectPoolPerID[workingObject].Count;
-                if (reserveCountTarget > 0)
+        private void FillReserve(PoolObjectDefinition def)
+        {
+            PoolObjectDefinition workingObject = def;
+            if (!m_objectPoolPerID.ContainsKey(workingObject))
+            {
+                m_objectPoolPerID.Add(workingObject, new List<PoolableBehaviour>(def.ReserveSize));
+            }
+
+            // it's ok if we have more object.
+            int reserveCountTarget = def.ReserveSize - m_objectPoolPerID[workingObject].Count;
+            if (reserveCountTarget > 0)
+            {
+                m_objectPoolPerID[workingObject].AddRange(InstantiateBatch(def.PoolableObject, reserveCountTarget));
+            }
+        }
+
+        private void ClearReserve<TDefinition>(TDefinition definition) where TDefinition : PoolObjectDefinition
+        {
+            if (m_objectPoolPerID.ContainsKey(definition))
+            {
+                var list = m_objectPoolPerID[definition];
+                foreach (var obj in list)
                 {
-                    m_objectPoolPerID[workingObject].AddRange(InstantiateBatch(def.PoolableObject, reserveCountTarget));
+                    Destroy(obj.gameObject);
                 }
+                m_objectPoolPerID[definition].Clear();
+                m_objectPoolPerID.Remove(definition);
             }
         }
 
         protected virtual void Start()
         {
-            if (m_resetPoolOnStart)
+            if ((m_behaviour & PoolBehaviour.FillsPoolOnStart) != 0)
             {
                 ResetManager();
             }
         }
 
 #if UNITY_EDITOR
+
         [Button(enabledMode: EButtonEnableMode.Playmode)]
         private void SpawnOneElementOfEachDefinition()
         {
-            if (m_objectsDefinition.Length == 0)
+            if (m_initialDefinitions.Length == 0)
             {
                 return;
             }
 
-            foreach (var def in m_objectsDefinition)
+            foreach (var def in m_initialDefinitions)
             {
                 SpawnObject(def, transform.position, 1, 1);
             }
         }
+
 #endif
     }
 }

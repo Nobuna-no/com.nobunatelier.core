@@ -58,6 +58,7 @@ public class PoolableBehaviour : VirtualBehaviour
     public void ResetObject()
     {
         onCreation?.Invoke();
+        // Manually disable the object to not call OnDeactivation.
         gameObject.SetActive(false);
     }
 
