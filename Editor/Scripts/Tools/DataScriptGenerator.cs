@@ -26,8 +26,8 @@ namespace NobunAtelier.Editor
         private string m_savePath = "";
         private int m_selectedTypeIndex = 0;
 
-        private string m_scriptContent;
-        private string m_scriptPath;
+        private string m_definitionScriptContent;
+        private string m_definitionScriptPath;
         private string m_collectionScriptContent;
         private string m_collectionScriptPath;
         private string m_propertyDrawerScriptContent;
@@ -143,8 +143,8 @@ namespace NobunAtelier.Editor
 
                         EditorGUI.indentLevel++;
 
-                        EditorGUILayout.LabelField(m_scriptPath, EditorStyles.boldLabel);
-                        m_scriptContent = EditorGUILayout.TextArea(m_scriptContent);
+                        EditorGUILayout.LabelField(m_definitionScriptPath, EditorStyles.boldLabel);
+                        m_definitionScriptContent = EditorGUILayout.TextArea(m_definitionScriptContent);
                         GUILayout.Space(10);
 
                         EditorGUILayout.LabelField(m_collectionScriptPath, EditorStyles.boldLabel);
@@ -189,7 +189,7 @@ namespace NobunAtelier.Editor
         {
             if (!string.IsNullOrEmpty(m_savePath))
             {
-                WriteScript(m_savePath, m_scriptContent);
+                WriteScript(m_definitionScriptPath, m_definitionScriptContent);
                 WriteScript(m_collectionScriptPath, m_collectionScriptContent);
                 WriteScript(m_collectionEditorScriptPath, m_collectionEditorScriptContent);
                 if (m_isStateDefinitionChild && m_generateStateMachineAndComponent)
@@ -201,11 +201,11 @@ namespace NobunAtelier.Editor
                 AssetDatabase.Refresh();
 
                 // Focus the generated script in the Project view if in the Assets folder.
-                if (!m_scriptPath.Contains("Assets"))
+                if (!m_definitionScriptPath.Contains("Assets"))
                 {
                     return;
                 }
-                string assetPath = m_scriptPath.Substring(m_scriptPath.IndexOf("Assets"));
+                string assetPath = m_definitionScriptPath.Substring(m_definitionScriptPath.IndexOf("Assets"));
                 UnityEngine.Object generatedScript = AssetDatabase.LoadAssetAtPath(assetPath, typeof(MonoScript));
                 Selection.activeObject = generatedScript;
             }
@@ -230,13 +230,13 @@ namespace NobunAtelier.Editor
         private void GeneratePreview()
         {
             string parentType = m_typeNames[m_selectedTypeIndex];
-            m_scriptContent = NamespacesString +
+            m_definitionScriptContent = NamespacesString +
                 string.Format(DefinitionTemplateString, m_className, parentType) + EmptyMethodString;
             m_collectionScriptContent = NamespacesString +
                 string.Format(CollectionTemplateString, m_className) + EmptyMethodString;
             m_collectionEditorScriptContent = EditorNamespacesString +
                 string.Format(CollectionEditorTemplateString, m_className) + EmptyMethodString;
-            m_scriptPath = Path.Combine(m_savePath, m_className + "Definition.cs").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            m_definitionScriptPath = Path.Combine(m_savePath, m_className + "Definition.cs").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             m_collectionScriptPath = Path.Combine(m_savePath, m_className + "Collection.cs").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             m_editorFolderPath = Path.Combine(m_savePath, "Editor").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             Directory.CreateDirectory(m_editorFolderPath);
