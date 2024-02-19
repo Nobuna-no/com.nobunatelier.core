@@ -12,19 +12,20 @@ namespace NobunAtelier.Editor
         private readonly string NamespacesString = "using UnityEngine;\nusing NobunAtelier;\n\n";
         private readonly string EditorNamespacesString = "using UnityEditor;\nusing NobunAtelier;\nusing NobunAtelier.Editor;\n\n";
         private readonly string DefinitionTemplateString = "public class {0}Definition : {1}\n";
-        private readonly string CollectionTemplateString = "[CreateAssetMenu(fileName =\"DC_{0}\", menuName = \"NobunAtelier/Collection/{0}\")]\npublic class {0}Collection : DataCollection<{0}Definition>\n";
+        private readonly string CollectionTemplateString = "[CreateAssetMenu(fileName =\"[{0}]\", menuName = \"{1}/Collection/{0}\")]\npublic class {0}Collection : DataCollection<{0}Definition>\n";
         private readonly string CollectionEditorTemplateString = "[CustomEditor(typeof({0}Collection))]\npublic class {0}CollectionEditor : DataCollectionEditor\n";
         private readonly string DefinitionPropertyDrawerTemplateString = "[CustomPropertyDrawer(typeof({0}Definition))]\npublic class  {0}DefinitionPropertyDrawer : StateDefinitionPropertyDrawer<{0}Definition, {0}Collection>\n";
 
-        private readonly string StateTemplateString = "public class {0}State : StateWithTransition<{0}Definition,{0}Collection>\n";
-        private readonly string StateMachineTemplateString = "public class {0}StateMachine : StateWithTransition<{0}Definition,{0}Collection>\n";
+        private readonly string StateTemplateString = "[AddComponentMenu(\"{2}/States/{0}\")]\npublic class {0}State : {1}<{0}Definition, {0}Collection>\n";
+        private readonly string StateMachineTemplateString = "[AddComponentMenu(\"{2}/States/{0} Machine\")]\npublic class {0}StateMachine : {1}<{0}Definition, {0}Collection>\n";
         private readonly string EmptyMethodString = "{\n\n}";
 
         private List<Type> m_dataDefinitionTypes = new List<Type>();
         private string[] m_typeNames;
         private string m_className = "MyData";
         private string m_savePath = "";
-        private int m_selectedTypeIndex = 0;
+        private string m_menuName = "NobunAtelier";
+        private int m_selectedTypeIndex = -1;
 
         private string m_definitionScriptContent;
         private string m_definitionScriptPath;
@@ -66,9 +67,12 @@ namespace NobunAtelier.Editor
                 .ToArray());
 
             m_typeNames = m_dataDefinitionTypes.Select(type => type.Name).ToArray();
-            m_selectedTypeIndex = Array.IndexOf(m_typeNames, typeof(DataDefinition).Name);
-            m_isStateDefinitionChild = false;
-            m_generateStateMachineAndComponent = false;
+            if (m_selectedTypeIndex == -1)
+            {
+                m_selectedTypeIndex = Array.IndexOf(m_typeNames, typeof(DataDefinition).Name);
+                m_isStateDefinitionChild = false;
+                m_generateStateMachineAndComponent = false;
+            }
 
             m_stateTypes.AddRange(AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes())
@@ -84,6 +88,7 @@ namespace NobunAtelier.Editor
 
             EditorGUI.BeginChangeCheck();
             {
+                m_menuName = EditorGUILayout.TextField("Parent Menu Name", m_menuName);
                 m_className = EditorGUILayout.TextField("Class Name", m_className);
                 m_selectedTypeIndex = EditorGUILayout.Popup("Parent Type", m_selectedTypeIndex, m_typeNames);
                 if (m_isStateDefinitionChild)
@@ -233,7 +238,7 @@ namespace NobunAtelier.Editor
             m_definitionScriptContent = NamespacesString +
                 string.Format(DefinitionTemplateString, m_className, parentType) + EmptyMethodString;
             m_collectionScriptContent = NamespacesString +
-                string.Format(CollectionTemplateString, m_className) + EmptyMethodString;
+                string.Format(CollectionTemplateString, m_className, m_menuName) + EmptyMethodString;
             m_collectionEditorScriptContent = EditorNamespacesString +
                 string.Format(CollectionEditorTemplateString, m_className) + EmptyMethodString;
             m_definitionScriptPath = Path.Combine(m_savePath, m_className + "Definition.cs").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
@@ -245,6 +250,9 @@ namespace NobunAtelier.Editor
             // Adding property drawer script if the parent type is a state definition for the state machine.
             if (m_isStateDefinitionChild)
             {
+                string stateParentType = m_stateTypeNames[m_selectedStateTypeIndex];
+                string stateMachineParentType = m_stateMachineTypeNames[m_selectedStateMachineTypeIndex];
+
                 // Generate custom property drawer for State Definition
                 m_propertyDrawerScriptContent = EditorNamespacesString +
                     string.Format(DefinitionPropertyDrawerTemplateString, m_className) + EmptyMethodString;
@@ -253,11 +261,11 @@ namespace NobunAtelier.Editor
                 if (m_generateStateMachineAndComponent)
                 {
                     m_stateScriptContent = NamespacesString +
-                        string.Format(StateTemplateString, m_className) + EmptyMethodString;
+                        string.Format(StateTemplateString, m_className, stateParentType, m_menuName) + EmptyMethodString;
                     m_stateScriptPath = Path.Combine(m_savePath, m_className + "State.cs").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
                     m_stateMachineScriptContent = NamespacesString +
-                        string.Format(StateMachineTemplateString, m_className) + EmptyMethodString;
+                        string.Format(StateMachineTemplateString, m_className, stateMachineParentType, m_menuName) + EmptyMethodString;
                     m_stateMachineScriptPath = Path.Combine(m_savePath, m_className + "StateMachine.cs").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
                 }
             }

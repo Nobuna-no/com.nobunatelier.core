@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Controller/PlayerController")]
+    [AddComponentMenu("NobunAtelier/Controller/Player/Player Controller")]
     public class PlayerController : CharacterControllerBase<PlayerControllerModuleBase>
     {
         public override bool IsAI => false;
@@ -58,6 +58,11 @@ namespace NobunAtelier
 
             foreach (var extension in m_modules)
             {
+                if (!extension.enabled)
+                {
+                    continue;
+                }
+
                 extension.EnableModuleInput(PlayerInput, ActiveActionMap);
             }
         }
@@ -70,6 +75,11 @@ namespace NobunAtelier
 
             foreach (var extension in m_modules)
             {
+                if (!extension.enabled)
+                {
+                    continue;
+                }
+
                 extension.DisableModuleInput(PlayerInput, ActiveActionMap);
             }
         }

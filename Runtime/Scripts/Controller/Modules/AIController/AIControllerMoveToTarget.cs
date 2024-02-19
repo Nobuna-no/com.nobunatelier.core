@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Controller/AI Module/AI Controller Module: Move To Target")]
+    [AddComponentMenu("NobunAtelier/Controller/AI/AI Controller Module: Move To Target")]
     public class AIControllerMoveToTarget : AIControllerModuleBase
     {
         [SerializeField]

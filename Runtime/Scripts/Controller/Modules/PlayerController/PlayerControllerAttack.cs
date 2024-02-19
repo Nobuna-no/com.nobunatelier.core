@@ -1,42 +1,59 @@
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Controller/PlayerModule Attack")]
-    public class PlayerControllerAttack : PlayerControllerModuleBase
+    [AddComponentMenu("NobunAtelier/Controller/Player/Player Controller Module: Actions")]
+    public class PlayerControllerActions : PlayerControllerModuleBase
     {
-        [SerializeField]
-        private string m_actionName = "Attack";
-
-        private InputAction m_attackAction;
+        [SerializeField] private ActionData[] m_actions;
 
         public override void EnableModuleInput(PlayerInput playerInput, InputActionMap activeActionMap)
         {
-            m_attackAction = activeActionMap.FindAction(m_actionName);
-            Debug.Assert(m_attackAction != null, $"Can't find '{m_actionName}' action");
-            m_attackAction.performed += AttackAction_performed;
+            foreach (var action in m_actions)
+            {
+                action.EnableAction(activeActionMap);
+            }
         }
 
         public override void DisableModuleInput(PlayerInput playerInput, InputActionMap activeActionMap)
         {
-            if (m_attackAction != null)
+            foreach (var action in m_actions)
             {
-                m_attackAction.performed -= AttackAction_performed;
+                action.DisableAction(activeActionMap);
             }
         }
 
-        private void AttackAction_performed(InputAction.CallbackContext obj)
+        [System.Serializable]
+        private class ActionData
         {
-            if (ModuleOwner.ControlledCharacter == null)
+            [SerializeField] private string m_actionName = "";
+            [SerializeField] private UnityEvent m_actionToExecute;
+
+            private InputAction m_inputAction;
+
+            public void EnableAction(InputActionMap map)
             {
-                return;
+                m_inputAction = map.FindAction(m_actionName);
+                Debug.Assert(m_inputAction != null, $"Can't find '{m_actionName}' action");
+                m_inputAction.performed += Execute;
             }
 
-            // if (character.TryGetAbilityModule<CharacterSimpleTargetingAbility>(out var module))
-            // {
-            //     module.NextTarget();
-            // }
+            public void DisableAction(InputActionMap map)
+            {
+                if (m_inputAction == null)
+                {
+                    return;
+                }
+
+                m_inputAction.performed -= Execute;
+            }
+
+            private void Execute(InputAction.CallbackContext obj)
+            {
+                m_actionToExecute?.Invoke();
+            }
         }
     }
 }

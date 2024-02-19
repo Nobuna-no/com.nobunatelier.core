@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Character/RotationModule Input Driven")]
+    [AddComponentMenu("NobunAtelier/Character/Rotation/RotationModule: Input Driven")]
     public class CharacterInputDrivenRotation : CharacterRotationModuleBase
     {
         [Serializable]

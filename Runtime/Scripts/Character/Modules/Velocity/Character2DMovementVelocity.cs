@@ -204,6 +204,8 @@ namespace NobunAtelier
 
                     m_velocity = Vector3.MoveTowards(currentVel, desiredVelocity, maxSpeedChange);
                     break;
+
+                    // TO DO FOR SIMULACRA - Add something that allows to conserve current velocity...
             }
 
             if (m_ignoreThirdAxis)

@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Controller/PlayerModule TwinStick Character Rotation")]
+    [AddComponentMenu("NobunAtelier/Controller/Player/Player Controller Module: TwinStick Rotation")]
     public class PlayerControllerTwinStickCharacterRotation : PlayerControllerModuleBase
     {
         [SerializeField]

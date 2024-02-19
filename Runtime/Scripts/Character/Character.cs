@@ -34,6 +34,7 @@ namespace NobunAtelier
 
         [SerializeField]
         private bool m_ignoreMissingModule = false;
+        [SerializeField] private bool m_autoCaptureModules = true;
 
         public bool TryGetAbilityModule<T>(out T outModule) where T : CharacterAbilityModuleBase
         {
@@ -236,6 +237,11 @@ namespace NobunAtelier
         [Button("Refresh modules")]
         private void CaptureModules()
         {
+            if (!m_autoCaptureModules)
+            {
+                return;
+            }
+
             m_physicsModule = GetComponent<CharacterPhysicsModule>();
 
             m_abilityModules.Clear();

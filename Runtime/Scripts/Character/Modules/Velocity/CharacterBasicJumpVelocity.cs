@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Character/VelocityModule Basic Jump")]
+    [AddComponentMenu("NobunAtelier/Character/Velocity/VelocityModule: Basic Jump")]
     public class CharacterBasicJumpVelocity : CharacterVelocityModuleBase
     {
         [SerializeField]

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Character/RotationModule: Sprite Velocity Driven")]
+    [AddComponentMenu("NobunAtelier/Character/Rotation/RotationModule: Sprite Velocity Driven")]
     public class CharacterSpriteVelocityDrivenRotation : CharacterRotationModuleBase
     {
         [SerializeField, Required] SpriteRenderer m_targetSprite;

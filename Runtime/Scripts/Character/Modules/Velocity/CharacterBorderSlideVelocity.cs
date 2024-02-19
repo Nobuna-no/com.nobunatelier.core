@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Character/VelocityModule Border Slide")]
+    [AddComponentMenu("NobunAtelier/Character/Velocity/VelocityModule: Border Slide")]
     public class CharacterBorderSlideVelocity : CharacterVelocityModuleBase
     {
         [SerializeField]
