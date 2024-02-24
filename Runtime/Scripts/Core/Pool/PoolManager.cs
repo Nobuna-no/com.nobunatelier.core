@@ -158,12 +158,27 @@ namespace NobunAtelier
             return target;
         }
 
-        public void SpawnObject(PoolObjectDefinition id, Vector3 location, float radius, int count)
+        public PoolableBehaviour[] SpawnObjects(PoolObjectDefinition id, Vector3 location, float radius, int count)
         {
+            PoolableBehaviour[] objects = new PoolableBehaviour[count];
+            for (int i = 0; i < count; ++i) 
+            {
+                objects[i] = SpawnObject(id, GetSpawnPointInRadius(location, radius));
+            }
+
+            return objects;
+        }
+
+        public T[] SpawnObjects<T>(PoolObjectDefinition id, Vector3 location, float radius, int count)
+            where T : PoolableBehaviour
+        {
+            T[] objects = new T[count];
             for (int i = 0; i < count; ++i)
             {
-                SpawnObject(id, GetSpawnPointInRadius(location, radius));
+                objects[i] = SpawnObject(id, GetSpawnPointInRadius(location, radius)) as T;
             }
+
+            return objects;
         }
 
         protected Vector3 GetSpawnPointInRadius(Vector3 location, float radius)
@@ -255,7 +270,7 @@ namespace NobunAtelier
 
             foreach (var def in m_initialDefinitions)
             {
-                SpawnObject(def, transform.position, 1, 1);
+                SpawnObjects(def, transform.position, 1, 1);
             }
         }
 
