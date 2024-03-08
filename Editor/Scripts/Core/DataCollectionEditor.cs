@@ -168,10 +168,12 @@ namespace NobunAtelier.Editor
                 using (new EditorGUILayout.VerticalScope(GUI.skin.window))
                 {
                     m_titleBarExpand = EditorGUILayout.InspectorTitlebar(m_titleBarExpand, m_currentEditor);
-
                     if (m_titleBarExpand)
                     {
+                        // Do not remove Morgan! The indent is for nested objects.
+                        EditorGUI.indentLevel++;
                         m_currentEditor.OnInspectorGUI();
+                        EditorGUI.indentLevel--;
                     }
                 }
             }
