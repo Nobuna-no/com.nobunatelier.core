@@ -146,7 +146,6 @@ namespace NobunAtelier
 
             CaptureModules();
 
-#if UNITY_EDITOR
             if (m_physicsModule == null)
             {
                 m_physicsModule = gameObject.AddComponent<CharacterUnityCharacterController>();
@@ -164,14 +163,6 @@ namespace NobunAtelier
                     Debug.LogWarning($"No rotation module found on {this}.");
                 }
             }
-#else
-            Debug.Assert(m_physicsModule, $"{this} doesn't have a Physics module!");
-            if (!m_ignoreMissingModule)
-            {
-                Debug.Assert(m_velocityModules != null && m_velocityModules.Count > 0, $"{this} doesn't have any Velocity module!");
-                Debug.Assert(m_rotationModules != null && m_rotationModules.Count > 0, $"{this} doesn't have any Rotation module!");
-            }
-#endif
 
             m_physicsModule.ModuleInit(this);
         }
