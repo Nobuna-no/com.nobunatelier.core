@@ -18,6 +18,9 @@ public class PoolableBehaviour : VirtualBehaviour
         get; set;
     }
 
+    // TODO: Need to add a release function
+    // ideally getting closer to the IObjectPool API...
+
     // Use this value to activate and deactivate the object
     public bool IsActive
     {

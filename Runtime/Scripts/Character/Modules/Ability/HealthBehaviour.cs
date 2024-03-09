@@ -101,8 +101,10 @@ namespace NobunAtelier.Gameplay
         private TeamModule m_teamModule;
 
         public delegate void OnHealthChangedDelegate(float currentHealth, float maxHealth);
-
+        public delegate void HealthBehaviourDelegate(HealthBehaviour healthBehaviour);
         public event OnHealthChangedDelegate OnHealthChanged;
+        public event HealthBehaviourDelegate OnBehaviourDeath;
+        public event HealthBehaviourDelegate OnBehaviourBurial;
 
         private void Start()
         {
@@ -183,6 +185,7 @@ namespace NobunAtelier.Gameplay
             {
                 m_isDead = true;
                 OnDeath?.Invoke(hitInfo);
+                OnBehaviourDeath?.Invoke(this);
                 StartCoroutine(PoolObjectDeactivateCoroutine());
             }
             else
@@ -272,6 +275,7 @@ namespace NobunAtelier.Gameplay
             yield return new WaitForSecondsRealtime(value);
 
             OnBurial?.Invoke();
+            OnBehaviourBurial?.Invoke(this);
 
             if (m_definition.Burial == HealthDefinition.BurialType.None)
             {
