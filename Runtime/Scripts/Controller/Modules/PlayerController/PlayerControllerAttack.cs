@@ -29,7 +29,8 @@ namespace NobunAtelier
         private class ActionData
         {
             [SerializeField] private string m_actionName = "";
-            [SerializeField] private UnityEvent m_actionToExecute;
+            [SerializeField] private UnityEvent m_onActionPerformed;
+            [SerializeField] private UnityEvent m_onActionCancelled;
 
             private InputAction m_inputAction;
 
@@ -37,7 +38,8 @@ namespace NobunAtelier
             {
                 m_inputAction = map.FindAction(m_actionName);
                 Debug.Assert(m_inputAction != null, $"Can't find '{m_actionName}' action");
-                m_inputAction.performed += Execute;
+                m_inputAction.performed += Perform;
+                m_inputAction.canceled += Cancel;
             }
 
             public void DisableAction(InputActionMap map)
@@ -47,12 +49,18 @@ namespace NobunAtelier
                     return;
                 }
 
-                m_inputAction.performed -= Execute;
+                m_inputAction.performed -= Perform;
+                m_inputAction.canceled -= Cancel;
             }
 
-            private void Execute(InputAction.CallbackContext obj)
+            private void Perform(InputAction.CallbackContext obj)
             {
-                m_actionToExecute?.Invoke();
+                m_onActionPerformed?.Invoke();
+            }
+
+            private void Cancel(InputAction.CallbackContext obj)
+            {
+                m_onActionCancelled?.Invoke();
             }
         }
     }
