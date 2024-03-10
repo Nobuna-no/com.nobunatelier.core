@@ -5,12 +5,13 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 
-public struct HitInfo
+public class HitInfo
 {
+    public HitDefinition Hit;
     public TeamModule OriginTeam;
     public GameObject OriginGao;
     public Vector3 ImpactLocation;
-    public HitDefinition Hit;
+    public float DamageMultiplier = 1;
 }
 
 [System.Serializable]
@@ -178,7 +179,7 @@ namespace NobunAtelier.Gameplay
                 return;
             }
 
-            m_CurrentLifeValue = Mathf.Max(m_CurrentLifeValue - hitInfo.Hit.DamageAmount, 0);
+            m_CurrentLifeValue = Mathf.Max(m_CurrentLifeValue - hitInfo.Hit.DamageAmount * hitInfo.DamageMultiplier, 0);
             OnHealthChanged?.Invoke(m_CurrentLifeValue, m_definition.MaxValue);
 
             if (m_CurrentLifeValue <= 0)

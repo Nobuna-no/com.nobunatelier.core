@@ -1,4 +1,5 @@
 using NaughtyAttributes;
+using PlasticGui.WorkspaceWindow;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
@@ -27,6 +28,8 @@ namespace NobunAtelier.Gameplay
         [SerializeField]
         private Transform m_impactOriginSocket;
 
+        [SerializeField]
+        protected float m_damageMultiplier = 1;
         protected Collider OwnCollider => m_collider;
         private Collider m_collider;
 
@@ -101,13 +104,19 @@ namespace NobunAtelier.Gameplay
                 OriginTeam = m_hitOriginTeam ? m_hitOriginTeam : null,
                 OriginGao = m_hitOriginGao ? m_hitOriginGao : null,
                 ImpactLocation = m_impactOriginSocket ? m_impactOriginSocket.position : transform.position,
-                Hit = m_hitDefinition
+                Hit = m_hitDefinition,
+                DamageMultiplier = GetDamageMultiplier(),
             };
 
             hpBehaviour.ApplyDamage(info);
 
             OnHit?.Invoke(info);
             return true;
+        }
+
+        public virtual float GetDamageMultiplier()
+        {
+            return m_damageMultiplier;
         }
 
 #if UNITY_EDITOR
