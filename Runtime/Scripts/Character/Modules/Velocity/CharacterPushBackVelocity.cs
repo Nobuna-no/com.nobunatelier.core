@@ -58,7 +58,18 @@ namespace NobunAtelier
             Vector3 attackOrigin = info.ImpactLocation;
             if (m_useAttackerPositionInsteadOfImpactPosition)
             {
-                attackOrigin = info.OriginTeam ? info.OriginTeam.ModuleOwner.Position : (info.OriginGao ? info.OriginGao.transform.position : info.ImpactLocation);
+                if (info.OriginTeam && info.OriginTeam.ModuleOwner)
+                {
+                    attackOrigin = info.OriginTeam.ModuleOwner.Position;
+                }
+                else if (info.OriginGao)
+                {
+                    attackOrigin = info.OriginGao.transform.position;
+                }
+                else
+                {
+                    attackOrigin = info.ImpactLocation;
+                }
             }
 
             Vector3 coord1 = m_origin - attackOrigin;
