@@ -65,6 +65,11 @@ namespace NobunAtelier
 
             for (int i = 0, c = m_stateModules.Length; i < c; i++)
             {
+                if (!m_stateModules[i].isActiveAndEnabled)
+                {
+                    continue;
+                }
+
                 m_stateModules[i].Enter();
             }
         }
@@ -78,6 +83,11 @@ namespace NobunAtelier
 
             for (int i = 0, c = m_stateModules.Length; i < c; i++)
             {
+                if (!m_stateModules[i].isActiveAndEnabled)
+                {
+                    continue;
+                }
+
                 m_stateModules[i].Tick(deltaTime);
             }
         }
@@ -96,6 +106,11 @@ namespace NobunAtelier
 
             for (int i = 0, c = m_stateModules.Length; i < c; i++)
             {
+                if (!m_stateModules[i].isActiveAndEnabled)
+                {
+                    continue;
+                }
+
                 m_stateModules[i].Exit();
             }
         }
