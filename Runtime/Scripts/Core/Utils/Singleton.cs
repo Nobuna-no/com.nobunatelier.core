@@ -1,6 +1,7 @@
 using UnityEngine;
 
 // Improved version of the Singleton pattern for Unity.
+[DefaultExecutionOrder(-100)]
 public abstract class Singleton<T> : MonoBehaviour
     where T : MonoBehaviour
 {
