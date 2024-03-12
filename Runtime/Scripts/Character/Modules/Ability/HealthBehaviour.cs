@@ -193,7 +193,7 @@ namespace NobunAtelier.Gameplay
             {
                 OnHit?.Invoke(hitInfo);
 
-                if (hitInfo.Hit.DamageAmount > 0)
+                if (hitInfo.Hit.DamageAmount > 0 && !ignoreIframe)
                 {
                     m_currentInvulnerabilityDuration = m_definition.InvulnerabilityDuration;
                     if (m_isVulnerable)
