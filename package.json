@@ -1,7 +1,7 @@
 {
   "name": "com.nobunatelier.core",
   "displayName": "NobunAtelier - Core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "unity": "2023.2",
   "description": "A core collection of datastructure and game developement architecture use as a baseline for any game.  \n\nFor now it's a big mess, but once a better structure will be defined, I will split this package into more specialized ones.\n\n# Core\n- Scriptable Objects Data Definition/Collection\n- Object Pooled Factory\n- StateMachine\n\n# Gameplay \n- Module based Controller/Character\n- Game Manager, Mode with State\n\nMakes use of Unity's InputSystem. \n\nFor best results, use this text to summarize: \n\u25aa What the package does \n\u25aa How it can benefit the user \n\nNote: Special formatting characters are supported, including line breaks ('\\n') and bullets ('\\u25AA').",
   "author": {
@@ -16,9 +16,9 @@
   },
   "samples": [
     {
-        "displayName": "3C",
-        "description": "Contains basic 3C for starter.",
-        "path": "Samples~/3C"
-    } 
+      "displayName": "3C",
+      "description": "Contains basic 3C for starter.",
+      "path": "Samples~/3C"
+    }
   ]
 }
