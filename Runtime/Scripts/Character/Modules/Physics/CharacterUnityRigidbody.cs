@@ -39,7 +39,7 @@ namespace NobunAtelier
         {
             get
             {
-                return m_targetRigidbody.isKinematic ? m_kinematicVelocity : m_targetRigidbody.velocity;
+                return m_targetRigidbody.isKinematic ? m_kinematicVelocity : m_targetRigidbody.linearVelocity;
             }
             set
             {
@@ -49,7 +49,7 @@ namespace NobunAtelier
                 }
                 else
                 {
-                    m_targetRigidbody.velocity = value;
+                    m_targetRigidbody.linearVelocity = value;
                 }
             }
         }
@@ -118,19 +118,19 @@ namespace NobunAtelier
                 {
                     if (Physics.gravity.x != 0)
                     {
-                        newVelocity.x = m_targetRigidbody.velocity.x;
+                        newVelocity.x = m_targetRigidbody.linearVelocity.x;
                     }
                     if (Physics.gravity.y != 0)
                     {
-                        newVelocity.y = m_targetRigidbody.velocity.y;
+                        newVelocity.y = m_targetRigidbody.linearVelocity.y;
                     }
                     if (Physics.gravity.z != 0)
                     {
-                        newVelocity.z = m_targetRigidbody.velocity.z;
+                        newVelocity.z = m_targetRigidbody.linearVelocity.z;
                     }
                 }
 
-                m_targetRigidbody.velocity = newVelocity;
+                m_targetRigidbody.linearVelocity = newVelocity;
             }
 
             // m_isGrounded = false;
