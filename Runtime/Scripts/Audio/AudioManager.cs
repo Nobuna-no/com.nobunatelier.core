@@ -22,7 +22,7 @@ namespace NobunAtelier
     /// Provides methods for loading, playing, pausing, resuming, and unloading audio resources.
     /// It also handles 3D audio and audio fading in and out (using Unity's AudioMixerSnapshot).
     /// </summary>
-    public class AudioManager : Singleton<AudioManager>
+    public class AudioManager : SingletonMonoBehaviour<AudioManager>
     {
         [Header("Audio Settings")]
         [SerializeField]

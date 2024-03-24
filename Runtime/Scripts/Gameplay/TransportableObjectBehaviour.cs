@@ -4,7 +4,7 @@ using UnityEngine.Events;
 
 namespace NobunAtelier.Gameplay
 {
-    public class TransportableObjectBehaviour : PoolableBehaviour
+    public class TransportableObjectBehaviour : FactoryProduct
     {
         protected const float k_ExplosiveForce = 100;
 
@@ -74,12 +74,25 @@ namespace NobunAtelier.Gameplay
             }
         }
 
-        protected override void OnActivation()
+        protected override void OnProductReset()
+        {
+            if (m_targetInteractionCollider == null)
+            {
+                m_targetInteractionCollider = GetComponent<Collider>();
+            }
+
+            if (m_targetRigidbody == null)
+            {
+                m_targetRigidbody = GetComponent<Rigidbody>();
+            }
+        }
+
+        protected override void OnProductActivation()
         {
             Drop();
         }
 
-        protected override void OnDeactivation()
+        protected override void OnProductDeactivation()
         {
             EnablePhysics(false);
         }
@@ -93,21 +106,6 @@ namespace NobunAtelier.Gameplay
             TargetRigidbody.isKinematic = !enable;
             TargetRigidbody.useGravity = enable;
             TargetRigidbody.detectCollisions = enable;
-        }
-
-        protected override void Awake()
-        {
-            base.Awake();
-
-            if (m_targetInteractionCollider == null)
-            {
-                m_targetInteractionCollider = GetComponent<Collider>();
-            }
-
-            if (m_targetRigidbody == null)
-            {
-                m_targetRigidbody = GetComponent<Rigidbody>();
-            }
         }
 
         protected Vector3 GetLocalSpawnPointInSphere()

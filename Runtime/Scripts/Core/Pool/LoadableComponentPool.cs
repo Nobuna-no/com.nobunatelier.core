@@ -5,10 +5,10 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace NobunAtelier
 {
-    public class AssetReferenceGameObjectComponentT<T> : AssetReferenceGameObject
-    where T : Component
+    public class LoadableGameObjectComponent<T> : AssetReferenceGameObject
+        where T : Component
     {
-        public AssetReferenceGameObjectComponentT(string guid) : base(guid)
+        public LoadableGameObjectComponent(string guid) : base(guid)
         { }
 
         public override bool ValidateAsset(string mainAssetPath)
@@ -22,36 +22,40 @@ namespace NobunAtelier
 
             return gao.GetComponentInChildren<T>();
 #else
-        return false;
+            return false;
 #endif
         }
     }
 
-    public abstract class AtelierFactoryGameObjectReferenceT<T, AssetRefT> : AtelierFactoryT<T>
+    public abstract class LoadableComponentPool<T, AssetRefT> : MonoBehaviourPool<T>
         where T : Component
-        where AssetRefT : AssetReferenceGameObjectComponentT<T>
+        where AssetRefT : LoadableGameObjectComponent<T>
     {
         public abstract void SetAssetReference(AssetRefT assetReference);
     }
 
-    public abstract class AtelierFactoryGameObjectReferenceT<T, AssetRefT, AtelierFactoryT> : AtelierFactoryGameObjectReferenceT<T, AssetRefT>
+    /// <summary>
+    /// A generic factory for dynamically loading, instantiating, and pooling different types of component instances based on asset references.
+    /// Uses Unity's Addressable Asset System and object pooling techniques for efficient asset management.
+    /// </summary>
+    public abstract class LoadableComponentPoolFactory<T, AssetRefT, PoolT> : LoadableComponentPool<T, AssetRefT>
         where T : Component
-        where AssetRefT : AssetReferenceGameObjectComponentT<T>
-        where AtelierFactoryT : AtelierFactoryGameObjectReferenceT<T, AssetRefT>
+        where AssetRefT : LoadableGameObjectComponent<T>
+        where PoolT : LoadableComponentPool<T, AssetRefT>
     {
-        private static Dictionary<string, AtelierFactoryT> s_addressableFactoriesMap = null;
+        private static Dictionary<string, PoolT> s_addressableFactoriesMap = null;
         private static GameObject s_atelierFactoryGao;
 
         [SerializeField]
         private AssetReferenceGameObject objectPoolPrefab = null;
 
-        private static Dictionary<string, AtelierFactoryT> Instance
+        private static Dictionary<string, PoolT> Instance
         {
             get
             {
                 if (s_addressableFactoriesMap == null)
                 {
-                    s_addressableFactoriesMap = new Dictionary<string, AtelierFactoryT>();
+                    s_addressableFactoriesMap = new Dictionary<string, PoolT>();
                     s_atelierFactoryGao = new GameObject($"Atelier Factory ({typeof(T).Name})");
                 }
 
@@ -69,14 +73,14 @@ namespace NobunAtelier
 
             if (!Instance.ContainsKey(assetRef.AssetGUID))
             {
-                Instance.Add(assetRef.AssetGUID, s_atelierFactoryGao.AddComponent<AtelierFactoryT>());
+                Instance.Add(assetRef.AssetGUID, s_atelierFactoryGao.AddComponent<PoolT>());
                 Instance[assetRef.AssetGUID].SetInitialSize(initialReserve);
                 Instance[assetRef.AssetGUID].SetAssetReference(assetRef);
                 Instance[assetRef.AssetGUID].ResetPool();
             }
         }
 
-        public static T GetProduct(AssetRefT assetRef)
+        public static T Get(AssetRefT assetRef)
         {
             if (string.IsNullOrEmpty(assetRef.AssetGUID))
             {
@@ -89,10 +93,10 @@ namespace NobunAtelier
                 CreateFactory(assetRef);
             }
 
-            return Instance[assetRef.AssetGUID].GetProduct();
+            return Instance[assetRef.AssetGUID].Get();
         }
 
-        public static void ReleaseProduct(AssetRefT assetRef, T product)
+        public static void Release(AssetRefT assetRef, T product)
         {
             if (!Instance.ContainsKey(assetRef.AssetGUID))
             {
@@ -100,9 +104,10 @@ namespace NobunAtelier
                 return;
             }
 
-            Instance[assetRef.AssetGUID].ReleaseProduct(product);
+            Instance[assetRef.AssetGUID].Release(product);
         }
 
+        // This is going to be used by each individual factory.
         public override void SetAssetReference(AssetRefT assetReference)
         {
             objectPoolPrefab = assetReference;

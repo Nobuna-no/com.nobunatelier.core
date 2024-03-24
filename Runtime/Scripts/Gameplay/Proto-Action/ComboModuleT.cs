@@ -372,7 +372,7 @@ namespace NobunAtelier
                     return;
                 }
 
-                ImpactParticle = AtelierFactoryParticleSystemReference.GetProduct(m_attackDefinition.ImpactParticleReference);
+                ImpactParticle = LoadableParticleSystemPoolFactory.Get(m_attackDefinition.ImpactParticleReference);
             }
 
             public virtual void ResourcesRelease()
@@ -384,7 +384,7 @@ namespace NobunAtelier
                     return;
                 }
 
-                AtelierFactoryParticleSystemReference.ReleaseProduct(m_attackDefinition.ImpactParticleReference, ImpactParticle);
+                LoadableParticleSystemPoolFactory.Release(m_attackDefinition.ImpactParticleReference, ImpactParticle);
                 ImpactParticle = null;
             }
 
@@ -425,7 +425,7 @@ namespace NobunAtelier
                     return;
                 }
 
-                m_hitbox = AtelierFactoryHitboxBehaviourReference.GetProduct(m_attackDefinition.HitboxReference);
+                m_hitbox = AtelierFactoryHitboxBehaviourReference.Get(m_attackDefinition.HitboxReference);
             }
 
             private void HitboxRelease()
@@ -435,7 +435,7 @@ namespace NobunAtelier
                     return;
                 }
 
-                AtelierFactoryHitboxBehaviourReference.ReleaseProduct(m_attackDefinition.HitboxReference, m_hitbox);
+                AtelierFactoryHitboxBehaviourReference.Release(m_attackDefinition.HitboxReference, m_hitbox);
                 m_hitbox = null;
             }
         }

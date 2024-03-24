@@ -108,7 +108,7 @@ namespace NobunAtelier
             }
         }
 
-        private void PlayAudio(AssetReferenceAudioSource assetReference)
+        private void PlayAudio(LoadableAudioSource assetReference)
         {
             CurrentAttack.PlayAudio(ModuleOwner.Position, assetReference);
 
@@ -148,7 +148,7 @@ namespace NobunAtelier
             //}
         }
 
-        private IEnumerator Start3DAudio_Coroutine(AssetReferenceAudioSource assetReference, float delay)
+        private IEnumerator Start3DAudio_Coroutine(LoadableAudioSource assetReference, float delay)
         {
             yield return new WaitForSeconds(delay);
 
@@ -231,7 +231,7 @@ namespace NobunAtelier
 
             private bool m_isSFXLoaded = false;
 
-            private Dictionary<AssetReferenceAudioSource, AudioSource> m_soundEffectsMap;
+            private Dictionary<LoadableAudioSource, AudioSource> m_soundEffectsMap;
 
             public override void ResourcesInit()
             {
@@ -247,7 +247,7 @@ namespace NobunAtelier
                 SFXRelease();
             }
 
-            private AudioSource GetAudio(AssetReferenceAudioSource key)
+            private AudioSource GetAudio(LoadableAudioSource key)
             {
                 if (m_soundEffectsMap == null || m_soundEffectsMap.Count == 0)
                 {
@@ -262,7 +262,7 @@ namespace NobunAtelier
                 return null;
             }
 
-            public void PlayAudio(Vector3 worldPosition, AssetReferenceAudioSource assetReference)
+            public void PlayAudio(Vector3 worldPosition, LoadableAudioSource assetReference)
             {
                 var audioSource = GetAudio(assetReference);
                 if (audioSource == null)
@@ -296,7 +296,7 @@ namespace NobunAtelier
                     return;
                 }
 
-                Particle = AtelierFactoryParticleSystemReference.GetProduct(AnimData.Particle.AssetReference);
+                Particle = LoadableParticleSystemPoolFactory.Get(AnimData.Particle.AssetReference);
             }
 
             private void VFXRelease()
@@ -306,7 +306,7 @@ namespace NobunAtelier
                     return;
                 }
 
-                AtelierFactoryParticleSystemReference.ReleaseProduct(AnimData.Particle.AssetReference, Particle);
+                LoadableParticleSystemPoolFactory.Release(AnimData.Particle.AssetReference, Particle);
                 Particle = null;
             }
 
@@ -317,7 +317,7 @@ namespace NobunAtelier
                     return;
                 }
 
-                m_soundEffectsMap = new Dictionary<AssetReferenceAudioSource, AudioSource>(AnimData.SoundEffects.Count);
+                m_soundEffectsMap = new Dictionary<LoadableAudioSource, AudioSource>(AnimData.SoundEffects.Count);
 
                 foreach (var se in AnimData.SoundEffects)
                 {
@@ -326,7 +326,7 @@ namespace NobunAtelier
                         continue;
                     }
 
-                    m_soundEffectsMap.Add(se.AssetReference, AtelierFactoryAudioSourceReference.GetProduct(se.AssetReference));
+                    m_soundEffectsMap.Add(se.AssetReference, LoadableAudioSourcePoolFactory.Get(se.AssetReference));
                 }
                 m_isSFXLoaded = true;
             }
@@ -341,7 +341,7 @@ namespace NobunAtelier
 
                 foreach (var se in m_soundEffectsMap)
                 {
-                    AtelierFactoryAudioSourceReference.ReleaseProduct(se.Key, se.Value);
+                    LoadableAudioSourcePoolFactory.Release(se.Key, se.Value);
                 }
 
                 m_soundEffectsMap.Clear();

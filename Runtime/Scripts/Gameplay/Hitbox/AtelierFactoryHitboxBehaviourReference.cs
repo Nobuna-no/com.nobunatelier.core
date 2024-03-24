@@ -1,13 +1,13 @@
 namespace NobunAtelier.Gameplay
 {
     [System.Serializable]
-    public class AssetReferenceHitboxBehaviour : AssetReferenceGameObjectComponentT<HitboxBehaviour>
+    public class AssetReferenceHitboxBehaviour : LoadableGameObjectComponent<HitboxBehaviour>
     {
         public AssetReferenceHitboxBehaviour(string guid) : base(guid)
         { }
     }
 
     public class AtelierFactoryHitboxBehaviourReference
-        : AtelierFactoryGameObjectReferenceT<HitboxBehaviour, AssetReferenceHitboxBehaviour, AtelierFactoryHitboxBehaviourReference>
+        : LoadableComponentPoolFactory<HitboxBehaviour, AssetReferenceHitboxBehaviour, AtelierFactoryHitboxBehaviourReference>
     { }
 }

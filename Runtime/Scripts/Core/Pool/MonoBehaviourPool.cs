@@ -3,7 +3,17 @@ using UnityEngine.Pool;
 
 namespace NobunAtelier
 {
-    public abstract class AtelierFactoryT<T> : MonoBehaviour
+    public interface IPool<T>
+    {
+        T Get();
+        void GetAsync(System.Action<T> onCompleted);
+        void Release(T instance);
+    }
+
+    /// <summary>
+    /// Provides product based on type (factory) and manages them in a Unity IObjectPool.
+    /// </summary>
+    public abstract class MonoBehaviourPool<T> : MonoBehaviour, IPool<T>
         where T : class
     {
         public int ReserveSize => m_initialSize;
@@ -22,12 +32,31 @@ namespace NobunAtelier
 
         public IObjectPool<T> ObjectPool { get; protected set; } = null;
 
-        public virtual T GetProduct()
+        public virtual T Get()
         {
+#if DEBUG
+            if (ObjectPool == null)
+            {
+                Debug.LogError("Object pool is not initialized.");
+                return default(T);
+            }
+#endif
             return ObjectPool.Get();
         }
 
-        public virtual void ReleaseProduct(T obj)
+        public virtual void GetAsync(System.Action<T> onCompleted)
+        {
+#if DEBUG
+            if (ObjectPool == null)
+            {
+                Debug.LogError("Object pool is not initialized.");
+                return;
+            }
+#endif
+            onCompleted?.Invoke(ObjectPool.Get());
+        }
+
+        public virtual void Release(T obj)
         {
             ObjectPool.Release(obj);
         }

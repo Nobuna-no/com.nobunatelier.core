@@ -12,7 +12,7 @@ public class AttackDefinition : DataDefinition
     public Vector3 HitboxRotation => m_hitboxRotation;
     public Vector3 HitboxScale => m_hitboxScale;
 
-    public AssetReferenceParticleSystem ImpactParticleReference => m_impactParticleReference;
+    public LodableParticleSystem ImpactParticleReference => m_impactParticleReference;
     public Vector3 ParticleOffset => m_particleOffset;
     public Vector3 ParticleRotation => m_particleRotation;
     public Vector3 ParticleScale => m_particleScale;
@@ -37,7 +37,7 @@ public class AttackDefinition : DataDefinition
     private Vector3 m_hitboxScale = Vector3.one;
 
     [SerializeField]
-    private AssetReferenceParticleSystem m_impactParticleReference;
+    private LodableParticleSystem m_impactParticleReference;
 
     [SerializeField]
     private Vector3 m_particleOffset = Vector3.zero;

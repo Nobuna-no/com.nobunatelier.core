@@ -2,14 +2,14 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    public class PoolObjectDefinition : DataDefinition
+    public class FactoryProductDefinition : DataDefinition
     {
-        public PoolableBehaviour PoolableObject => m_poolablePrefab;
+        public FactoryProduct Product => m_poolablePrefab;
         public int ReserveSize => m_reserveSize;
         public int ReserveGrowCount => m_reserveGrowCount;
 
         [SerializeField]
-        private PoolableBehaviour m_poolablePrefab;
+        private FactoryProduct m_poolablePrefab;
 
         [SerializeField]
         private int m_reserveSize = 10;

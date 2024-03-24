@@ -9,7 +9,7 @@ namespace NobunAtelier
     /// It also has events that are triggered when a fade in or fade out begins or ends.
     /// The abstraction allows to implement the fading effect, using an animator or a shader for example.
     /// </summary>
-    public abstract class ScreenFader : Singleton<ScreenFader>
+    public abstract class ScreenFader : SingletonMonoBehaviour<ScreenFader>
     {
         public enum FadingMode
         {

@@ -16,7 +16,7 @@ namespace NobunAtelier
     /// Provides methods to asynchronously and simultaneously load and unload scenes, 
     /// wrapping Unity async loading API.
     /// </summary>
-    public class LevelManager : Singleton<LevelManager>
+    public class LevelManager : SingletonMonoBehaviour<LevelManager>
     {
         [Header("Level Manager")]
         [SerializeField, Scene]
