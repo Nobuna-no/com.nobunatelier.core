@@ -47,7 +47,7 @@ namespace NobunAtelier
 
         public void SetCameraTarget(ITargetable target)
         {
-            m_cameraTarget = target.Transform;
+            m_cameraTarget = target.TargetTransform;
         }
 
         public void SetCameraTarget(Transform cameraTarget)

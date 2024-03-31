@@ -10,7 +10,7 @@ namespace NobunAtelier
 
         public void SetTarget(ITargetable target)
         {
-            m_target = target.Transform;
+            m_target = target.TargetTransform;
         }
 
         public void SetTarget(Transform target)

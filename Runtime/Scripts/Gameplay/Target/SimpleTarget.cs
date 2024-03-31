@@ -10,7 +10,7 @@ namespace NobunAtelier
 
         public bool IsTargetable => m_isTargetable && this.enabled;
 
-        public Transform Transform => transform;
+        public Transform TargetTransform => transform;
 
         public Vector3 Position => transform.position;
 

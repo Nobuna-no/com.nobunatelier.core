@@ -11,7 +11,7 @@ namespace NobunAtelier
         public virtual LegacyCharacterControllerBase Controller { get; private set; }
         public Animator Animator { get; private set; }
         public virtual bool IsTargetable => true;
-        public virtual Transform Transform => transform;
+        public virtual Transform TargetTransform => transform;
         public virtual Vector3 Position => transform.position;
         public virtual Quaternion Rotation => transform.rotation;
 

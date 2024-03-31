@@ -10,8 +10,8 @@ namespace NobunAtelier
     public interface ITargetable
     {
         bool IsTargetable { get; }
-        Transform Transform { get; }
         Vector3 Position { get; }
+        Transform TargetTransform { get; }
     }
 
     public interface ITargeter
