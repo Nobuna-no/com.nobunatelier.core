@@ -13,4 +13,10 @@ namespace NobunAtelier
         Transform Transform { get; }
         Vector3 Position { get; }
     }
+
+    public interface ITargeter
+    {
+        void SetTarget(ITargetable target);
+        void SetTarget(Transform target);
+    }
 }

@@ -20,6 +20,7 @@ namespace NobunAtelier
     public class AnimationSegmentEvent : UnityEvent<AnimSequenceDefinition.Segment>
     { }
 
+    [AddComponentMenu("NobunAtelier/Character/Modules/Animation Sequence")]
     public class AnimationModule_AnimSequence : AnimationModule
     {
         [SerializeField]
@@ -91,24 +92,24 @@ namespace NobunAtelier
             {
                 bool animatorSpeedChange = false;
                 var currentSegment = m_animationSegmentsMap[segmentDefinition];
-                switch (currentSegment.segmentModifier)
+                switch (currentSegment.Modifier)
                 {
-                    case AnimSequenceDefinition.Segment.SegmentModifier.ForceDuration:
-                        m_cachedAnimatorSpeed = currentSegment.Duration / currentSegment.segmentNewDuration;
+                    case AnimSequenceDefinition.Segment.ModifierType.ForceDuration:
+                        m_cachedAnimatorSpeed = currentSegment.Duration / currentSegment.NewDuration;
                         animatorSpeedChange = true;
                         break;
 
-                    case AnimSequenceDefinition.Segment.SegmentModifier.ForceAnimatorSpeed:
-                        m_cachedAnimatorSpeed = currentSegment.segmentAnimatorSpeed;
+                    case AnimSequenceDefinition.Segment.ModifierType.ForceAnimatorSpeed:
+                        m_cachedAnimatorSpeed = currentSegment.AnimatorSpeed;
                         animatorSpeedChange = true;
                         break;
 
-                    case AnimSequenceDefinition.Segment.SegmentModifier.ResetAnimatorSpeed:
+                    case AnimSequenceDefinition.Segment.ModifierType.ResetAnimatorSpeed:
                         m_cachedAnimatorSpeed = 1;
                         animatorSpeedChange = true;
                         break;
 
-                    case AnimSequenceDefinition.Segment.SegmentModifier.None:
+                    case AnimSequenceDefinition.Segment.ModifierType.None:
                         break;
                 }
 
@@ -157,7 +158,7 @@ namespace NobunAtelier
             m_animationSegmentsMap.Clear();
             for (int i = m_animSeqDefinition.segments.Length - 1; i >= 0; i--)
             {
-                m_animationSegmentsMap.Add(m_animSeqDefinition.segments[i].segmentDefinition, m_animSeqDefinition.segments[i]);
+                m_animationSegmentsMap.Add(m_animSeqDefinition.segments[i].SegmentDefinition, m_animSeqDefinition.segments[i]);
             }
         }
 

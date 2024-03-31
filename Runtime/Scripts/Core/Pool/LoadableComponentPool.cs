@@ -5,10 +5,10 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace NobunAtelier
 {
-    public class LoadableGameObjectComponent<T> : AssetReferenceGameObject
+    public class LoadableComponent<T> : AssetReferenceGameObject
         where T : Component
     {
-        public LoadableGameObjectComponent(string guid) : base(guid)
+        public LoadableComponent(string guid) : base(guid)
         { }
 
         public override bool ValidateAsset(string mainAssetPath)
@@ -29,7 +29,7 @@ namespace NobunAtelier
 
     public abstract class LoadableComponentPool<T, AssetRefT> : MonoBehaviourPool<T>
         where T : Component
-        where AssetRefT : LoadableGameObjectComponent<T>
+        where AssetRefT : LoadableComponent<T>
     {
         public abstract void SetAssetReference(AssetRefT assetReference);
     }
@@ -40,7 +40,7 @@ namespace NobunAtelier
     /// </summary>
     public abstract class LoadableComponentPoolFactory<T, AssetRefT, PoolT> : LoadableComponentPool<T, AssetRefT>
         where T : Component
-        where AssetRefT : LoadableGameObjectComponent<T>
+        where AssetRefT : LoadableComponent<T>
         where PoolT : LoadableComponentPool<T, AssetRefT>
     {
         private static Dictionary<string, PoolT> s_addressableFactoriesMap = null;

@@ -21,7 +21,10 @@ namespace NobunAtelier
 
         public void OnDisable()
         {
-            TargetManager.Instance.Unregister(this);
+            if (TargetManager.IsSingletonValid)
+            {
+                TargetManager.Instance.Unregister(this);
+            }
         }
     }
 }

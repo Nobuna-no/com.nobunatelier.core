@@ -3,13 +3,13 @@ using UnityEngine;
 namespace NobunAtelier
 {
     [System.Serializable]
-    public class LodableParticleSystem : LoadableGameObjectComponent<ParticleSystem>
+    public class LoadableParticleSystem : LoadableComponent<ParticleSystem>
     {
-        public LodableParticleSystem(string guid) : base(guid)
+        public LoadableParticleSystem(string guid) : base(guid)
         { }
     }
 
     public class LoadableParticleSystemPoolFactory
-        : LoadableComponentPoolFactory<ParticleSystem, LodableParticleSystem, LoadableParticleSystemPoolFactory>
+        : LoadableComponentPoolFactory<ParticleSystem, LoadableParticleSystem, LoadableParticleSystemPoolFactory>
     { }
 }

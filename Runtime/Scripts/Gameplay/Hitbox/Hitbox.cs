@@ -6,7 +6,7 @@ using UnityEngine.Events;
 namespace NobunAtelier.Gameplay
 {
     [RequireComponent(typeof(Collider), typeof(Rigidbody))]
-    public class HitboxBehaviour : MonoBehaviour
+    public class Hitbox : MonoBehaviour
     {
         [Header("Hitbox")]
         [SerializeField, Tooltip("The team behind the attack.")]

@@ -7,15 +7,16 @@ using UnityEngine.Events;
 namespace NobunAtelier
 {
     [RequireComponent(typeof(TeamModule))]
-    public abstract class ComboModuleT<T, ComboAttackT> : CharacterAbilityModuleBase
+    public abstract class ComboModule<T, ComboAttackT> : CharacterAbilityModuleBase, ITargeter
         where T : AttackDefinition
-        where ComboAttackT : ComboModuleT<T, ComboAttackT>.ComboAttack
+        where ComboAttackT : ComboModule<T, ComboAttackT>.ComboAttack
     {
         public IReadOnlyList<Combo> ComboCollection => m_comboCollection;
         public Combo ActiveCombo => m_activeCombo;
         public ComboState State => m_comboState;
         public ComboAttackT CurrentAttack => m_currentAttack;
         public int AttackIndex => m_comboIndex;
+        public Transform CurrentTarget { get; private set; }
 
         [SerializeField]
         private Combo[] m_comboCollection;
@@ -26,6 +27,9 @@ namespace NobunAtelier
         private ComboState m_comboState = ComboState.ReadyToAttack;
 
         [SerializeField]
+        private Transform m_target;
+
+        [SerializeField]
         private bool m_debugLog = false;
 
         private Queue<System.Action> m_actionsQueue = new Queue<System.Action>();
@@ -34,6 +38,16 @@ namespace NobunAtelier
         private TeamModule m_teamModule;
         private int m_comboIndex;
         private bool m_canExecuteNewAction = true;
+
+        public void SetTarget(ITargetable target)
+        {
+            m_target = target.Transform;
+        }
+
+        public void SetTarget(Transform target)
+        {
+            m_target = target;
+        }
 
         public override void ModuleInit(Character character)
         {
@@ -62,7 +76,7 @@ namespace NobunAtelier
 
             if (m_comboState == ComboState.Attacking && CurrentAttack != null)
             {
-                CurrentAttack.UpdateHitbox(ModuleOwner.Transform);
+                CurrentAttack.UpdateHitbox(CurrentTarget);
             }
 
             if (!m_canExecuteNewAction || m_actionsQueue.Count == 0)
@@ -295,11 +309,25 @@ namespace NobunAtelier
                         m_comboIndex = 0;
                         m_currentAttack = m_activeCombo.Attacks[0];
 
-                        // m_comboCancelled = false;
+                        switch (m_currentAttack.AttackDefinition.HitPositioning)
+                        {
+                            case AttackDefinition.AttackPositioning.RelativeToSelf:
+                                CurrentTarget = ModuleOwner.Transform;
+                                break;
+                            case AttackDefinition.AttackPositioning.RelativeToTarget:
+                                if (m_target == null)
+                                {
+                                    Debug.LogWarning("Trying to position attack hit over target, but target has not been assigned...", this);
+                                    CurrentTarget = ModuleOwner.Transform;
+                                }
+                                else
+                                {
+                                    CurrentTarget = m_target;
+                                }
+                                break;
+                        }
+
                         InitialAttackImpl();
-                        // m_animationModule.PlayAnimSequence(m_activeCombo.Attacks[0].AnimData);
-                        //
-                        // AddListenersToAnimSegments();
 
                         SetupComboAttack();
                     }
@@ -332,8 +360,8 @@ namespace NobunAtelier
         {
             m_comboState = ComboState.Attacking;
 
-            m_activeCombo.Attacks[m_comboIndex].Hitbox.OnHit.AddListener(OnAttackHitImpl);
-            m_activeCombo.Attacks[m_comboIndex].SetupHitbox(ModuleOwner.Transform, m_teamModule);
+            m_currentAttack.Hitbox.OnHit.AddListener(OnAttackHitImpl);
+            m_currentAttack.SetupHitbox(CurrentTarget, m_teamModule);
 
             SetupAttackImpl();
         }
@@ -350,12 +378,12 @@ namespace NobunAtelier
         {
             public T AttackDefinition => m_attackDefinition;
             public HitDefinition Hit => m_attackDefinition.Hit;
-            public HitboxBehaviour Hitbox => m_hitbox;
+            public Hitbox Hitbox => m_hitbox;
 
             [SerializeField]
             private T m_attackDefinition;
 
-            private HitboxBehaviour m_hitbox;
+            private Hitbox m_hitbox;
             public ParticleSystem ImpactParticle { get; private set; } = null;
 
             public virtual void ResourcesInit()
@@ -425,7 +453,7 @@ namespace NobunAtelier
                     return;
                 }
 
-                m_hitbox = AtelierFactoryHitboxBehaviourReference.Get(m_attackDefinition.HitboxReference);
+                m_hitbox = LoadableHitboxPoolFactory.Get(m_attackDefinition.HitboxReference);
             }
 
             private void HitboxRelease()
@@ -435,7 +463,7 @@ namespace NobunAtelier
                     return;
                 }
 
-                AtelierFactoryHitboxBehaviourReference.Release(m_attackDefinition.HitboxReference, m_hitbox);
+                LoadableHitboxPoolFactory.Release(m_attackDefinition.HitboxReference, m_hitbox);
                 m_hitbox = null;
             }
         }

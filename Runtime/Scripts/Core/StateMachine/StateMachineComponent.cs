@@ -10,7 +10,7 @@ namespace NobunAtelier
         where T : StateDefinition
         where TCollection : DataCollection
     {
-        public T CurrentStateDefinition => m_activeStateDefinition;
+        public T ActiveStateDefinition => m_activeStateDefinition;
         public bool IsPaused { get; set; } = false;
 
 #if UNITY_EDITOR

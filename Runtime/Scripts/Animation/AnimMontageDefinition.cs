@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
+    // Represent
     public class AnimMontageDefinition : AnimSequenceDefinition
     {
         // public AnimSequenceDefinition AnimSequence => m_animSequence;
@@ -24,14 +25,14 @@ namespace NobunAtelier
         [System.Serializable]
         public class ParticleEffect
         {
-            public LodableParticleSystem AssetReference => m_particle;
+            public LoadableParticleSystem AssetReference => m_particle;
             public float StartDelay => m_fxStartDelay;
             public Vector3 ParticleOffset => m_particleOffset;
             public Vector3 ParticleRotation => m_particleRotation;
             public Vector3 ParticleScale => m_particleScale;
 
             [SerializeField]
-            private LodableParticleSystem m_particle;
+            private LoadableParticleSystem m_particle;
 
             [SerializeField]
             private float m_fxStartDelay;

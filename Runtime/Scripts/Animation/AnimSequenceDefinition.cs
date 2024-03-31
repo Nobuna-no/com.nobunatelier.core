@@ -1,9 +1,16 @@
 using NaughtyAttributes;
 using UnityEngine;
-using UnityEngine.Serialization;
+using static NobunAtelier.AnimSequenceDefinition;
+using static Unity.Cinemachine.CinemachineFreeLookModifier;
 
 namespace NobunAtelier
 {
+    /// <summary>
+    /// Stores additional information about an animation state within an AnimatorController.
+    /// It stores segments of animation by on AnimSegmentDefinition. It is then possible to adds Modifier on
+    /// each segments to modulate the animator speed or force the duration of a sequence.
+    /// Data can be generated using NobunAtelier AnimationSequenceBaker tool.
+    /// </summary>
     public class AnimSequenceDefinition : DataDefinition
     {
         [Header("AnimSequence")]
@@ -14,14 +21,14 @@ namespace NobunAtelier
         public int stateNameHash;
 
         // public AnimationClip clip;
-        public float crossFadeDuration = .1f;
+        public float crossFadeDuration = 0.1f;
 
         public Segment[] segments;
 
         [System.Serializable]
         public class Segment
         {
-            public enum SegmentModifier
+            public enum ModifierType
             {
                 None,
                 ForceAnimatorSpeed,
@@ -30,36 +37,49 @@ namespace NobunAtelier
             }
 
             public float Duration => m_duration;
+            public float NewDuration => m_newDuration;
+            public AnimSegmentDefinition SegmentDefinition => m_definition;
+            public ModifierType Modifier => m_modifier;
+            public float AnimatorSpeed => m_animatorSpeed;
 
-            [FormerlySerializedAs("duration")]
             [SerializeField, AllowNesting, ReadOnly]
             private float m_duration;
-
-            public AnimSegmentDefinition segmentDefinition;
-            public SegmentModifier segmentModifier;
-
+            [SerializeField, AllowNesting, ReadOnly]
+            private AnimSegmentDefinition m_definition;
+            [SerializeField]
+            private ModifierType m_modifier;
             [SerializeField, AllowNesting, ShowIf("ShowForceDuration")]
-            public float segmentNewDuration;
-
+            private float m_newDuration;
             [SerializeField, AllowNesting, ShowIf("ShowForceAnimatorSpeed")]
-            public float segmentAnimatorSpeed;
+            private float m_animatorSpeed;
 
-            public bool ShowForceDuration => segmentModifier == SegmentModifier.ForceDuration;
-            public bool ShowForceAnimatorSpeed => segmentModifier == SegmentModifier.ForceAnimatorSpeed;
+#if UNITY_EDITOR
+            // NaughtyAttribute's ShowIf arguments.
+            public bool ShowForceDuration => m_modifier == ModifierType.ForceDuration;
+            public bool ShowForceAnimatorSpeed => m_modifier == ModifierType.ForceAnimatorSpeed;
+#endif
+
+            public Segment(float duration, AnimSegmentDefinition segmentDef)
+            {
+                m_duration = duration;
+                m_newDuration = duration;
+                m_definition = segmentDef;
+                m_animatorSpeed = 1;
+            }
 
             public float GetEstimatedDuration()
             {
-                switch (segmentModifier)
+                switch (m_modifier)
                 {
-                    case AnimSequenceDefinition.Segment.SegmentModifier.None:
-                    case AnimSequenceDefinition.Segment.SegmentModifier.ResetAnimatorSpeed:
+                    case AnimSequenceDefinition.Segment.ModifierType.None:
+                    case AnimSequenceDefinition.Segment.ModifierType.ResetAnimatorSpeed:
                         return m_duration;
 
-                    case AnimSequenceDefinition.Segment.SegmentModifier.ForceDuration:
-                        return segmentNewDuration;
+                    case AnimSequenceDefinition.Segment.ModifierType.ForceDuration:
+                        return m_newDuration;
 
-                    case AnimSequenceDefinition.Segment.SegmentModifier.ForceAnimatorSpeed:
-                        return m_duration * segmentAnimatorSpeed;
+                    case AnimSequenceDefinition.Segment.ModifierType.ForceAnimatorSpeed:
+                        return m_duration * m_animatorSpeed;
                 }
 
                 return m_duration;

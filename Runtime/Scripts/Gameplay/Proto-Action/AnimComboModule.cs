@@ -5,7 +5,7 @@ using static NobunAtelier.AnimComboModule;
 
 namespace NobunAtelier
 {
-    public class AnimComboModule : ComboModuleT<AttackAnimationDefinition, AnimComboAttack>
+    public class AnimComboModule : ComboModule<AttackAnimationDefinition, AnimComboAttack>
     {
         [SerializeField]
         private AnimationModule_AnimSequence m_animationModule;
@@ -83,7 +83,7 @@ namespace NobunAtelier
 
                 if (CurrentAttack.ParticleStartDelay == 0)
                 {
-                    CurrentAttack.SetupParticleAndPlay(ModuleOwner.transform);
+                    CurrentAttack.SetupParticleAndPlay(CurrentTarget);
                 }
                 else
                 {
@@ -110,7 +110,7 @@ namespace NobunAtelier
 
         private void PlayAudio(LoadableAudioSource assetReference)
         {
-            CurrentAttack.PlayAudio(ModuleOwner.Position, assetReference);
+            CurrentAttack.PlayAudio(CurrentTarget.position, assetReference);
 
             //var audioSource = CurrentAttack.GetAudio(assetReference);
             //if (audioSource == null)
@@ -134,7 +134,7 @@ namespace NobunAtelier
                 yield break;
             }
 
-            ActiveCombo.Attacks[index].SetupParticleAndPlay(ModuleOwner.transform);
+            ActiveCombo.Attacks[index].SetupParticleAndPlay(CurrentTarget);
 
             //if (ActiveCombo.Attacks[index].ParticleTransform != null)
             //{
@@ -211,23 +211,10 @@ namespace NobunAtelier
             public ParticleSystem Particle { get; private set; } = null;
             public IReadOnlyList<AnimMontageDefinition.SoundEffect> SFXs => AnimData.SoundEffects;
 
-            // public ParticleSystem ImpactParticle { get; private set; } = null;
-            // public Transform ParticleTransform => m_particleTransform;
             public float ParticleStartDelay => AnimData.Particle.StartDelay;
 
             public bool HasFX => Particle != null;
             public bool HasSFX => m_isSFXLoaded;
-
-            // [Header("Animation")]
-
-            //[SerializeField]
-            //private AnimMontageDefinition m_animData;
-
-            // [SerializeField]
-            // private AssetReferenceParticleSystem m_impactParticleReference;
-
-            //[SerializeField]
-            //private Transform m_particleTransform;
 
             private bool m_isSFXLoaded = false;
 

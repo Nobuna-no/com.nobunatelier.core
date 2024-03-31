@@ -8,6 +8,7 @@ namespace NobunAtelier.Editor
 {
     public class AnimSequenceBaker : EditorWindow
     {
+        private AnimatorOverrideController overrideController;
         private AnimatorController controller;
 
         private Dictionary<int, AnimMontageDataToBake> m_animMontagesData = new Dictionary<int, AnimMontageDataToBake>();
@@ -17,6 +18,7 @@ namespace NobunAtelier.Editor
         private AnimSequenceCollection m_animationCollection;
 
         private bool m_showOnlyValidAnimationClip = true;
+        private bool m_useAnimationControllerOverride = false;
 
         [MenuItem("NobunAtelier/Animation Sequence Baker")]
         public static void ShowWindow()
@@ -28,7 +30,16 @@ namespace NobunAtelier.Editor
         {
             using (new EditorGUILayout.VerticalScope(GUI.skin.window, GUILayout.Height(EditorGUIUtility.singleLineHeight * 4)))
             {
-                controller = EditorGUILayout.ObjectField("Animator Controller", controller, typeof(AnimatorController), true) as AnimatorController;
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    controller = EditorGUILayout.ObjectField("Animator Controller", controller, typeof(AnimatorController), true) as AnimatorController;
+                    if (m_useAnimationControllerOverride)
+                    {
+                        overrideController = EditorGUILayout.ObjectField("Animator Controller", overrideController, typeof(AnimatorOverrideController), true) as AnimatorOverrideController;
+                    }
+
+                    m_useAnimationControllerOverride = GUILayout.Toggle(m_useAnimationControllerOverride, "Use AnimationController", GUILayout.ExpandWidth(false));
+                }
 
                 m_animationCollection = EditorGUILayout.ObjectField("Animation Montage Collection", m_animationCollection, typeof(AnimSequenceCollection), false) as AnimSequenceCollection;
 
@@ -188,6 +199,8 @@ namespace NobunAtelier.Editor
                             {
                                 var def = m_animationCollection.GetOrCreateDefinition(state.name) as AnimSequenceDefinition;
                                 BakeAnimSequenceData(state, clip, currentAnimData, def);
+                                EditorUtility.SetDirty(def);
+                                AssetDatabase.SaveAssetIfDirty(def);
                                 m_animationCollection.SaveCollection();
                                 currentAnimData.sequenceDefinitionToUpdate = def;
                                 currentAnimData.saveInCollection = false;
@@ -238,14 +251,11 @@ namespace NobunAtelier.Editor
             for (int i = currentAnimData.animSegmentsData.Count - 1; i >= 0; --i)
             {
                 var segment = currentAnimData.animSegmentsData[i];
-                def.segments[i] = new AnimSequenceDefinition.Segment();
-                def.segments[i].segmentDefinition = segment.definition;
-                // def.segments[i].duration = segment.duration;
-                def.segments[i].segmentNewDuration = segment.duration;
-                def.segments[i].segmentAnimatorSpeed = 1f;
+                def.segments[i] = new AnimSequenceDefinition.Segment(segment.duration, segment.definition);
 
-                var durationProperty = serializedObject.FindProperty("m_duration");
-                durationProperty.floatValue = segment.duration;
+                // Total length... deprecated feature...
+                // var durationProperty = serializedObject.FindProperty("m_duration");
+                // durationProperty.floatValue = segment.duration;
             }
             serializedObject.ApplyModifiedProperties();
         }
@@ -347,7 +357,11 @@ namespace NobunAtelier.Editor
         public List<AnimatorState> GetAnimatorControllerStateInfo()
         {
             List<AnimatorState> stateHashes = new List<AnimatorState>();
-            if (controller == null) return stateHashes;
+            if (controller == null)
+            {
+                return stateHashes;
+            }
+
 
             foreach (AnimatorControllerLayer layer in this.controller.layers)
             {
