@@ -15,7 +15,6 @@ namespace NobunAtelier
         }
 
         public TargetChangedEvent OnTargetRefreshed;
-        public TargetChangedEvent OnTargetChanged;
 
         private ITargetable m_currentTarget;
         public ITargetable CurrentTarget => m_currentTarget;
@@ -77,7 +76,7 @@ namespace NobunAtelier
 
             // Update the current target with the closest one
             m_currentTarget = closestTarget;
-            OnTargetChanged?.Invoke(m_currentTarget);
+            OnTargetRefreshed?.Invoke(m_currentTarget);
         }
     }
 }

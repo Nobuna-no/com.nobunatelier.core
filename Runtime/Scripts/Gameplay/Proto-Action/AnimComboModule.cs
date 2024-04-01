@@ -32,8 +32,8 @@ namespace NobunAtelier
         public override void ModuleInit(Character character)
         {
             base.ModuleInit(character);
-
-            Debug.Assert(ModuleOwner.TryGetAbilityModule(out m_animationModule), $"{this.name}: No animation module found in character {ModuleOwner.name}.", this);
+            ModuleOwner.TryGetAbilityModule(out m_animationModule);
+            Debug.Assert(m_animationModule, $"{this.name}: No animation module found in character {ModuleOwner.name}.", this);
         }
 
         public override void StopCombo()
