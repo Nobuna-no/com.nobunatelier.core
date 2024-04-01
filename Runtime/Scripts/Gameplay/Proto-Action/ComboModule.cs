@@ -70,9 +70,9 @@ namespace NobunAtelier
             }
         }
 
-        public override void AbilityUpdate(float deltaTime)
+        protected override void OnAbilityUpdate(float deltaTime)
         {
-            base.AbilityUpdate(deltaTime);
+            base.OnAbilityUpdate(deltaTime);
 
             if (m_comboState == ComboState.Attacking && CurrentAttack != null)
             {

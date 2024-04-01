@@ -2,7 +2,12 @@ namespace NobunAtelier
 {
     public abstract class CharacterAbilityModuleBase : CharacterModuleBase
     {
-        public virtual void AbilityUpdate(float deltaTime)
+        internal void AbilityUpdate(float deltaTime)
+        {
+            OnAbilityUpdate(deltaTime);
+        }
+
+        protected virtual void OnAbilityUpdate(float deltaTime)
         { }
     }
 }

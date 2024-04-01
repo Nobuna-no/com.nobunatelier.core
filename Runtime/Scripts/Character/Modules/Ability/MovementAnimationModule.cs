@@ -8,7 +8,7 @@ namespace NobunAtelier
         [SerializeField, AnimatorParam("m_animator")]
         private string m_moveSpeedFloatName;
 
-        public override void AbilityUpdate(float deltaTime)
+        protected override void OnAbilityUpdate(float deltaTime)
         {
             var movement = ModuleOwner.GetMoveVector();
             movement.y = 0;
