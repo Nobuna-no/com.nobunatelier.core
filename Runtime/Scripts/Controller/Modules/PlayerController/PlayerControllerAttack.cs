@@ -13,17 +13,17 @@ namespace NobunAtelier
 
         public override void EnableModuleInput(PlayerInput playerInput, InputActionMap activeActionMap)
         {
-            bool needUpdate = false;
+            // bool needUpdate = false;
             foreach (var action in m_actions)
             {
                 action.EnableAction(activeActionMap);
-                needUpdate |= action.CanBeHoldAction;
+                // needUpdate |= action.CanBeHoldAction;
             }
 
-            if (needUpdate)
-            {
-                StartCoroutine(UpdateRoutine());
-            }
+            // if (needUpdate)
+            // {
+            //     StartCoroutine(UpdateRoutine());
+            // }
         }
 
         public override void DisableModuleInput(PlayerInput playerInput, InputActionMap activeActionMap)
@@ -34,7 +34,7 @@ namespace NobunAtelier
             }
 
             // If the coroutine hasn't started, will do nothing.
-            StopCoroutine(UpdateRoutine());
+            // StopCoroutine(UpdateRoutine());
         }
 
         private IEnumerator UpdateRoutine()
@@ -53,6 +53,19 @@ namespace NobunAtelier
 
                 // In case user use slowmo style, we don't want player input to be impacted.
                 yield return new WaitForSecondsRealtime(Time.unscaledDeltaTime);
+            }
+        }
+
+        private void LateUpdate()
+        {
+            foreach (var action in m_actions)
+            {
+                if (!action.NeedUpdate)
+                {
+                    continue;
+                }
+
+                action.UpdateAction(Time.unscaledDeltaTime);
             }
         }
 
@@ -78,6 +91,7 @@ namespace NobunAtelier
             public bool NeedUpdate { get; private set; } = false;
 
             private InputAction m_inputAction;
+            [SerializeField, AllowNesting, ReadOnly, ShowIf("CanBeHoldAction")]
             private float m_holdDuration = 0f;
 
             public void EnableAction(InputActionMap map)
