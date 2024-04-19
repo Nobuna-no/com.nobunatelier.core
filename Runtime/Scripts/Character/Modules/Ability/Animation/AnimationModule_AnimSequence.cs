@@ -105,11 +105,9 @@ namespace NobunAtelier
                         break;
 
                     case AnimSequenceDefinition.Segment.ModifierType.ResetAnimatorSpeed:
+                    case AnimSequenceDefinition.Segment.ModifierType.None:
                         m_cachedAnimatorSpeed = 1;
                         animatorSpeedChange = true;
-                        break;
-
-                    case AnimSequenceDefinition.Segment.ModifierType.None:
                         break;
                 }
 
@@ -176,8 +174,21 @@ namespace NobunAtelier
                 return;
             }
 
+            ResetAnimationSpeed();
+
             // Might be improve with more params...
             Animator.CrossFadeInFixedTime(m_animSeqDefinition.stateNameHash, m_animSeqDefinition.crossFadeDuration, 0);
+        }
+
+        public override void ResetAnimationSpeed()
+        {
+            m_cachedAnimatorSpeed = 1;
+
+            if (m_isFrozen)
+            {
+                return;
+            }
+            base.ResetAnimationSpeed();
         }
 
 #if UNITY_EDITOR
