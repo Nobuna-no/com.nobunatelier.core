@@ -20,6 +20,11 @@ namespace NobunAtelier.Editor
         private bool m_showOnlyValidAnimationClip = true;
         private bool m_useAnimationControllerOverride = false;
 
+        private bool m_addDefaultStartSegment = true;
+        private bool m_addDefaultEndSegment = true;
+        private AnimSegmentDefinition m_segmentStartDefinition;
+        private AnimSegmentDefinition m_segmentEndDefinition;
+
         [MenuItem("NobunAtelier/Animation Sequence Baker")]
         public static void ShowWindow()
         {
@@ -42,6 +47,24 @@ namespace NobunAtelier.Editor
                 }
 
                 m_animationCollection = EditorGUILayout.ObjectField("Animation Montage Collection", m_animationCollection, typeof(AnimSequenceCollection), false) as AnimSequenceCollection;
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    m_addDefaultStartSegment = GUILayout.Toggle(m_addDefaultStartSegment, "Add default start segment");
+                    if (m_addDefaultStartSegment)
+                    {
+                        m_segmentStartDefinition = EditorGUILayout.ObjectField(m_segmentStartDefinition, typeof(AnimSegmentDefinition), false) as AnimSegmentDefinition;
+                    }
+                }
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    m_addDefaultEndSegment = GUILayout.Toggle(m_addDefaultEndSegment, "Add default end segment");
+                    if (m_addDefaultEndSegment)
+                    {
+                        m_segmentEndDefinition = EditorGUILayout.ObjectField(m_segmentEndDefinition, typeof(AnimSegmentDefinition), false) as AnimSegmentDefinition;
+                    }
+                }
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
@@ -129,9 +152,13 @@ namespace NobunAtelier.Editor
                         continue;
                     }
 
-                    bool hasAvailableSegment = currentAnimData.availableSegments.Count > 0;
-                    // currentAnimData.availableSegments.Count > 0
-                    EditorGUILayout.LabelField(hasAvailableSegment ? "Available Segments:" : "No AnimSegment event found.");
+                    //bool hasAvailableSegment = currentAnimData.availableSegments.Count > 0;
+                    //// currentAnimData.availableSegments.Count > 0
+                    //if (!hasAvailableSegment)
+                    //{
+                    //    EditorGUILayout.LabelField(hasAvailableSegment ? "Available Segments:" : "No AnimSegment event found.");
+                    //    continue;
+                    //}
 
                     if (currentAnimData.availableSegments.Count > 0)
                     {
@@ -260,8 +287,9 @@ namespace NobunAtelier.Editor
             serializedObject.ApplyModifiedProperties();
         }
 
-        private static void RefreshAnimSegmentsData(AnimationClip clip, AnimMontageDataToBake currentAnimData)
+        private void RefreshAnimSegmentsData(AnimationClip clip, AnimMontageDataToBake currentAnimData)
         {
+            // Start by the end to get the segments duration based on the total duration of the clip.
             float lastEventTime = clip.length;
 
             for (int i = clip.events.Length - 1; i >= 0; i--)
@@ -282,6 +310,57 @@ namespace NobunAtelier.Editor
             }
 
             currentAnimData.animSegmentsData.Sort((x, y) => x.eventTime.CompareTo(y.eventTime));
+
+            if (m_addDefaultStartSegment && m_segmentStartDefinition)
+            {
+                bool alreadyExist = false;
+                foreach (var data in currentAnimData.animSegmentsData)
+                {
+                    if (data.definition == m_segmentStartDefinition)
+                    {
+                        alreadyExist = true;
+                        break;
+                    }
+                }
+
+                if (!alreadyExist && m_segmentStartDefinition)
+                {
+                    var currentFirstAnimData = currentAnimData.animSegmentsData[0];
+                    currentAnimData.animSegmentsData.Insert(0, new AnimSegmentDataToBake()
+                    {
+                        definition = m_segmentStartDefinition,
+                        eventTime = 0,
+                        duration = currentFirstAnimData.eventTime,
+                    });
+                }
+            }
+
+            if (m_addDefaultEndSegment && m_segmentEndDefinition)
+            {
+                bool alreadyExist = false;
+                foreach (var data in currentAnimData.animSegmentsData)
+                {
+                    if (data.definition == m_segmentEndDefinition)
+                    {
+                        alreadyExist = true;
+                        break;
+                    }
+                }
+
+                if (!alreadyExist)
+                {
+                    var currentlastAnimData = currentAnimData.animSegmentsData[currentAnimData.animSegmentsData.Count - 1];
+                    lastEventTime = currentlastAnimData.eventTime;
+                    currentlastAnimData.duration = clip.length - lastEventTime;
+
+                    currentAnimData.animSegmentsData.Add(new AnimSegmentDataToBake()
+                    {
+                        definition = m_segmentEndDefinition,
+                        eventTime = clip.length,
+                        duration = 0,
+                    });
+                }
+            }
         }
 
         private bool ExtractAndRefreshAvailableSegment(AnimMontageDataToBake currentAnimData, AnimationClip clip)

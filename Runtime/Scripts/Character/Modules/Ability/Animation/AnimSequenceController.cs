@@ -21,7 +21,7 @@ namespace NobunAtelier
     { }
 
     [AddComponentMenu("NobunAtelier/Character/Modules/Animation Sequence")]
-    public class AnimationModule_AnimSequence : AnimationModule
+    public class AnimSequenceController : AnimationModule
     {
         [SerializeField]
         private AnimSequenceDefinition m_animSeqDefinition;
@@ -37,6 +37,7 @@ namespace NobunAtelier
 
         private bool m_isFrozen = false;
         private float m_cachedAnimatorSpeed = 1f;
+        private AnimSegmentDefinition m_lastSegmentRaised = null;
 
         public bool TryGetAnimationEventForSegment(AnimSegmentDefinition segmentDefinition, out AnimationSegmentEvent segmentEvent)
         {
@@ -88,6 +89,13 @@ namespace NobunAtelier
 
         public void OnAnimationSegmentTrigger(AnimSegmentDefinition segmentDefinition)
         {
+            if (segmentDefinition.ExpectedPriorSegment != null && segmentDefinition.ExpectedPriorSegment != m_lastSegmentRaised)
+            {
+                Debug.LogWarning($"[{Time.frameCount}] AnimSegment <b>{segmentDefinition}</b> triggered and " +
+                    $"was expecting prior segment to be '<b>{segmentDefinition.ExpectedPriorSegment}</b>' but was '<b>{m_lastSegmentRaised}</b>'. Skipping.");
+                return;
+            }
+
             if (m_animationSegmentsMap.ContainsKey(segmentDefinition))
             {
                 bool animatorSpeedChange = false;
@@ -134,6 +142,8 @@ namespace NobunAtelier
             {
                 m_segmentTriggerMap[segmentDefinition].onSegmentTrigger?.Invoke(null);
             }
+
+            m_lastSegmentRaised = segmentDefinition;
         }
 
         public void FreezeAnimator()
@@ -158,6 +168,7 @@ namespace NobunAtelier
             {
                 m_animationSegmentsMap.Add(m_animSeqDefinition.segments[i].SegmentDefinition, m_animSeqDefinition.segments[i]);
             }
+            m_lastSegmentRaised = null;
         }
 
         public void PlayAnimSequence(AnimSequenceDefinition animationDefinition)

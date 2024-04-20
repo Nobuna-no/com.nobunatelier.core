@@ -8,7 +8,7 @@ namespace NobunAtelier
     public class AnimComboModule : ComboModule<AttackAnimationDefinition, AnimComboAttack>
     {
         [SerializeField]
-        private AnimationModule_AnimSequence m_animationModule;
+        private AnimSequenceController m_animationModule;
 
         [SerializeField]
         private AnimSegmentDefinition m_attackWarningBeginSegmentDefinition;
