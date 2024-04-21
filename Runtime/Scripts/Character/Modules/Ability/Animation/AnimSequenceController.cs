@@ -91,8 +91,9 @@ namespace NobunAtelier
         {
             if (segmentDefinition.ExpectedPriorSegment != null && segmentDefinition.ExpectedPriorSegment != m_lastSegmentRaised)
             {
-                Debug.LogWarning($"[{Time.frameCount}] AnimSegment <b>{segmentDefinition}</b> triggered and " +
-                    $"was expecting prior segment to be '<b>{segmentDefinition.ExpectedPriorSegment}</b>' but was '<b>{m_lastSegmentRaised}</b>'. Skipping.");
+                // KEEP THIS FOR FUTURE DEBUGGING.
+                // Debug.LogWarning($"[{Time.frameCount}] AnimSegment <b>{segmentDefinition}</b> triggered and " +
+                //     $"was expecting prior segment to be '<b>{segmentDefinition.ExpectedPriorSegment}</b>' but was '<b>{m_lastSegmentRaised}</b>'. Skipping.");
                 return;
             }
 
