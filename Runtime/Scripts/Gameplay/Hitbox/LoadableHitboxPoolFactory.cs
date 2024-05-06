@@ -9,5 +9,14 @@ namespace NobunAtelier.Gameplay
 
     public class LoadableHitboxPoolFactory
         : LoadableComponentPoolFactory<Hitbox, LoadableHitbox, LoadableHitboxPoolFactory>
-    { }
+    {
+        public override void Release(Hitbox obj)
+        {
+            obj.OnHit.RemoveAllListeners();
+            obj.OnHitboxDisabled.RemoveAllListeners();
+            obj.OnHitboxEnabled.RemoveAllListeners();
+            obj.HitEnd();
+            base.Release(obj);
+        }
+    }
 }
