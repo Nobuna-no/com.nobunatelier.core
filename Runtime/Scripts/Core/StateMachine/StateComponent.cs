@@ -1,5 +1,6 @@
 using NaughtyAttributes;
 using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace NobunAtelier
@@ -49,18 +50,11 @@ namespace NobunAtelier
 
         public virtual void Enter()
         {
-            if (m_logDebug)
-            {
-                Debug.Log($"{this.name}.Enter", this);
-            }
+            Log();
 
             if (!HasStateModule)
             {
                 return;
-            }
-            else if (m_logDebug)
-            {
-                Debug.Log($"{this.name}.Enter: Has {m_stateModules.Length} state module(s).", this);
             }
 
             for (int i = 0, c = m_stateModules.Length; i < c; i++)
@@ -94,10 +88,7 @@ namespace NobunAtelier
 
         public virtual void Exit()
         {
-            if (m_logDebug)
-            {
-                Debug.Log($"{this.name}.Exit", this);
-            }
+            Log();
 
             if (!HasStateModule)
             {
@@ -266,6 +257,26 @@ namespace NobunAtelier
             IMGUIUtility.DrawTitle(this.ToString());
             IMGUIUtility.DrawLabelValue("Definition", m_stateDefinition.name);
             IMGUIUtility.DrawLabelValue("Parent", m_parentStateMachine ? m_parentStateMachine.name : "null");
+        }
+
+        private void Log(string message = "", bool isWarning = false, [CallerMemberName] string funcName = null)
+        {
+            if (!m_logDebug)
+            {
+                return;
+            }
+
+            message = $"[{Time.frameCount}] {this.name}<{funcName}> {message}" +
+                $"\nState Module Count: {(m_stateModules == null ? 0 : m_stateModules.Length)}";
+
+            if (isWarning)
+            {
+                Debug.LogWarning(message, this);
+            }
+            else
+            {
+                Debug.Log(message, this);
+            }
         }
     }
 }
