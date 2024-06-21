@@ -20,6 +20,10 @@ namespace NobunAtelier
         public static T Instance { get; private set; }
         public static bool IsSingletonValid => Instance != null;
 
+        /// <summary>
+        /// Can be call in a bootstrapper to initialize all managers.
+        /// </summary>
+        /// <returns></returns>
         public static IEnumerator CreateAndInitialize()
         {
             if (Instance == null)
