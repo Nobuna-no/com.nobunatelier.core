@@ -1,14 +1,39 @@
 using NaughtyAttributes;
 using System;
-using System.Runtime.CompilerServices;
 using UnityEngine;
+using static NobunAtelier.ContextualLogManager;
 
 namespace NobunAtelier
 {
-    public abstract class StateComponent : MonoBehaviour
+    public abstract class StateComponent : MonoBehaviour, ContextualLogManager.IStateProvider
     {
+        [Header("Log")]
+        [SerializeField] private LogSettings m_LogSettings;
+
+        public virtual string LogPartitionName
+        {
+            get => gameObject.name;
+        }
+
+        public LogPartition Log { get; private set; }
+
         // Reflection SetState, required to work with state module.
         public abstract void SetState(Type newState, StateDefinition stateDefinition);
+
+        public virtual string GetStateMessage()
+        {
+            return string.Empty;
+        }
+
+        protected virtual void OnEnable()
+        {
+            Log = ContextualLogManager.Register(this, m_LogSettings, this);
+        }
+
+        protected virtual void OnDisable()
+        {
+            ContextualLogManager.Unregister(Log);
+        }
     }
 
     public class StateComponent<T, TCollection> : StateComponent, NobunAtelier.IState<T>
@@ -28,10 +53,6 @@ namespace NobunAtelier
         [SerializeField]
         private bool m_autoCaptureStateModule = true;
 
-        [Header("Debug")]
-        [SerializeField]
-        protected bool m_logDebug = false;
-
         private NobunAtelier.StateMachineComponent<T, TCollection> m_parentStateMachine = null;
         public NobunAtelier.StateMachineComponent<T, TCollection> ParentStateMachine => m_parentStateMachine;
         public T StateDefinition => m_stateDefinition;
@@ -50,7 +71,7 @@ namespace NobunAtelier
 
         public virtual void Enter()
         {
-            Log();
+            Log.Record();
 
             if (!HasStateModule)
             {
@@ -70,6 +91,9 @@ namespace NobunAtelier
 
         public virtual void Tick(float deltaTime)
         {
+            // Enable for update debug.
+            // m_Log.Record(ContextualLogManager.LogTypeFilter.Update);
+
             if (!HasStateModule)
             {
                 return;
@@ -88,7 +112,7 @@ namespace NobunAtelier
 
         public virtual void Exit()
         {
-            Log();
+            Log.Record();
 
             if (!HasStateModule)
             {
@@ -136,6 +160,11 @@ namespace NobunAtelier
             {
                 Debug.LogWarning($"Specified StateDefinition [{newStateType}] does not match the StateComponent type.", this);
             }
+        }
+
+        public override string GetStateMessage()
+        {
+            return $"State Module Count: {(m_stateModules == null ? 0 : m_stateModules.Length)}";
         }
 
         protected virtual void Awake()
@@ -257,26 +286,29 @@ namespace NobunAtelier
             IMGUIUtility.DrawTitle(this.ToString());
             IMGUIUtility.DrawLabelValue("Definition", m_stateDefinition.name);
             IMGUIUtility.DrawLabelValue("Parent", m_parentStateMachine ? m_parentStateMachine.name : "null");
+            GUI.enabled = false;
+            GUILayout.TextArea(GetStateMessage());
+            GUI.enabled = true;
         }
 
-        private void Log(string message = "", bool isWarning = false, [CallerMemberName] string funcName = null)
-        {
-            if (!m_logDebug)
-            {
-                return;
-            }
+        //private void Log(string message = "", bool isWarning = false, [CallerMemberName] string funcName = null)
+        //{
+        //    if (!m_Log)
+        //    {
+        //        return;
+        //    }
 
-            message = $"[{Time.frameCount}] {this.name}<{funcName}> {message}" +
-                $"\nState Module Count: {(m_stateModules == null ? 0 : m_stateModules.Length)}";
+        //    message = $"[{Time.frameCount}] {this.name}<{funcName}> {message}" +
+        //        $"\nState Module Count: {(m_stateModules == null ? 0 : m_stateModules.Length)}";
 
-            if (isWarning)
-            {
-                Debug.LogWarning(message, this);
-            }
-            else
-            {
-                Debug.Log(message, this);
-            }
-        }
+        //    if (isWarning)
+        //    {
+        //        Debug.LogWarning(message, this);
+        //    }
+        //    else
+        //    {
+        //        Debug.Log(message, this);
+        //    }
+        //}
     }
 }

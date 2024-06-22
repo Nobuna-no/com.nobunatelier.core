@@ -125,10 +125,7 @@ namespace NobunAtelier
             OnGameModeStopEvent?.Invoke();
             if (!m_nextStateOnGameModeStop)
             {
-                if (m_logDebug)
-                {
-                    Debug.LogWarning($"{this}: Game mode ended but no state to follow");
-                }
+                Log.Record("Game mode ended but no state to follow", ContextualLogManager.LogTypeFilter.Warning);
                 return;
             }
 

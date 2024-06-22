@@ -2,12 +2,14 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 using UnityEngine;
+using static System.Collections.Specialized.BitVector32;
 
 namespace NobunAtelier
 {
     public class ContextualLogManager : SingletonMonoBehaviour<ContextualLogManager>
     {
         [Header("Contextual Log")]
+        [SerializeField] private bool m_ResetPartitionOnApplicationQuit = true;
         [SerializeField] private LogSettings m_defaultLogSettings;
         [SerializeField]
         private List<LogPartition> m_LogPartitions = new List<LogPartition>();
@@ -39,7 +41,7 @@ namespace NobunAtelier
 
         public interface IStateProvider
         {
-            string LogSectionName { get; }
+            string LogPartitionName { get; }
 
             string GetStateMessage();
         }
@@ -65,7 +67,7 @@ namespace NobunAtelier
 
         public static void Unregister(LogPartition section)
         {
-            if (section == null)
+            if (section == null || !IsSingletonValid)
             {
                 return;
             }
@@ -78,20 +80,30 @@ namespace NobunAtelier
             }
         }
 
+        protected override void OnSingletonApplicationQuit()
+        {
+            if (m_ResetPartitionOnApplicationQuit)
+            {
+                Instance.m_LogPartitions.Clear();
+            }
+        }
+
         private static int GenerateHash(UnityEngine.Object context, IStateProvider stateProvider = null)
         {
-            string sectionName = (context != null ? context.name : "Unknown");
+            int hash = context.GetHashCode();
             if (stateProvider != null)
             {
-                sectionName += stateProvider.LogSectionName;
+                hash ^= stateProvider.LogPartitionName.GetHashCode();
             }
 
-            return sectionName.GetHashCode();
+            return hash;
         }
 
         [System.Serializable]
         public class LogSettings
         {
+            public static LogSettings Default => new LogSettings();
+
             [SerializeField] private LogOutput m_Action = LogOutput.LogInConsole;
             [SerializeField]
             private LogEntryDetails m_EntryCustomization
@@ -123,12 +135,12 @@ namespace NobunAtelier
                 m_Partitions = new List<LogSubPartition>();
             }
 
-            public void Add(LogTypeFilter flags = LogTypeFilter.Info, [CallerMemberName] string funcName = null)
+            public void Record(LogTypeFilter flags = LogTypeFilter.Info, [CallerMemberName] string funcName = null)
             {
-                Add(string.Empty, flags, funcName);
+                Record(string.Empty, flags, funcName);
             }
 
-            public void Add(string message, LogTypeFilter flags = LogTypeFilter.Info, [CallerMemberName] string funcName = null)
+            public void Record(string message, LogTypeFilter flags = LogTypeFilter.Info, [CallerMemberName] string funcName = null)
             {
                 if ((Settings.Filter & flags) == 0)
                 {
@@ -181,42 +193,21 @@ namespace NobunAtelier
             {
                 if ((flags & LogTypeFilter.Error) != 0)
                 {
-                    if (Context != null)
-                    {
-                        Debug.LogError(message, Context);
-                    }
-                    else
-                    {
-                        Debug.LogError(message);
-                    }
+                    Debug.LogError(message, Context);
                 }
                 else if ((flags & LogTypeFilter.Warning) != 0)
                 {
-                    if (Context != null)
-                    {
-                        Debug.LogWarning(message, Context);
-                    }
-                    else
-                    {
-                        Debug.LogWarning(message);
-                    }
+                    Debug.LogWarning(message, Context);
                 }
                 else
                 {
-                    if (Context != null)
-                    {
-                        Debug.Log(message, Context);
-                    }
-                    else
-                    {
-                        Debug.Log(message);
-                    }
+                    Debug.Log(message, Context);
                 }
             }
 
             private LogSubPartition GetActiveSubPartition()
             {
-                string partitionName = StateProvider?.LogSectionName ?? "Default";
+                string partitionName = StateProvider?.LogPartitionName ?? "Default";
                 LogSubPartition partition = m_Partitions.Find(ss => ss.Name == partitionName) ?? new LogSubPartition { Name = partitionName, Entries = new List<string>() };
 
                 if (!m_Partitions.Contains(partition))
