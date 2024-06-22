@@ -4,7 +4,7 @@ using UnityEngine;
 namespace NobunAtelier
 {
     /// <summary>
-    /// Class created to allows children to sealed MonoBehaviour Initialization mechanisms.
+    /// Allows children to sealed MonoBehaviour Initialization mechanisms.
     /// </summary>
     public abstract class VirtualFactoryProductMonoBehaviour : MonoBehaviour
     {
@@ -42,6 +42,9 @@ namespace NobunAtelier
         protected abstract void OnDisable();
     }
 
+    /// <summary>
+    /// Provides basic life-cycle mechanism to an object to be used by a Factory.
+    /// </summary>
     [DisallowMultipleComponent]
     public class FactoryProduct : VirtualFactoryProductMonoBehaviour
     {

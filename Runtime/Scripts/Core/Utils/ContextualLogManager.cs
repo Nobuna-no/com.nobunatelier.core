@@ -27,7 +27,8 @@ namespace NobunAtelier
             FrameCount = 1 << 0,
             Context = 1 << 1,
             FuncName = 1 << 2,
-            ContextState = 1 << 3,
+            ContextState = 1 << 3, // Only if available by IStateProvider.
+            ContextType = 1 << 4,
         }
 
         [System.Flags]
@@ -51,6 +52,12 @@ namespace NobunAtelier
             if (!IsSingletonValid)
             {
                 CreateAndInitialize();
+            }
+
+            // Implicit IStateProvider extraction.
+            if (stateProvider == null && context is IStateProvider)
+            {
+                stateProvider = context as IStateProvider;
             }
 
             var hash = GenerateHash(context, stateProvider);
@@ -99,18 +106,20 @@ namespace NobunAtelier
             return hash;
         }
 
+        /// <summary>
+        /// It is a class to keep the reference to the original object (i.e. as user can change value at runtime in the inspector).
+        /// </summary>
         [System.Serializable]
         public class LogSettings
         {
             public static LogSettings Default => new LogSettings();
 
             [SerializeField] private LogOutput m_Action = LogOutput.LogInConsole;
-            [SerializeField]
-            private LogEntryDetails m_EntryCustomization
-                = LogEntryDetails.FrameCount | LogEntryDetails.Context | LogEntryDetails.FuncName;
-            [SerializeField] private LogTypeFilter m_Filter = LogTypeFilter.Error;
+            [SerializeField] private LogEntryDetails m_Details =
+                LogEntryDetails.FrameCount | LogEntryDetails.Context | LogEntryDetails.ContextType | LogEntryDetails.FuncName;
+            [SerializeField] private LogTypeFilter m_Filter = LogTypeFilter.Warning | LogTypeFilter.Error;
 
-            public LogEntryDetails EntryCustomization => m_EntryCustomization;
+            public LogEntryDetails Details => m_Details;
             public LogTypeFilter Filter => m_Filter;
             public LogOutput Options => m_Action;
         }
@@ -150,22 +159,26 @@ namespace NobunAtelier
                 LogSubPartition partition = GetActiveSubPartition();
                 StringBuilder sb = new StringBuilder();
 
-                if ((Settings.EntryCustomization & LogEntryDetails.FrameCount) != 0)
+                if ((Settings.Details & LogEntryDetails.FrameCount) != 0)
                 {
                     sb.Append($"[{Time.frameCount}] ");
                 }
-                if ((Settings.EntryCustomization & LogEntryDetails.Context) != 0)
+                if ((Settings.Details & LogEntryDetails.Context) != 0)
                 {
                     sb.Append($"<b>{(Context != null ? Context.name : "???")}</b> ");
                 }
-                if ((Settings.EntryCustomization & LogEntryDetails.FuncName) != 0)
+                if((Settings.Details & LogEntryDetails.ContextType) != 0)
+                {
+                    sb.Append($"({Context.GetType().Name}) ");
+                }
+                if ((Settings.Details & LogEntryDetails.FuncName) != 0)
                 {
                     sb.Append($"<<i>{funcName}</i>> ");
                 }
 
                 sb.AppendLine(message);
 
-                if (StateProvider != null && (Settings.EntryCustomization & LogEntryDetails.ContextState) != 0)
+                if (StateProvider != null && (Settings.Details & LogEntryDetails.ContextState) != 0)
                 {
                     string data = StateProvider.GetStateMessage();
                     sb.Append(data);

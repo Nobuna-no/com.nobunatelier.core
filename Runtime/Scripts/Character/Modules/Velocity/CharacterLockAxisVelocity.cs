@@ -17,7 +17,7 @@ namespace NobunAtelier
         }
 
         [SerializeField, Range(0, 100)] private float m_lerpSpeed = 1f;
-        [SerializeField, Range(0, 100)] private float m_decelerationSpeed = 1f;
+        // [SerializeField, Range(0, 100)] private float m_decelerationSpeed = 1f;
         [SerializeField] private LockAxis m_lockAxes = LockAxis.Y;
 
         // [SerializeField] private Vector3 m_axesValue = Vector3.one;

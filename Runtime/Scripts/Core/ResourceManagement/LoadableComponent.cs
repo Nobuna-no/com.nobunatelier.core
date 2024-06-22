@@ -5,6 +5,10 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace NobunAtelier
 {
+    /// <summary>
+    /// Generic wrapper of Addressable AssetReferenceGameObject for Unity Component.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class LoadableComponent<T> : AssetReferenceGameObject
         where T : Component
     {
@@ -27,6 +31,11 @@ namespace NobunAtelier
         }
     }
 
+    /// <summary>
+    /// Provides product based on a Unity Component type and manages them in a Unity IObjectPool.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="AssetRefT"></typeparam>
     public abstract class LoadableComponentPool<T, AssetRefT> : MonoBehaviourPool<T>
         where T : Component
         where AssetRefT : LoadableComponent<T>
