@@ -5,12 +5,13 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 
-public struct HitInfo
+public class HitInfo
 {
+    public HitDefinition Hit;
     public TeamModule OriginTeam;
     public GameObject OriginGao;
     public Vector3 ImpactLocation;
-    public HitDefinition Hit;
+    public float DamageMultiplier = 1;
 }
 
 [System.Serializable]
@@ -38,11 +39,13 @@ namespace NobunAtelier.Gameplay
         private static HitDefinition s_killHit = null;
 
         public TeamDefinition Team => m_teamModule.Team;
-        public bool IsVulnerable => IsVulnerable;
 
         [Header("Definition")]
         [SerializeField, Required]
         private HealthDefinition m_definition;
+
+        [SerializeField]
+        private bool m_resetOnStart = false;
 
         [SerializeField, Header("Death")]
         private GameObject m_objectToMakeDisappear;
@@ -86,20 +89,35 @@ namespace NobunAtelier.Gameplay
         public bool IsDead => m_isDead;
         private bool m_isDead = false;
 
+        [SerializeField]
         private bool m_isVulnerable = true;
+
+        public bool IsVulnerable
+        {
+            get => m_isVulnerable;
+            set => m_isVulnerable = value;
+        }
 
         private float m_currentInvulnerabilityDuration = 0f;
         private TeamModule m_teamModule;
 
         public delegate void OnHealthChangedDelegate(float currentHealth, float maxHealth);
-
+        public delegate void HealthBehaviourDelegate(HealthBehaviour healthBehaviour);
         public event OnHealthChangedDelegate OnHealthChanged;
+        public event HealthBehaviourDelegate OnBehaviourDeath;
+        public event HealthBehaviourDelegate OnBehaviourBurial;
+
+        private void Start()
+        {
+            if (m_resetOnStart)
+            {
+                Reset();
+            }
+        }
 
         public override void ModuleInit(Character character)
         {
             base.ModuleInit(character);
-
-            m_teamModule = GetComponent<TeamModule>();
 
             Reset();
             Debug.Assert(m_definition != null);
@@ -113,6 +131,7 @@ namespace NobunAtelier.Gameplay
             }
 
             base.Reset();
+            m_teamModule = GetComponent<TeamModule>();
 
             OnReset?.Invoke();
 
@@ -160,20 +179,21 @@ namespace NobunAtelier.Gameplay
                 return;
             }
 
-            m_CurrentLifeValue = Mathf.Max(m_CurrentLifeValue - hitInfo.Hit.DamageAmount, 0);
+            m_CurrentLifeValue = Mathf.Max(m_CurrentLifeValue - hitInfo.Hit.DamageAmount * hitInfo.DamageMultiplier, 0);
             OnHealthChanged?.Invoke(m_CurrentLifeValue, m_definition.MaxValue);
 
             if (m_CurrentLifeValue <= 0)
             {
                 m_isDead = true;
                 OnDeath?.Invoke(hitInfo);
+                OnBehaviourDeath?.Invoke(this);
                 StartCoroutine(PoolObjectDeactivateCoroutine());
             }
             else
             {
                 OnHit?.Invoke(hitInfo);
 
-                if (hitInfo.Hit.DamageAmount > 0)
+                if (hitInfo.Hit.DamageAmount > 0 && !ignoreIframe)
                 {
                     m_currentInvulnerabilityDuration = m_definition.InvulnerabilityDuration;
                     if (m_isVulnerable)
@@ -256,6 +276,7 @@ namespace NobunAtelier.Gameplay
             yield return new WaitForSecondsRealtime(value);
 
             OnBurial?.Invoke();
+            OnBehaviourBurial?.Invoke(this);
 
             if (m_definition.Burial == HealthDefinition.BurialType.None)
             {

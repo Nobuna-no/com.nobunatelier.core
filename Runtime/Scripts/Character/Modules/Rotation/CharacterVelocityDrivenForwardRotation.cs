@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Character/RotationModule Velocity Driven")]
+    [AddComponentMenu("NobunAtelier/Character/Rotation/RotationModule: Velocity Driven")]
     public class CharacterVelocityDrivenForwardRotation : CharacterRotationModuleBase
     {
         [SerializeField, Tooltip("Set to 0 the velocity axis you want to ignore.\n i.e. y=0 mean not using y velocity to orient the body.")]

@@ -8,7 +8,7 @@ using UnityEngine.InputSystem;
 namespace NobunAtelier
 {
     [RequireComponent(typeof(PlayerInputManager))]
-    public class PlayerManager : Singleton<PlayerManager>
+    public class PlayerManager : SingletonMonoBehaviour<PlayerManager>
     {
         [Header("Player Manager")]
         [SerializeField, InfoBox("Maximum number of player + bot combined.")]
@@ -401,8 +401,8 @@ namespace NobunAtelier
                 return;
             }
 
-            Debug.Assert(m_splitScreenViewportCollection.DataDefinitions.Length >= m_participants.Count,
-            $"{this.name}: {m_participants.Count} participant(s) and only {m_splitScreenViewportCollection.DataDefinitions.Length} " +
+            Debug.Assert(m_splitScreenViewportCollection.Definitions.Count >= m_participants.Count,
+            $"{this.name}: {m_participants.Count} participant(s) and only {m_splitScreenViewportCollection.Definitions.Count} " +
             $"viewport element in the {m_splitScreenViewportCollection.name} collection.", this);
 
             int i = 0;
@@ -419,21 +419,22 @@ namespace NobunAtelier
 
                 camera.enabled = true;
 
-                SplitScreenRatioDefinition definition = m_splitScreenViewportCollection.GetData()[m_participants.Count];
+                SplitScreenRatioDefinition definition = m_splitScreenViewportCollection.Definitions[m_participants.Count - 1];
                 Debug.Assert(definition.Viewports.Count >= i,
                     $"{this.name}: Not enough viewport rect in {definition.name}, expecting at least {i + 1}.", this);
 
-                camera.rect = m_splitScreenViewportCollection.GetData()[m_participants.Count - 1].Viewports[i];
+                camera.rect = definition.Viewports[i];
 
                 CinemachineBrain cmBrain = camera.GetComponent<CinemachineBrain>();
                 if (cmBrain)
                 {
                     cmBrain.ChannelMask = (OutputChannels)((int)OutputChannels.Channel01 << i);
 
-                    CinemachineCamera targetCm = p.GetComponentInChildren<CinemachineCamera>();
-                    if (targetCm)
+                    CinemachineCamera[] targetCm = p.GetComponentsInChildren<CinemachineCamera>(true);
+
+                    foreach (var c in targetCm)
                     {
-                        targetCm.OutputChannel = cmBrain.ChannelMask;
+                        c.OutputChannel = cmBrain.ChannelMask;
                     }
                 }
 

@@ -10,7 +10,7 @@ namespace NobunAtelier
         where T : StateDefinition
         where TCollection : DataCollection
     {
-        public T CurrentStateDefinition => m_activeStateDefinition;
+        public T ActiveStateDefinition => m_activeStateDefinition;
         public bool IsPaused { get; set; } = false;
 
 #if UNITY_EDITOR
@@ -114,10 +114,7 @@ namespace NobunAtelier
 
         public override void Enter()
         {
-            if (m_logDebug)
-            {
-                Debug.Log($"{this.name}.Enter");
-            }
+            Log.Record();
 
             if (ParentStateMachine != null)
             {
@@ -127,10 +124,7 @@ namespace NobunAtelier
 
             if (HasStateModule)
             {
-                if (m_logDebug)
-                {
-                    Debug.Log($"{this.name}.Enter: Starting {m_stateModules.Length} state module(s).");
-                }
+                Log.Record();
 
                 for (int i = 0, c = m_stateModules.Length; i < c; i++)
                 {
@@ -158,6 +152,8 @@ namespace NobunAtelier
 
         public override void Exit()
         {
+            Log.Record();
+
             if (HasStateModule)
             {
                 for (int i = 0, c = m_stateModules.Length; i < c; i++)

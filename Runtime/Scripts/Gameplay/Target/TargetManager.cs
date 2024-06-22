@@ -4,7 +4,7 @@ using UnityEngine;
 namespace NobunAtelier
 {
     [DefaultExecutionOrder(0)]
-    public class TargetManager : Singleton<TargetManager>
+    public class TargetManager : SingletonMonoBehaviour<TargetManager>
     {
         [SerializeField]
         private CharacterSimpleTargetingAbility m_targetingModule;

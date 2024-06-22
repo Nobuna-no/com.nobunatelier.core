@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Controller/PlayerModule Jump")]
+    [AddComponentMenu("NobunAtelier/Controller/Player/Player Controller Module: Jump")]
     public class PlayerControllerJump : PlayerControllerModuleBase
     {
         [SerializeField]

@@ -39,7 +39,7 @@ namespace NobunAtelier
         {
             get
             {
-                return m_targetRigidbody.isKinematic ? m_kinematicVelocity : m_targetRigidbody.velocity;
+                return m_targetRigidbody.isKinematic ? m_kinematicVelocity : m_targetRigidbody.linearVelocity;
             }
             set
             {
@@ -49,7 +49,7 @@ namespace NobunAtelier
                 }
                 else
                 {
-                    m_targetRigidbody.velocity = value;
+                    m_targetRigidbody.linearVelocity = value;
                 }
             }
         }
@@ -100,29 +100,69 @@ namespace NobunAtelier
 
             if (m_targetRigidbody.isKinematic)
             {
-                m_targetRigidbody.position += newVelocity * deltaTime;
-                m_kinematicVelocity = newVelocity;
+                // If it there is an incoherence between the rigidbody and this module,
+                // assume that the player wanted to prevent physics movement.
+                if (m_isKinematic == false)
+                {
+                    m_kinematicVelocity = Vector3.zero;
+                }
+                else
+                {
+                    m_targetRigidbody.position += newVelocity * deltaTime;
+                    m_kinematicVelocity = newVelocity;
+                }
             }
             else
             {
-                m_targetRigidbody.velocity = newVelocity;
+                if (m_useGravity)
+                {
+                    if (Physics.gravity.x != 0)
+                    {
+                        newVelocity.x = m_targetRigidbody.linearVelocity.x;
+                    }
+                    if (Physics.gravity.y != 0)
+                    {
+                        newVelocity.y = m_targetRigidbody.linearVelocity.y;
+                    }
+                    if (Physics.gravity.z != 0)
+                    {
+                        newVelocity.z = m_targetRigidbody.linearVelocity.z;
+                    }
+                }
+
+                m_targetRigidbody.linearVelocity = newVelocity;
             }
 
-            m_isGrounded = false;
+            // m_isGrounded = false;
         }
 
         public override void OnModuleCollisionEnter(Collision collision)
         {
-            m_isGrounded = collision.collider.gameObject.layer == m_groundLayer;
+            if (collision.gameObject.layer != m_groundLayer)
+            {
+                return;
+            }
+
+            m_isGrounded = true;
         }
 
         public override void OnModuleCollisionStay(Collision collision)
         {
-            m_isGrounded = collision.collider.gameObject.layer == m_groundLayer;
+            if (collision.gameObject.layer != m_groundLayer)
+            {
+                return;
+            }
+
+            m_isGrounded = true;
         }
 
         public override void OnModuleCollisionExit(Collision collision)
         {
+            if (collision.gameObject.layer != m_groundLayer)
+            {
+                return;
+            }
+
             m_isGrounded = false;
         }
     }

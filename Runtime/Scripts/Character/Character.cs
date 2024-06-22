@@ -34,6 +34,7 @@ namespace NobunAtelier
 
         [SerializeField]
         private bool m_ignoreMissingModule = false;
+        [SerializeField] private bool m_autoCaptureModules = true;
 
         public bool TryGetAbilityModule<T>(out T outModule) where T : CharacterAbilityModuleBase
         {
@@ -145,7 +146,6 @@ namespace NobunAtelier
 
             CaptureModules();
 
-#if UNITY_EDITOR
             if (m_physicsModule == null)
             {
                 m_physicsModule = gameObject.AddComponent<CharacterUnityCharacterController>();
@@ -163,14 +163,6 @@ namespace NobunAtelier
                     Debug.LogWarning($"No rotation module found on {this}.");
                 }
             }
-#else
-            Debug.Assert(m_physicsModule, $"{this} doesn't have a Physics module!");
-            if (!m_ignoreMissingModule)
-            {
-                Debug.Assert(m_velocityModules != null && m_velocityModules.Count > 0, $"{this} doesn't have any Velocity module!");
-                Debug.Assert(m_rotationModules != null && m_rotationModules.Count > 0, $"{this} doesn't have any Rotation module!");
-            }
-#endif
 
             m_physicsModule.ModuleInit(this);
         }
@@ -185,9 +177,12 @@ namespace NobunAtelier
             float deltaTime = Time.deltaTime;
 
             var rotationModules = GetBestRotationModules();
-            foreach (var module in rotationModules)
+            if (rotationModules != null)
             {
-                module.RotationUpdate(deltaTime);
+                foreach (var module in rotationModules)
+                {
+                    module.RotationUpdate(deltaTime);
+                }
             }
 
             AbilityProcessing(deltaTime);
@@ -233,6 +228,11 @@ namespace NobunAtelier
         [Button("Refresh modules")]
         private void CaptureModules()
         {
+            if (!m_autoCaptureModules)
+            {
+                return;
+            }
+
             m_physicsModule = GetComponent<CharacterPhysicsModule>();
 
             m_abilityModules.Clear();
@@ -286,7 +286,7 @@ namespace NobunAtelier
                     continue;
                 }
 
-                if (bestModules.Count > 0 && m_rotationModules[i].Priority < bestPriority)
+                if (bestModules.Count > 0 && m_rotationModules[i].Priority > bestPriority)
                 {
                     break;
                 }
@@ -301,7 +301,6 @@ namespace NobunAtelier
         private void MovementProcessing(float deltaTime)
         {
             m_velocityModules.Sort((x, y) => x.Priority.CompareTo(y.Priority));
-            // m_velocityModules.Reverse();
 
             currentVel = m_physicsModule.Velocity;
             bool isGrounded = m_physicsModule.IsGrounded;

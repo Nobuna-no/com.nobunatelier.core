@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 namespace NobunAtelier
 {
     // Can be extended to add an action that re-enables it temporally (like holding Alt...)
-    [AddComponentMenu("NobunAtelier/Controller/PlayerModule Hide And Lock Cursor")]
+    [AddComponentMenu("NobunAtelier/Controller/Player/Player Controller Module: Hide And Lock Cursor")]
     public class PlayerControllerHideAndLockCursor : PlayerControllerModuleBase
     {
         public override void EnableModuleInput(PlayerInput playerInput, InputActionMap activeActionMap)

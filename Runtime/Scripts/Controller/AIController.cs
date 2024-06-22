@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Controller/AIController")]
+    [AddComponentMenu("NobunAtelier/Controller/AI/AI Controller")]
     public class AIController : CharacterControllerBase<AIControllerModuleBase>
     {
         public override bool IsAI => true;

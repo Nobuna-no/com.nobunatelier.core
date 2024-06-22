@@ -9,15 +9,19 @@ namespace NobunAtelier.Gameplay
         [SerializeField] private SocketStorageBehaviour m_storageComponent;
         public List<TransportableObjectBehaviour> GatherableObjects => m_baseGatherableObjects;
         private List<TransportableObjectBehaviour> m_baseGatherableObjects = new List<TransportableObjectBehaviour>();
+        protected SocketStorageBehaviour StorageComponent => m_storageComponent;
 
-        public event System.Action OnGatherableObjectAdded;
+        public event System.Action<TransportableObjectBehaviour> OnGatherableObjectAdded;
 
-        public event System.Action OnGatherableObjectRemoved;
+        public event System.Action<TransportableObjectBehaviour> OnGatherableObjectRemoved;
+
+        public bool CanPickup => enabled && !m_isPicking && m_storageComponent && m_storageComponent.HasAvailableSocket;
+        private bool m_isPicking = false;
 
         [Button]
         public void TryGather()
         {
-            if (m_storageComponent == null)
+            if (!CanPickup)
             {
                 return;
             }
@@ -30,6 +34,12 @@ namespace NobunAtelier.Gameplay
 
         public bool GatherTry(out TransportableObjectBehaviour obj)
         {
+            if (!enabled)
+            {
+                obj = null;
+                return false;
+            }
+
             obj = null;
 
             if (m_baseGatherableObjects.Count == 0)
@@ -40,6 +50,10 @@ namespace NobunAtelier.Gameplay
             obj = m_baseGatherableObjects[m_baseGatherableObjects.Count - 1];
             m_baseGatherableObjects.Remove(obj);
 
+            // Used to help listener that depends on CanPickup.
+            m_isPicking = true;
+            OnGatherableObjectRemoved?.Invoke(obj);
+            m_isPicking = false;
             return obj.Pick();
         }
 
@@ -49,7 +63,7 @@ namespace NobunAtelier.Gameplay
             if (gatherable != null && !m_baseGatherableObjects.Contains(gatherable))
             {
                 m_baseGatherableObjects.Add(gatherable);
-                OnGatherableObjectAdded?.Invoke();
+                OnGatherableObjectAdded?.Invoke(gatherable);
             }
         }
 
@@ -59,7 +73,27 @@ namespace NobunAtelier.Gameplay
             if (gatherable != null && m_baseGatherableObjects.Contains(gatherable))
             {
                 m_baseGatherableObjects.Remove(gatherable);
-                OnGatherableObjectRemoved?.Invoke();
+                OnGatherableObjectRemoved?.Invoke(gatherable);
+            }
+        }
+
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+
+            foreach (var g in m_baseGatherableObjects)
+            {
+                OnGatherableObjectAdded?.Invoke(g);
+            }
+        }
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+
+            foreach (var g in m_baseGatherableObjects)
+            {
+                OnGatherableObjectRemoved?.Invoke(g);
             }
         }
 

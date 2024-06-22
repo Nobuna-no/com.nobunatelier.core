@@ -17,22 +17,22 @@ public class SplitScreenRatioCollectionEditor : DataCollectionEditor
 
     private void RefreshSize()
     {
-        for (int i = 0, c = m_collection.DataDefinitions.Length; i < c; i++)
+        for (int i = 0, c = m_collection.EditorDataDefinitions.Length; i < c; i++)
         {
-            var defintion = m_collection.DataDefinitions[i] as SplitScreenRatioDefinition;
+            var ssDef = m_collection.EditorDataDefinitions[i] as SplitScreenRatioDefinition;
 
             if (i == 0)
             {
-                defintion.name = $"1 Participant";
+                ssDef.name = $"1 Participant";
             }
             else
             {
-                defintion.name = $"{i + 1} Participants";
+                ssDef.name = $"{i + 1} Participants";
             }
 
-            if (defintion.Viewports.Count != i + 1)
+            if (ssDef.Viewports.Count != i + 1)
             {
-                defintion.ResizeArray(i + 1);
+                ssDef.ResizeArray(i + 1);
             }
         }
     }

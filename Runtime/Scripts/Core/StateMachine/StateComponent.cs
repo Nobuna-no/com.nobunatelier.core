@@ -1,13 +1,39 @@
 using NaughtyAttributes;
 using System;
 using UnityEngine;
+using static NobunAtelier.ContextualLogManager;
 
 namespace NobunAtelier
 {
-    public abstract class StateComponent : MonoBehaviour
+    public abstract class StateComponent : MonoBehaviour, ContextualLogManager.IStateProvider
     {
+        [Header("Log")]
+        [SerializeField] private LogSettings m_LogSettings;
+
+        public virtual string LogPartitionName
+        {
+            get => gameObject.name;
+        }
+
+        public LogPartition Log { get; private set; }
+
         // Reflection SetState, required to work with state module.
         public abstract void SetState(Type newState, StateDefinition stateDefinition);
+
+        public virtual string GetStateMessage()
+        {
+            return string.Empty;
+        }
+
+        protected virtual void OnEnable()
+        {
+            Log = ContextualLogManager.Register(this, m_LogSettings, this);
+        }
+
+        protected virtual void OnDisable()
+        {
+            ContextualLogManager.Unregister(Log);
+        }
     }
 
     public class StateComponent<T, TCollection> : StateComponent, NobunAtelier.IState<T>
@@ -27,10 +53,6 @@ namespace NobunAtelier
         [SerializeField]
         private bool m_autoCaptureStateModule = true;
 
-        [Header("Debug")]
-        [SerializeField]
-        protected bool m_logDebug = false;
-
         private NobunAtelier.StateMachineComponent<T, TCollection> m_parentStateMachine = null;
         public NobunAtelier.StateMachineComponent<T, TCollection> ParentStateMachine => m_parentStateMachine;
         public T StateDefinition => m_stateDefinition;
@@ -49,28 +71,29 @@ namespace NobunAtelier
 
         public virtual void Enter()
         {
-            if (m_logDebug)
-            {
-                Debug.Log($"{this.name}.Enter");
-            }
+            Log.Record();
 
             if (!HasStateModule)
             {
                 return;
             }
-            else if (m_logDebug)
-            {
-                Debug.Log($"{this.name}.Enter: Has {m_stateModules.Length} state module(s).");
-            }
 
             for (int i = 0, c = m_stateModules.Length; i < c; i++)
             {
+                if (!m_stateModules[i].isActiveAndEnabled)
+                {
+                    continue;
+                }
+
                 m_stateModules[i].Enter();
             }
         }
 
         public virtual void Tick(float deltaTime)
         {
+            // Enable for update debug.
+            // m_Log.Record(ContextualLogManager.LogTypeFilter.Update);
+
             if (!HasStateModule)
             {
                 return;
@@ -78,16 +101,18 @@ namespace NobunAtelier
 
             for (int i = 0, c = m_stateModules.Length; i < c; i++)
             {
+                if (!m_stateModules[i].isActiveAndEnabled)
+                {
+                    continue;
+                }
+
                 m_stateModules[i].Tick(deltaTime);
             }
         }
 
         public virtual void Exit()
         {
-            if (m_logDebug)
-            {
-                Debug.Log($"{this.name}.Exit");
-            }
+            Log.Record();
 
             if (!HasStateModule)
             {
@@ -96,6 +121,11 @@ namespace NobunAtelier
 
             for (int i = 0, c = m_stateModules.Length; i < c; i++)
             {
+                if (!m_stateModules[i].isActiveAndEnabled)
+                {
+                    continue;
+                }
+
                 m_stateModules[i].Exit();
             }
         }
@@ -104,7 +134,7 @@ namespace NobunAtelier
         {
             if (m_parentStateMachine == null)
             {
-                Debug.LogError($"Failed to set new state [{newState}].");
+                Debug.LogError($"Failed to set new state [{newState}].", this);
                 return;
             }
 
@@ -116,7 +146,7 @@ namespace NobunAtelier
             // Check if the specified newStateType matches the StateDefinition type
             if (m_stateDefinitionType != newStateType)
             {
-                Debug.LogError($"Types mismatched! StateDefinition[{m_stateDefinitionType}] is different from {newStateType}!");
+                Debug.LogError($"Types mismatched! StateDefinition[{m_stateDefinitionType}] is different from {newStateType}!", this);
                 return;
             }
 
@@ -128,8 +158,13 @@ namespace NobunAtelier
             }
             else
             {
-                Debug.LogWarning($"Specified StateDefinition [{newStateType}] does not match the StateComponent type.");
+                Debug.LogWarning($"Specified StateDefinition [{newStateType}] does not match the StateComponent type.", this);
             }
+        }
+
+        public override string GetStateMessage()
+        {
+            return $"State Module Count: {(m_stateModules == null ? 0 : m_stateModules.Length)}";
         }
 
         protected virtual void Awake()
@@ -141,7 +176,7 @@ namespace NobunAtelier
 
             if (m_parentStateMachine != null)
             {
-                Debug.Assert(m_stateDefinition, $"{this} doesn't have a StateDefinition.");
+                Debug.Assert(m_stateDefinition, $"{this} doesn't have a StateDefinition.", this);
                 m_parentStateMachine.RegisterStateComponent(this);
             }
 
@@ -157,7 +192,7 @@ namespace NobunAtelier
                 var availableSM = GetComponents<StateComponentModule>();
                 if (availableSM != null && availableSM.Length > 0)
                 {
-                    Debug.LogWarning($"{this.name}: Doesn't have any of the {availableSM.Length} available state module(s).");
+                    Debug.LogWarning($"{this.name}: Doesn't have any of the {availableSM.Length} available state module(s).", this);
                 }
                 return;
             }
@@ -175,6 +210,15 @@ namespace NobunAtelier
             if (transform.parent != null)
             {
                 m_parentStateMachine = transform.parent.GetComponentInParent<NobunAtelier.StateMachineComponent<T, TCollection>>(true);
+            }
+
+            var otherComponent = GetComponent<StateComponent<T, TCollection>>();
+            if (otherComponent != null && this != otherComponent && otherComponent.StateDefinition != m_stateDefinition)
+            {
+                Debug.LogWarning($"Several '{typeof(StateComponent).Name}<{typeof(T).Name},{typeof(TCollection).Name}>' detected " +
+                    $"on '{gameObject.name}'.\n" +
+                    $"Copying the first definition. Only one state component should be present on a given GameObject.", this);
+                m_stateDefinition = otherComponent.m_stateDefinition;
             }
 
             if (m_stateDefinition != null)
@@ -242,6 +286,29 @@ namespace NobunAtelier
             IMGUIUtility.DrawTitle(this.ToString());
             IMGUIUtility.DrawLabelValue("Definition", m_stateDefinition.name);
             IMGUIUtility.DrawLabelValue("Parent", m_parentStateMachine ? m_parentStateMachine.name : "null");
+            GUI.enabled = false;
+            GUILayout.TextArea(GetStateMessage());
+            GUI.enabled = true;
         }
+
+        //private void Log(string message = "", bool isWarning = false, [CallerMemberName] string funcName = null)
+        //{
+        //    if (!m_Log)
+        //    {
+        //        return;
+        //    }
+
+        //    message = $"[{Time.frameCount}] {this.name}<{funcName}> {message}" +
+        //        $"\nState Module Count: {(m_stateModules == null ? 0 : m_stateModules.Length)}";
+
+        //    if (isWarning)
+        //    {
+        //        Debug.LogWarning(message, this);
+        //    }
+        //    else
+        //    {
+        //        Debug.Log(message, this);
+        //    }
+        //}
     }
 }

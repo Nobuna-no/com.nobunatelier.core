@@ -5,7 +5,7 @@ using UnityEngine;
 namespace NobunAtelier
 {
     // Better use the rigidbody.gravity instead...
-    [AddComponentMenu("NobunAtelier/Character/VelocityModule Gravity")]
+    [AddComponentMenu("NobunAtelier/Character/Velocity/VelocityModule: Gravity")]
     public class CharacterGravityVelocity : CharacterVelocityModuleBase
     {
         [SerializeField]

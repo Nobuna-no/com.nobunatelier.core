@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Controller/PlayerModule: Third Person Movement")]
+    [AddComponentMenu("NobunAtelier/Controller/Player/Player Controller Module: Third Person Movement")]
     public class PlayerControllerThirdPersonMovement : PlayerControllerModuleBase
     {
         [Header("Third Person Movement")]
@@ -47,7 +47,7 @@ namespace NobunAtelier
 
         public void SetCameraTarget(ITargetable target)
         {
-            m_cameraTarget = target.Transform;
+            m_cameraTarget = target.TargetTransform;
         }
 
         public void SetCameraTarget(Transform cameraTarget)

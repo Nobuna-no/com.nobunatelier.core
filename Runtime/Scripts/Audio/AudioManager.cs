@@ -19,10 +19,10 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 namespace NobunAtelier
 {
     /// <summary>
-    /// Provides methods for loading, playing, pausing, resuming, and unloading audio resources. 
+    /// Provides methods for loading, playing, pausing, resuming, and unloading audio resources.
     /// It also handles 3D audio and audio fading in and out (using Unity's AudioMixerSnapshot).
     /// </summary>
-    public class AudioManager : Singleton<AudioManager>
+    public class AudioManager : SingletonMonoBehaviour<AudioManager>
     {
         [Header("Audio Settings")]
         [SerializeField]
@@ -70,10 +70,6 @@ namespace NobunAtelier
         [Header("Debug")]
         [SerializeField]
         private bool m_logDebug = false;
-
-        private AsyncOperationHandle<AudioClip>[] m_audioToRelease = new AsyncOperationHandle<AudioClip>[2];
-
-        private AudioHandle[] m_audioHandles;
 
         private Dictionary<AudioDefinition, AudioHandle> m_audioHandlesDictionary = new Dictionary<AudioDefinition, AudioHandle>();
 
@@ -196,7 +192,7 @@ namespace NobunAtelier
                 Debug.Log($"{this.name}.LoadAudioCollection: {audioCollection.name}");
             }
 
-            foreach (var audio in audioCollection.DataDefinitions)
+            foreach (var audio in audioCollection.Definitions)
             {
                 LoadAudio(audio as AudioDefinition);
             }
@@ -497,7 +493,7 @@ namespace NobunAtelier
                 Debug.Log($"{this.name}.UnloadAudioCollection(AudioCollection): {audioCollection.name}");
             }
 
-            foreach (var audio in audioCollection.GetData())
+            foreach (var audio in audioCollection.Definitions)
             {
                 UnloadAudio(audio);
             }
@@ -524,6 +520,18 @@ namespace NobunAtelier
             m_muteAudioSnapshot.TransitionTo(m_muteSnapshotTransitionInSeconds);
         }
 
+        private void OnDestroy()
+        {
+            var definitions = new List<AudioDefinition>(m_audioHandlesDictionary.Keys);
+
+            foreach (var key in definitions)
+            {
+                AudioHandle_ReleaseAudio(m_audioHandlesDictionary[key]);
+            }
+            m_audioHandlesDictionary.Clear();
+            m_audioStitchers.Clear();
+        }
+
         private IEnumerator AudioHandle_PlayAudio_Coroutine(AudioHandle audioHandle, bool canStartDelayed)
         {
             while (!audioHandle.IsReadyToPlay())
@@ -545,8 +553,13 @@ namespace NobunAtelier
                 audioHandle.Play(0.0);
             }
 
+            if (audioHandle.IsLooping)
+            {
+                yield break;
+            }
+
             // wait for the one shot to end before releasing resource
-            while (audioHandle.IsPlaying)
+            while (!audioHandle.HasBeenStopped && audioHandle.IsPlaying)
             {
                 yield return new WaitForFixedUpdate();
             }
@@ -650,12 +663,6 @@ namespace NobunAtelier
 
         private void AudioHandle_ReleaseAudio(AudioHandle audioHandle)
         {
-            // If resource already released (or releasing), no more work needed.
-            // if (audioHandle.IsResourceReleased || audioHandle.IsFadingOut)
-            // {
-            //     return;
-            // }
-
             if (!audioHandle.IsResourceReleased)
             {
                 // If audio has been stopped already, only need to release resource.
@@ -730,6 +737,7 @@ namespace NobunAtelier
             public bool IsResourceReleased => !resourceHandle.IsValid();
             public bool IsPlaying => audioSource.isPlaying;
             public bool IsLoading => resourceHandle.IsValid();
+            public bool IsLooping => this.audioSource.loop;
             public bool ReleaseResourceOnStop { get; private set; }
 
             public AudioHandle(AudioDefinition audioDefinition, AudioSource audioSource)
@@ -805,7 +813,7 @@ namespace NobunAtelier
 
             public void SetAudioSourceVolume(float volume)
             {
-                this.audioSource.volume = volume;
+                this.audioSource.volume = originalAudioVolume * volume;
             }
 
             public void ResetAudioSourceVolume()
@@ -825,6 +833,11 @@ namespace NobunAtelier
 
             public void Stop()
             {
+                if (HasBeenStopped)
+                {
+                    return;
+                }
+
                 if (ReleaseResourceOnStop)
                 {
                     StopAndReleaseResource();
@@ -844,6 +857,11 @@ namespace NobunAtelier
 
             public void StopAndReleaseResource()
             {
+                if (HasBeenStopped)
+                {
+                    return;
+                }
+
                 IsFadingOut = false;
                 HasBeenStopped = true;
                 this.audioSource.Stop();

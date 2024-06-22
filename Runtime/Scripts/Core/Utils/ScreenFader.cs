@@ -9,7 +9,7 @@ namespace NobunAtelier
     /// It also has events that are triggered when a fade in or fade out begins or ends.
     /// The abstraction allows to implement the fading effect, using an animator or a shader for example.
     /// </summary>
-    public abstract class ScreenFader : Singleton<ScreenFader>
+    public abstract class ScreenFader : SingletonMonoBehaviour<ScreenFader>
     {
         public enum FadingMode
         {
@@ -158,7 +158,10 @@ namespace NobunAtelier
             // If already fading in, just add the callback to the event.
             if (IsFadeInProgress)
             {
-                Instance.OnFadeInEnd?.AddListener(actionToRaiseOnEnd);
+                if (actionToRaiseOnEnd != null)
+                {
+                    OnFadeInEnd?.AddListener(actionToRaiseOnEnd);
+                }
                 return;
             }
 
@@ -199,7 +202,10 @@ namespace NobunAtelier
             // If already fading out, just add the callback to the event.
             if (IsFadeInProgress)
             {
-                Instance.OnFadeOutBegin?.AddListener(actionToRaiseOnEnd);
+                if (actionToRaiseOnEnd != null)
+                {
+                    OnFadeOutBegin?.AddListener(actionToRaiseOnEnd);
+                }
                 return;
             }
 

@@ -138,6 +138,13 @@ namespace NaughtyAttributes.Editor
                 if (animator != null)
                 {
                     AnimatorController animatorController = animator.runtimeAnimatorController as AnimatorController;
+                    if (animatorController != null)
+                    {
+                        return animatorController;
+                    }
+
+                    AnimatorOverrideController animatorControllerOverride = animator.runtimeAnimatorController as AnimatorOverrideController;
+                    animatorController = animatorControllerOverride.runtimeAnimatorController as AnimatorController;
                     return animatorController;
                 }
             }
@@ -150,6 +157,13 @@ namespace NaughtyAttributes.Editor
                 if (animator != null)
                 {
                     AnimatorController animatorController = animator.runtimeAnimatorController as AnimatorController;
+                    if (animatorController != null)
+                    {
+                        return animatorController;
+                    }
+
+                    AnimatorOverrideController animatorControllerOverride = animator.runtimeAnimatorController as AnimatorOverrideController;
+                    animatorController = animatorControllerOverride.runtimeAnimatorController as AnimatorController;
                     return animatorController;
                 }
             }
@@ -163,6 +177,13 @@ namespace NaughtyAttributes.Editor
                 if (animator != null)
                 {
                     AnimatorController animatorController = animator.runtimeAnimatorController as AnimatorController;
+                    if (animatorController != null)
+                    {
+                        return animatorController;
+                    }
+
+                    AnimatorOverrideController animatorControllerOverride = animator.runtimeAnimatorController as AnimatorOverrideController;
+                    animatorController = animatorControllerOverride.runtimeAnimatorController as AnimatorController;
                     return animatorController;
                 }
             }

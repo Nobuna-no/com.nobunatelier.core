@@ -5,17 +5,24 @@ namespace NobunAtelier
     [AddComponentMenu("NobunAtelier/Character/Ability/AbilityModule: Simple Targeting")]
     public class CharacterSimpleTargetingAbility : CharacterAbilityModuleBase
     {
-        public bool CanChangeTarget = true;
+        [SerializeField]
+        private bool m_canChangeTarget = true;
+
+        public bool CanChangeTarget
+        {
+            get => m_canChangeTarget;
+            set { m_canChangeTarget = value; }
+        }
 
         public TargetChangedEvent OnTargetRefreshed;
-        public TargetChangedEvent OnTargetChanged;
 
         private ITargetable m_currentTarget;
         public ITargetable CurrentTarget => m_currentTarget;
 
         public void RefreshTarget()
         {
-            if (m_currentTarget != null && !m_currentTarget.IsTargetable)
+            // Init or when target died and is no longer targetable.
+            if (m_currentTarget == null || !m_currentTarget.IsTargetable)
             {
                 NextTarget();
             }
@@ -25,12 +32,13 @@ namespace NobunAtelier
 
         public void NextTarget()
         {
-            if (TargetManager.Instance == null)
+            if (!TargetManager.IsSingletonValid)
             {
-                Debug.LogError($"{this}: Trying to use targeting ability, but no TargetManager instance available.");
+                Debug.LogWarning($"{this}: Trying to use targeting ability, but no TargetManager instance available.");
+                return;
             }
 
-            if (!CanChangeTarget)
+            if (!m_canChangeTarget)
             {
                 return;
             }
@@ -68,7 +76,7 @@ namespace NobunAtelier
 
             // Update the current target with the closest one
             m_currentTarget = closestTarget;
-            OnTargetChanged?.Invoke(m_currentTarget);
+            OnTargetRefreshed?.Invoke(m_currentTarget);
         }
     }
 }

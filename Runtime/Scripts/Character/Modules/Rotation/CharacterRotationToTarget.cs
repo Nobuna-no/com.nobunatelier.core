@@ -3,14 +3,14 @@ using UnityEngine;
 namespace NobunAtelier
 {
     [AddComponentMenu("NobunAtelier/Character/Rotation/RotationModule: Look At Target")]
-    public class CharacterRotationToTarget : CharacterVelocityDrivenForwardRotation
+    public class CharacterRotationToTarget : CharacterVelocityDrivenForwardRotation, ITargeter
     {
         [SerializeField]
         private Transform m_target;
 
         public void SetTarget(ITargetable target)
         {
-            m_target = target.Transform;
+            m_target = target.TargetTransform;
         }
 
         public void SetTarget(Transform target)

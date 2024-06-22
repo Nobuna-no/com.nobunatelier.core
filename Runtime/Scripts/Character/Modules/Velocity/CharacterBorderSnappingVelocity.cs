@@ -27,7 +27,7 @@ namespace NobunAtelier
     //                  - But then that would mean no longer have the option to move to the right and back?
     // In the end I think that the lerp should be directly affecting snapAcceleration to currentVel...
 
-    [AddComponentMenu("NobunAtelier/Character/VelocityModule Border Snapping")]
+    [AddComponentMenu("NobunAtelier/Character/Velocity/VelocityModule: Border Snapping")]
     public class CharacterBorderSnappingVelocity : CharacterVelocityModuleBase
     {
         [SerializeField]

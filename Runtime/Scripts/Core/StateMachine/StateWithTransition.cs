@@ -57,5 +57,11 @@ namespace NobunAtelier
                 SetState(m_nextState);
             }
         }
+
+        // We authorized for people who know what they do.
+        protected void SetNextState(T nextState)
+        {
+            m_nextState = nextState;
+        }
     }
 }

@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Controller/PlayerModule TwinStick Character Movement")]
+    [AddComponentMenu("NobunAtelier/Controller/Player/Player Controller Module: TwinStick Movement")]
     public class PlayerControllerTwinStickCharacterMovement : PlayerControllerModuleBase
     {
         private InputAction m_moveAction;

@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Controller/PlayerModule Third Person Camera")]
+    [AddComponentMenu("NobunAtelier/Controller/Player/Player Controller Module: Third Person Camera")]
     public class PlayerControllerThirdPersonCamera : PlayerControllerModuleBase
     {
         private const string GamepadControlSchemeName = "Gamepad";

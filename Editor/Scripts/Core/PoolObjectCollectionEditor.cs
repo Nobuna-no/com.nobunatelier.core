@@ -2,7 +2,7 @@ using UnityEditor;
 
 namespace NobunAtelier.Editor
 {
-    [CustomEditor(typeof(PoolObjectCollection))]
+    [CustomEditor(typeof(FactoryProductCollection))]
     public class PoolObjectCollectionEditor : DataCollectionEditor
     {
     }

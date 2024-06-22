@@ -72,11 +72,11 @@ namespace NobunAtelier.Editor
                         if (collection != null && s_workingCollection != collection)
                         {
                             s_workingCollection = collection;
-                            s_names = new List<string>(collection.DataDefinitions.Length + 1)
+                            s_names = new List<string>(collection.EditorDataDefinitions.Length + 1)
                             {
                                 "(none)",
                             };
-                            s_names.AddRange(collection.DataDefinitions.Select(x => x.name).ToArray());
+                            s_names.AddRange(collection.EditorDataDefinitions.Select(x => x.name).ToArray());
                             s_refCount = new int[s_names.Count];
                         }
 
@@ -97,6 +97,20 @@ namespace NobunAtelier.Editor
                             if (useCount > 1)
                             {
                                 s_names[i] += $" [{useCount} refs]";
+                            }
+                        }
+
+                        if (m_definitionIndex == -1)
+                        {
+                            // Seems like we lost reference to the definition, regenerate the names array.
+                            ResetWorkingCollection();
+                            return;
+                        }
+                        else if (m_definitionIndex > 0)
+                        {
+                            if (m_targetComponent.StateDefinition == property.objectReferenceValue && m_targetComponent.gameObject.name != $"state-{property.objectReferenceValue.name}")
+                            {
+                                m_targetComponent.gameObject.name = $"state-{property.objectReferenceValue.name}";
                             }
                         }
                     }

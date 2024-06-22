@@ -1,7 +1,7 @@
 using NaughtyAttributes;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace NobunAtelier.Gameplay
 {
@@ -12,6 +12,9 @@ namespace NobunAtelier.Gameplay
         [SerializeField]
         private Transform[] m_backpackSockets;
 
+        [SerializeField, Tooltip("Can be use to dynamically change the amount of usable slot.")]
+        private int m_socketUsageMaxCount = 3;
+
         [SerializeField]
         private float m_lerpSpeed = 20;
 
@@ -19,10 +22,15 @@ namespace NobunAtelier.Gameplay
         private AnimationCurve m_lerpSpeedFactorPerIndex;
 
         [SerializeField]
-        private int m_socketUsageMaxCount = 3;
+        private bool m_useSocketLocalPositionAsOffset = false;
+
+        [SerializeField]
+        private bool m_doRotation = false;
 
         [SerializeField]
         private float m_throwForce = 10;
+
+        [SerializeField] private float m_throwUpwardForce = 1f;
 
         public int ActiveSocketCount
         {
@@ -41,6 +49,8 @@ namespace NobunAtelier.Gameplay
 
         private Queue<TransportableObjectBehaviour> m_backpackQueue = new Queue<TransportableObjectBehaviour>();
         private bool m_isUsable = true;
+
+        public IReadOnlyList<Transform> Sockets => m_backpackSockets;
 
         public bool ItemTryPeekFirst(out TransportableObjectBehaviour item)
         {
@@ -101,11 +111,6 @@ namespace NobunAtelier.Gameplay
                 item.Drop(true);
             }
             m_backpackQueue.Clear();
-
-            //if (m_animator && m_seedCountIntName != string.Empty)
-            //{
-            //    m_animator.SetInteger(m_seedCountIntName, 0);
-            //}
         }
 
         [Button]
@@ -124,14 +129,8 @@ namespace NobunAtelier.Gameplay
 
             var item = m_backpackQueue.Dequeue();
             item.Drop(true);
-
-            //if (m_animator && m_seedCountIntName != string.Empty)
-            //{
-            //    m_animator.SetInteger(m_seedCountIntName, m_backpackQueue.Count);
-            //}
         }
 
-        [SerializeField]private float m_throwUpwardForce = 1f;
         [Button]
         public void ThrowFirstItem()
         {
@@ -151,20 +150,23 @@ namespace NobunAtelier.Gameplay
             int index = 0;
             foreach (var item in m_backpackQueue)
             {
-                Rigidbody rb = item.GetComponent<Rigidbody>();
-                //if (m_useInverseLerping)
-                //{
-                //    Vector3 targetDes = m_backpackSockets[index].position;
-                //    Vector3 currentPos = rb.position;
+                Rigidbody rb = item.TargetRigidbody;
 
-                //    Vector3 delta = (currentPos - targetDes) * Time.fixedDeltaTime * m_lerpSpeed;
-                //    rb.position += delta;
-                //}
-                //else
-                //{
                 float indexRatio = (float)index / (float)m_backpackSockets.Length;
-                rb.position = Vector3.SlerpUnclamped(rb.position, m_backpackSockets[index].position, Time.fixedDeltaTime * m_lerpSpeed * m_lerpSpeedFactorPerIndex.Evaluate(indexRatio));
-                rb.rotation = Quaternion.Slerp(rb.rotation, transform.rotation, Time.fixedDeltaTime * m_lerpSpeed);
+                if (m_useSocketLocalPositionAsOffset)
+                {
+                    var pos = transform.position + m_backpackSockets[index].localPosition;
+                    rb.position = Vector3.SlerpUnclamped(rb.position, pos, Time.fixedDeltaTime * m_lerpSpeed * m_lerpSpeedFactorPerIndex.Evaluate(indexRatio));
+                }
+                else
+                {
+                    rb.position = Vector3.SlerpUnclamped(rb.position, m_backpackSockets[index].position, Time.fixedDeltaTime * m_lerpSpeed * m_lerpSpeedFactorPerIndex.Evaluate(indexRatio));
+                }
+
+                if (m_doRotation)
+                {
+                    rb.rotation = Quaternion.Slerp(rb.rotation, transform.rotation, Time.fixedDeltaTime * m_lerpSpeed);
+                }
                 ++index;
             }
         }

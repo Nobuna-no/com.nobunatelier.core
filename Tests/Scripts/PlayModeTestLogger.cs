@@ -1,17 +1,18 @@
 using System.Text;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace NobunAtelier.Tests
 {
-    public class PlayModeTestLogger : Singleton<PlayModeTestLogger>
+    public class PlayModeTestLogger : SingletonMonoBehaviour<PlayModeTestLogger>
     {
+        [Header("PlayModeTest Logger")]
         [SerializeField, TextArea()]
         private string m_expectedOutput;
 
         private bool m_isTestRunning = false;
         private StringBuilder m_output = new StringBuilder();
 
-        [Header("PlayModeTest Logger")]
         [SerializeField, TextArea()]
         private string m_outputString;
 

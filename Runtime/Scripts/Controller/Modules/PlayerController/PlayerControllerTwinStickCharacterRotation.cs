@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace NobunAtelier
 {
-    [AddComponentMenu("NobunAtelier/Controller/PlayerModule TwinStick Character Rotation")]
+    [AddComponentMenu("NobunAtelier/Controller/Player/Player Controller Module: TwinStick Rotation")]
     public class PlayerControllerTwinStickCharacterRotation : PlayerControllerModuleBase
     {
         [SerializeField]
@@ -11,15 +11,17 @@ namespace NobunAtelier
 
         [SerializeField]
         private string m_lookActionName = "Look";
+        [SerializeField]
+        private bool m_useMouseWorldToScreen = true;
 
         private InputAction m_lookAction;
         private Vector2 m_lastLookInputValue;
 
         public override void EnableModuleInput(PlayerInput playerInput, InputActionMap activeActionMap)
         {
-            if (m_camera == null)
+            if (m_useMouseWorldToScreen && m_camera == null)
             {
-                Debug.LogWarning("No camera set, using main camera as reference...");
+                Debug.LogWarning("No camera set, using main camera as reference...", this);
                 m_camera = Camera.main;
             }
 
@@ -44,7 +46,7 @@ namespace NobunAtelier
 
             if (m_lastLookInputValue != Vector2.zero)
             {
-                if (PlayerInput.currentControlScheme == "Gamepad")
+                if (!m_useMouseWorldToScreen || PlayerInput.currentControlScheme == "Gamepad")
                 {
                     ControlledCharacter.Rotate(m_lastLookInputValue);
                 }

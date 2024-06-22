@@ -4,7 +4,7 @@ using UnityEngine.UIElements;
 
 namespace NobunAtelier.Gameplay
 {
-    public class HitboxWithIndicatorBehaviour : HitboxBehaviour
+    public class HitboxWithIndicatorBehaviour : Hitbox
     {
         [SerializeField]
         private Gradient m_warningGradient;
