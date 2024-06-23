@@ -118,22 +118,26 @@ namespace NobunAtelier
                 {
                     if (Physics.gravity.x != 0)
                     {
-                        newVelocity.x = m_targetRigidbody.linearVelocity.x;
+                        newVelocity.x += m_targetRigidbody.linearVelocity.x;
                     }
                     if (Physics.gravity.y != 0)
                     {
-                        newVelocity.y = m_targetRigidbody.linearVelocity.y;
+                        newVelocity.y += m_targetRigidbody.linearVelocity.y;
                     }
                     if (Physics.gravity.z != 0)
                     {
-                        newVelocity.z = m_targetRigidbody.linearVelocity.z;
+                        newVelocity.z += m_targetRigidbody.linearVelocity.z;
                     }
                 }
 
                 m_targetRigidbody.linearVelocity = newVelocity;
+
+                if (newVelocity.y != 0)
+                {
+                    m_isGrounded = false;
+                }
             }
 
-            // m_isGrounded = false;
         }
 
         public override void OnModuleCollisionEnter(Collision collision)
