@@ -10,11 +10,11 @@ namespace NobunAtelier
         public Animator Animator { get; private set; }
 
         // public virtual bool IsTargetable => true;
-        public Transform Transform => Body.transform;
+        public Transform Transform => Body ? Body.transform : transform;
 
         public CharacterPhysicsModule Body => m_physicsModule;
-        public Vector3 Position => Body.Position;
-        public Quaternion Rotation => Body.Rotation;
+        public Vector3 Position => Body ? Body.Position : transform.position;
+        public Quaternion Rotation => Body ? Body.Rotation : transform.rotation;
 
         [SerializeField]
         private CharacterPhysicsModule m_physicsModule;
