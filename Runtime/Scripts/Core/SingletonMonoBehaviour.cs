@@ -20,11 +20,24 @@ namespace NobunAtelier
         public static T Instance { get; private set; }
         public static bool IsSingletonValid => Instance != null;
 
+        public static void CreateAndInitialize()
+        {
+            if (Instance == null)
+            {
+                var singleton = new GameObject($"[ {typeof(T).Name} ]").AddComponent<T>();
+            }
+            if (IsSingletonValid == false)
+            {
+                Debug.LogError("Singleton failed to call awake?");
+            }
+            Instance.Initialize();
+        }
+
         /// <summary>
         /// Can be call in a bootstrapper to initialize all managers.
         /// </summary>
         /// <returns></returns>
-        public static IEnumerator CreateAndInitialize()
+        public static IEnumerator CreateAndInitializeRoutine()
         {
             if (Instance == null)
             {
