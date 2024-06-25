@@ -208,11 +208,18 @@ namespace NobunAtelier
 
         protected override ParticleSystem GetNewProduct(LoadableParticleSystem resource)
         {
-            return LoadableParticleSystemPoolFactory.Get(resource);
+            var product = LoadableParticleSystemPoolFactory.Get(resource);
+            product.Stop();
+            return product;
         }
 
         protected override void ReleaseProduct(LoadableParticleSystem resource, ParticleSystem product)
         {
+            if (product.isPlaying)
+            {
+                product.Stop();
+            }
+
             LoadableParticleSystemPoolFactory.Release(resource, product);
         }
 
@@ -300,6 +307,11 @@ namespace NobunAtelier
 
         protected override void ReleaseProduct(LoadableAudioSource resource, AudioSource product)
         {
+            if (product.isPlaying)
+            {
+                product.Stop();
+            }
+
             LoadableAudioSourcePoolFactory.Release(resource, product);
         }
 
