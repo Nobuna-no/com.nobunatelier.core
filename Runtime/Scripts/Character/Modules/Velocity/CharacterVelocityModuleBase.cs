@@ -11,6 +11,9 @@ namespace NobunAtelier
             LastMoveDirection = direction;
         }
 
+        public virtual void StateUpdate(bool grounded)
+        { }
+
         public abstract Vector3 VelocityUpdate(Vector3 currentVel, float deltaTime);
 
         public virtual void OnModuleCollisionEnter(Collision collision)

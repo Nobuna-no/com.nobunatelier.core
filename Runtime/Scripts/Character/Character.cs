@@ -1,7 +1,6 @@
 using NaughtyAttributes;
 using System.Collections.Generic;
 using UnityEngine;
-using static Unity.Cinemachine.CinemachineTargetGroup;
 
 namespace NobunAtelier
 {
@@ -146,25 +145,24 @@ namespace NobunAtelier
 
             CaptureModules();
 
+            if (m_ignoreMissingModule)
+            {
+                return;
+            }
+            
             if (m_physicsModule == null)
             {
                 m_physicsModule = gameObject.AddComponent<CharacterUnityCharacterController>();
                 Debug.LogWarning($"No physics module found on {this}, instancing a default CharacterUnityCharacterController.");
             }
-
-            if (!m_ignoreMissingModule)
+            if (m_velocityModules == null || m_velocityModules.Count == 0)
             {
-                if (m_velocityModules == null || m_velocityModules.Count == 0)
-                {
-                    Debug.LogWarning($"No velocity module found on {this}.");
-                }
-                if (m_rotationModules == null || m_rotationModules.Count == 0)
-                {
-                    Debug.LogWarning($"No rotation module found on {this}.");
-                }
+                Debug.LogWarning($"No velocity module found on {this}.");
             }
-
-            m_physicsModule.ModuleInit(this);
+            if (m_rotationModules == null || m_rotationModules.Count == 0)
+            {
+                Debug.LogWarning($"No rotation module found on {this}.");
+            }
         }
 
         private void Start()
@@ -187,7 +185,7 @@ namespace NobunAtelier
 
             AbilityProcessing(deltaTime);
 
-            if (m_physicsModule.VelocityUpdate != CharacterPhysicsModule.VelocityApplicationUpdate.Update)
+            if (m_physicsModule?.VelocityUpdate != CharacterPhysicsModule.VelocityApplicationUpdate.Update)
             {
                 return;
             }
@@ -197,7 +195,7 @@ namespace NobunAtelier
 
         private void FixedUpdate()
         {
-            if (m_physicsModule.VelocityUpdate != CharacterPhysicsModule.VelocityApplicationUpdate.FixedUpdate)
+            if (m_physicsModule?.VelocityUpdate != CharacterPhysicsModule.VelocityApplicationUpdate.FixedUpdate)
             {
                 return;
             }
@@ -207,17 +205,17 @@ namespace NobunAtelier
 
         private void OnCollisionEnter(Collision collision)
         {
-            m_physicsModule.OnModuleCollisionEnter(collision);
+            m_physicsModule?.OnModuleCollisionEnter(collision);
         }
 
         private void OnCollisionStay(Collision collision)
         {
-            m_physicsModule.OnModuleCollisionStay(collision);
+            m_physicsModule?.OnModuleCollisionStay(collision);
         }
 
         private void OnCollisionExit(Collision collision)
         {
-            m_physicsModule.OnModuleCollisionExit(collision);
+            m_physicsModule?.OnModuleCollisionExit(collision);
         }
 
         private void OnValidate()
@@ -247,6 +245,8 @@ namespace NobunAtelier
 
         private void ModulesInit()
         {
+            m_physicsModule?.ModuleInit(this);
+
             for (int i = 0, c = m_abilityModules.Count; i < c; ++i)
             {
                 m_abilityModules[i].ModuleInit(this);
@@ -300,6 +300,11 @@ namespace NobunAtelier
 
         private void MovementProcessing(float deltaTime)
         {
+            if (!m_physicsModule)
+            {
+                return;
+            }
+
             m_velocityModules.Sort((x, y) => x.Priority.CompareTo(y.Priority));
 
             currentVel = m_physicsModule.Velocity;
@@ -322,13 +327,9 @@ namespace NobunAtelier
         {
             m_abilityModules.Sort((x, y) => x.Priority.CompareTo(y.Priority));
 
-            currentVel = m_physicsModule.Velocity;
-            bool isGrounded = m_physicsModule.IsGrounded;
-
             for (int i = 0, c = m_abilityModules.Count; i < c; ++i)
             {
                 var vModule = m_abilityModules[i];
-                vModule.StateUpdate(isGrounded);
                 if (vModule.CanBeExecuted())
                 {
                     vModule.AbilityUpdate(deltaTime);

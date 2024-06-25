@@ -22,9 +22,6 @@ namespace NobunAtelier
         public virtual void Reset()
         { }
 
-        public virtual void StateUpdate(bool grounded)
-        { }
-
         public virtual bool CanBeExecuted()
         {
             return isActiveAndEnabled;
