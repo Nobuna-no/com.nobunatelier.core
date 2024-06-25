@@ -13,6 +13,14 @@ namespace NobunAtelier
     /// </summary>
     public class AnimSequenceDefinition : DataDefinition
     {
+        [InfoBox("Steps to bake AnimSequenceDefinition:" +
+            "\n\t1. Add the 'AnimSequenceController' component on a model with an animator already setup" +
+            "\n\t2. Open the target animation and add events where you want to create segments" +
+            "\n\t3. Set animation clip event with `OnAnimationSegmentTrigger` and assign your Segment" +
+            "\n\t4. Open Window > NobunAtelier > Anim Segment Baker:" +
+            "\n\t\t- Assign the AnimatorController to see the available animation segment to bake" +
+            "\n\t\t- Assign the AnimSequenceCollection in which you want to bake the segment" +
+            "\n\t5. Add all segment you want and press the Add to Collection button")]
         [Header("AnimSequence")]
         [InfoBox("This name should correspond to the AnimatorState of the AnimatorController holding the animation clip.")]
         public string stateName;
