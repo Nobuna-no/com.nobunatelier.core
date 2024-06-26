@@ -29,6 +29,7 @@ namespace NobunAtelier
             FuncName = 1 << 2,
             ContextState = 1 << 3, // Only if available by IStateProvider.
             ContextType = 1 << 4,
+            Ticks = 1 << 5,
         }
 
         [System.Flags]
@@ -162,6 +163,10 @@ namespace NobunAtelier
                 if ((Settings.Details & LogEntryDetails.FrameCount) != 0)
                 {
                     sb.Append($"[{Time.frameCount}] ");
+                }
+                if ((Settings.Details & LogEntryDetails.Ticks) != 0)
+                {
+                    sb.Append($"[{System.DateTime.Now.Ticks}] ");
                 }
                 if ((Settings.Details & LogEntryDetails.Context) != 0)
                 {

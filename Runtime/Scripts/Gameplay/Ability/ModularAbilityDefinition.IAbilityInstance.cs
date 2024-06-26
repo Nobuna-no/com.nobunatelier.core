@@ -621,8 +621,10 @@ public partial class ModularAbilityDefinition
             private IEnumerator AutoExecuteRoutine()
             {
                 yield return new WaitForSeconds(m_abilityAction.ExecutionDelay);
+                //m_target.ExecuteEffect();
                 Execute();
                 yield return new WaitForSeconds(m_abilityAction.UpdateDuration);
+                //m_target.StopEffect();
                 Stop();
                 yield return new WaitForSeconds(m_abilityAction.ChainOpportunityDuration);
 
