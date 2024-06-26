@@ -4,6 +4,10 @@ namespace NobunAtelier
 {
     public abstract class CharacterVelocityModuleBase : CharacterModuleBase
     {
+        /// <summary>
+        /// Last move direction sent by a Controller module.
+        /// Need to be manually zeroed.
+        /// </summary>
         public Vector3 LastMoveDirection { get; protected set; }
 
         public virtual void MoveInput(Vector3 direction)

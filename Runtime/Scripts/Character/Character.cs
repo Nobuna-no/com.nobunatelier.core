@@ -1,4 +1,5 @@
 using NaughtyAttributes;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,6 +7,7 @@ namespace NobunAtelier
 {
     public class Character : MonoBehaviour
     {
+        private const float kMinimumMovementTreshold = 0.1f;
         public virtual CharacterControllerBase Controller { get; private set; }
         public Animator Animator { get; private set; }
 
@@ -15,6 +17,9 @@ namespace NobunAtelier
         public CharacterPhysicsModule Body => m_physicsModule;
         public Vector3 Position => Body ? Body.Position : transform.position;
         public Quaternion Rotation => Body ? Body.Rotation : transform.rotation;
+
+        public event Action OnPreUpdate;
+        public event Action OnPostUpdate;
 
         [SerializeField]
         private CharacterPhysicsModule m_physicsModule;
@@ -98,6 +103,8 @@ namespace NobunAtelier
             return currentVel.magnitude;
         }
 
+        public bool IsMoving => currentVel.sqrMagnitude > kMinimumMovementTreshold;
+
         public Vector3 GetNormalizedMoveSpeed()
         {
             return Vector3.Normalize(m_physicsModule.Velocity);
@@ -172,6 +179,8 @@ namespace NobunAtelier
 
         private void Update()
         {
+            OnPreUpdate?.Invoke();
+
             float deltaTime = Time.deltaTime;
 
             var rotationModules = GetBestRotationModules();
@@ -191,6 +200,8 @@ namespace NobunAtelier
             }
 
             MovementProcessing(deltaTime);
+
+            OnPostUpdate?.Invoke();
         }
 
         private void FixedUpdate()
