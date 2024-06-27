@@ -1,5 +1,6 @@
 using NaughtyAttributes;
 using UnityEngine;
+using static NobunAtelier.ContextualLogManager;
 
 namespace NobunAtelier
 {
@@ -23,6 +24,8 @@ namespace NobunAtelier
 
         [SerializeField, InfoBox("Kinematic implementation in progress...")]
         private bool m_isKinematic = false;
+
+        private bool m_hasChangeGroundedThisFrame = false;
 
         public override VelocityApplicationUpdate VelocityUpdate => VelocityApplicationUpdate.FixedUpdate;
 
@@ -132,12 +135,12 @@ namespace NobunAtelier
 
                 m_targetRigidbody.linearVelocity = newVelocity;
 
-                if (newVelocity.y != 0)
+                if (newVelocity.y != 0 && m_isGrounded)
                 {
                     m_isGrounded = false;
+                    m_hasChangeGroundedThisFrame = true;
                 }
             }
-
         }
 
         public override void OnModuleCollisionEnter(Collision collision)
@@ -152,6 +155,12 @@ namespace NobunAtelier
 
         public override void OnModuleCollisionStay(Collision collision)
         {
+            if (m_hasChangeGroundedThisFrame)
+            {
+                m_hasChangeGroundedThisFrame = false;
+                return;
+            }
+
             if (collision.gameObject.layer != m_groundLayer)
             {
                 return;
