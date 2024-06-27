@@ -1,9 +1,11 @@
+using Codice.Client.Common.GameUI;
 using NobunAtelier;
+using System.Collections;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.Events;
 
-public class CharacterGaitVelocity : CharacterVelocityModuleBase
+public class CharacterGaitVelocity : CharacterVelocityModuleBase, ContextualLogManager.IStateProvider
 {
     private const float kDelayBeforeInferringJump = 0.3f;
 
@@ -21,7 +23,7 @@ public class CharacterGaitVelocity : CharacterVelocityModuleBase
     [Tooltip("Initial vertical speed when sprint-jumping")]
     [SerializeField] private float SprintJumpSpeed = 6;
     [SerializeField] private UnityEvent StartJump;
-    [SerializeField] private UnityEvent EndJump;
+    [SerializeField] private float DelayBetweenJumpPressedAndExecution = 0.1f;
 
     // [Header("Gravity")]
     // [Tooltip("Force of gravity in the down direction (m/s/s)")]
@@ -41,6 +43,17 @@ public class CharacterGaitVelocity : CharacterVelocityModuleBase
 
     public Camera Camera => CameraOverride == null ? Camera.main : CameraOverride;
 
+    [SerializeField]
+    private ContextualLogManager.LogSettings m_LogSettings;
+    public ContextualLogManager.LogPartition Log { get; private set; }
+
+    public string LogPartitionName => null;
+
+    public string GetStateMessage()
+    {
+        return $"Action requested: {m_gaitState}; IsGrounded: {IsGrounded};" +
+            $"IsJumping: {m_IsJumping}";
+    }
 
     public bool IsGrounded { get; private set; } = true;
     public bool Strafe
@@ -55,7 +68,6 @@ public class CharacterGaitVelocity : CharacterVelocityModuleBase
     private bool m_IsSprinting;
     private bool m_IsCrouching;
     private bool m_IsJumping;
-    // float m_TimeLastGrounded = 0;
 
     private ActionRequestType m_gaitState = 0;
 
@@ -86,18 +98,18 @@ public class CharacterGaitVelocity : CharacterVelocityModuleBase
         m_IsSprinting = false;
         m_IsCrouching = false;
         m_IsJumping = false;
-        // m_TimeLastGrounded = Time.time;
     }
 
     public override void StateUpdate(bool grounded)
     {
         IsGrounded = grounded;
+        Log.Record(ContextualLogManager.LogTypeFilter.Update);
     }
 
     public override Vector3 VelocityUpdate(Vector3 currentVel, float deltaTime)
     {
         // Process Jump
-        bool justLanded =  ProcessJump(deltaTime);
+        bool justLanded =  ProcessJump();
 
         Vector3 rawInput = new Vector3(LastMoveDirection.x, 0, LastMoveDirection.z);
         var inputFrame = GetInputFrame(Vector3.Dot(rawInput, m_LastRawInput) < 0.8f);
@@ -110,7 +122,7 @@ public class CharacterGaitVelocity : CharacterVelocityModuleBase
             m_LastInput.Normalize();
 
         // Compute the new velocity and move the player, but only if not mid-jump
-        if (!m_IsJumping)
+        if (!m_IsJumping && !m_jumpPending)
         {
             m_IsSprinting = (m_gaitState & ActionRequestType.Sprint) != 0;
             m_IsCrouching = (m_gaitState & ActionRequestType.Crouch) != 0;
@@ -130,13 +142,9 @@ public class CharacterGaitVelocity : CharacterVelocityModuleBase
             }
         }
 
-        if (m_CurrentVelocityXZ.AlmostZero())
-        {
-            m_CurrentVelocityXZ = Vector3.zero;
-        }
-
         currentVel = m_CurrentVelocityXZ;
         currentVel.y = m_CurrentVelocityY;
+        m_CurrentVelocityY = 0;
 
         return currentVel;
     }
@@ -153,7 +161,7 @@ public class CharacterGaitVelocity : CharacterVelocityModuleBase
 
     public void ToggleCrouch()
     {
-        if (m_IsJumping)
+        if (m_IsJumping || m_jumpPending)
         {
             return;
         }
@@ -168,11 +176,15 @@ public class CharacterGaitVelocity : CharacterVelocityModuleBase
             m_gaitState |= ActionRequestType.Crouch;
             StartCrouch?.Invoke();
         }
-
     }
 
     public void DoJump()
     {
+        if (m_IsJumping || m_jumpPending)
+        {
+            return;
+        }
+
         if ((m_gaitState & ActionRequestType.Crouch) != 0)
         {
             ToggleCrouch();
@@ -181,50 +193,51 @@ public class CharacterGaitVelocity : CharacterVelocityModuleBase
         m_gaitState |= ActionRequestType.Jump;
     }
 
-    private bool ProcessJump(float deltaTime)
+    private bool m_jumpPending = false;
+    private float m_jumpRemainingTime = 0f;
+    private bool ProcessJump()
     {
         bool justLanded = false;
-        // var now = Time.time;
         bool grounded = IsGrounded;
 
-        // m_CurrentVelocityY -= Gravity * deltaTime;
-
-        if (!m_IsJumping)
+        if (m_jumpPending)
+        {
+            m_jumpRemainingTime -= Time.deltaTime;
+            if (m_jumpRemainingTime <= 0)
+            {
+                grounded = false;
+                // Use default jumpSpeed if crouched.
+                m_CurrentVelocityY = m_IsSprinting ? SprintJumpSpeed : JumpSpeed;
+                m_gaitState &= ~ActionRequestType.Jump;
+                m_IsJumping = true;
+                m_jumpPending = false;
+            }
+        }
+        else if (!m_IsJumping)
         {
             // Process jump command
             if (grounded && (m_gaitState & ActionRequestType.Jump) != 0)
             {
-                m_IsJumping = true;
-                // Use default jumpSpeed if crouched.
-                m_CurrentVelocityY = m_IsSprinting ? SprintJumpSpeed : JumpSpeed;
-                m_gaitState &= ~ActionRequestType.Jump;
                 StartJump?.Invoke();
-                grounded = false;
+                m_gaitState &= ~ActionRequestType.Jump;
+                m_jumpPending = true;
+                m_jumpRemainingTime = DelayBetweenJumpPressedAndExecution;
+                // StartCoroutine(StartJump_Routine());
             }
-            // If we are falling, assume the jump pose
-            // if (!grounded && now - m_TimeLastGrounded > kDelayBeforeInferringJump)
-            //     m_IsJumping = true;
-
-            // if (m_IsJumping)
-            // {
-            //     m_gaitState &= ~ActionRequestType.Jump;
-            //     StartJump?.Invoke();
-            //     grounded = false;
-            // }
         }
 
         if (grounded)
         {
-            // m_TimeLastGrounded = Time.time;
             m_CurrentVelocityY = 0;
 
             // If we were jumping, complete the jump
             if (m_IsJumping)
             {
-                EndJump?.Invoke();
+                Log.Record("Land");
+
                 m_IsJumping = false;
                 justLanded = true;
-                Landed.Invoke();
+                Landed?.Invoke();
             }
         }
         return justLanded;
@@ -290,5 +303,23 @@ public class CharacterGaitVelocity : CharacterVelocityModuleBase
         if (inTopHemisphere)
             return Quaternion.Slerp(frameB, frameA, m_TimeInHemisphere / BlendTime);
         return Quaternion.Slerp(frameA, frameB, m_TimeInHemisphere / BlendTime);
+    }
+
+    private IEnumerator StartJump_Routine()
+    {
+        yield return new WaitForSeconds(DelayBetweenJumpPressedAndExecution);
+        // Use default jumpSpeed if crouched.
+        m_CurrentVelocityY = m_IsSprinting ? SprintJumpSpeed : JumpSpeed;
+        m_IsJumping = true;
+    }
+
+    private void OnEnable()
+    {
+        Log = ContextualLogManager.Register(this, m_LogSettings);
+    }
+
+    private void OnDisable()
+    {
+        ContextualLogManager.Unregister(Log);
     }
 }

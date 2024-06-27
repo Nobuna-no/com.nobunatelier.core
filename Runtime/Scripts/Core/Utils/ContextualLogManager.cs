@@ -99,7 +99,7 @@ namespace NobunAtelier
         private static int GenerateHash(UnityEngine.Object context, IStateProvider stateProvider = null)
         {
             int hash = context.GetHashCode();
-            if (stateProvider != null)
+            if (stateProvider != null && stateProvider.LogPartitionName != null)
             {
                 hash ^= stateProvider.LogPartitionName.GetHashCode();
             }
