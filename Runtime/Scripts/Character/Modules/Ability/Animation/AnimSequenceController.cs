@@ -20,17 +20,21 @@ namespace NobunAtelier
     public class AnimationSegmentEvent : UnityEvent<AnimSequenceDefinition.Segment>
     { }
 
-    [AddComponentMenu("NobunAtelier/Character/Modules/Animation Sequence")]
+    [AddComponentMenu("NobunAtelier/Character/Modules/Animation Sequence Controller")]
     public class AnimSequenceController : AnimationModule
     {
+        [Header("Anim Sequence Controller")]
         [SerializeField]
-        private AnimSequenceDefinition m_animSeqDefinition;
+        private AnimSequenceDefinition m_sequenceToPlay;
 
         [SerializeField]
         private float m_frozenAnimatorSpeed;
 
-        [SerializeField]
+        [SerializeField, Tooltip("You can explicitly define segments to be listened to with Unity events.")]
         private SegmentTrigger[] m_segmentTriggers;
+
+        [Header("Debug")]
+        [SerializeField] private ContextualLogManager.LogSettings m_LogSettings;
 
         private Dictionary<AnimSegmentDefinition, AnimSequenceDefinition.Segment> m_animationSegmentsMap;
         private Dictionary<AnimSegmentDefinition, SegmentTrigger> m_segmentTriggerMap = new Dictionary<AnimSegmentDefinition, SegmentTrigger>();
@@ -38,6 +42,7 @@ namespace NobunAtelier
         private bool m_isFrozen = false;
         private float m_cachedAnimatorSpeed = 1f;
         private AnimSegmentDefinition m_lastSegmentRaised = null;
+        public ContextualLogManager.LogPartition Log { get; private set; }
 
         public bool TryGetAnimationEventForSegment(AnimSegmentDefinition segmentDefinition, out AnimationSegmentEvent segmentEvent)
         {
@@ -56,44 +61,16 @@ namespace NobunAtelier
             return false;
         }
 
-        private void Awake()
-        {
-            m_segmentTriggerMap = new Dictionary<AnimSegmentDefinition, SegmentTrigger>(m_segmentTriggers.Length);
-
-            for (int i = m_segmentTriggers.Length - 1; i >= 0; i--)
-            {
-                if (m_segmentTriggerMap.ContainsKey(m_segmentTriggers[i].segment))
-                {
-                    Debug.LogError($"{this.name}: SegmentTriggers[{i}] '{m_segmentTriggers[i].segment}' already exist! The event won't be triggered.");
-                    continue;
-                }
-
-                m_segmentTriggerMap.Add(m_segmentTriggers[i].segment, m_segmentTriggers[i]);
-            }
-
-            m_animationSegmentsMap = new Dictionary<AnimSegmentDefinition, AnimSequenceDefinition.Segment>();
-            if (m_animSeqDefinition)
-            {
-                SetAnimSequence(m_animSeqDefinition);
-            }
-        }
-
-        private void Start()
-        {
-            if (Animator == null)
-            {
-                Debug.LogError("Animator reference not set!");
-                return;
-            }
-        }
-
         public void OnAnimationSegmentTrigger(AnimSegmentDefinition segmentDefinition)
         {
+            Log.Record($"AnimSegment <b>{segmentDefinition}</b> triggered.");
+
+            // This usually happens when chaining different animations together.
             if (segmentDefinition.ExpectedPriorSegment != null && segmentDefinition.ExpectedPriorSegment != m_lastSegmentRaised)
             {
-                // KEEP THIS FOR FUTURE DEBUGGING.
-                // Debug.LogWarning($"[{Time.frameCount}] AnimSegment <b>{segmentDefinition}</b> triggered and " +
-                //     $"was expecting prior segment to be '<b>{segmentDefinition.ExpectedPriorSegment}</b>' but was '<b>{m_lastSegmentRaised}</b>'. Skipping.");
+                Log.Record($"AnimSegment <b>{segmentDefinition}</b> triggered and " +
+                    $"was expecting prior segment to be '<b>{segmentDefinition.ExpectedPriorSegment}</b>' " +
+                    $"but was '<b>{m_lastSegmentRaised}</b>'. Skipping.");
                 return;
             }
 
@@ -122,10 +99,12 @@ namespace NobunAtelier
 
                 if (animatorSpeedChange && !m_isFrozen)
                 {
+                    Log.Record($"animatorSpeedChange from '{Animator.speed}' to '{m_cachedAnimatorSpeed}'.");
                     Animator.speed = m_cachedAnimatorSpeed;
                 }
             }
 
+            // Lazy init.
             if (!m_segmentTriggerMap.ContainsKey(segmentDefinition))
             {
                 m_segmentTriggerMap.Add(segmentDefinition, new SegmentTrigger()
@@ -135,14 +114,9 @@ namespace NobunAtelier
                 });
             }
 
-            if (m_animationSegmentsMap.ContainsKey(segmentDefinition))
-            {
-                m_segmentTriggerMap[segmentDefinition].onSegmentTrigger?.Invoke(m_animationSegmentsMap[segmentDefinition]);
-            }
-            else
-            {
-                m_segmentTriggerMap[segmentDefinition].onSegmentTrigger?.Invoke(null);
-            }
+            // If the segment is not found, dictionary still return default value for the type (aka. null).
+            m_animationSegmentsMap.TryGetValue(segmentDefinition, out var value);
+            m_segmentTriggerMap[segmentDefinition].onSegmentTrigger?.Invoke(value);
 
             m_lastSegmentRaised = segmentDefinition;
         }
@@ -162,12 +136,25 @@ namespace NobunAtelier
 
         public void SetAnimSequence(AnimSequenceDefinition animationDefinition)
         {
-            m_animSeqDefinition = animationDefinition;
+            m_sequenceToPlay = animationDefinition;
 
             m_animationSegmentsMap.Clear();
-            for (int i = m_animSeqDefinition.segments.Length - 1; i >= 0; i--)
+
+            foreach (var segment in m_sequenceToPlay.segments)
             {
-                m_animationSegmentsMap.Add(m_animSeqDefinition.segments[i].SegmentDefinition, m_animSeqDefinition.segments[i]);
+                if (!m_segmentTriggerMap.ContainsKey(segment.SegmentDefinition))
+                {
+                    m_segmentTriggerMap.Add(segment.SegmentDefinition, new SegmentTrigger()
+                    {
+                        onSegmentTrigger = new AnimationSegmentEvent(),
+                        segment = segment.SegmentDefinition
+                    });
+                }
+            }
+
+            for (int i = m_sequenceToPlay.segments.Length - 1; i >= 0; i--)
+            {
+                m_animationSegmentsMap.Add(m_sequenceToPlay.segments[i].SegmentDefinition, m_sequenceToPlay.segments[i]);
             }
             m_lastSegmentRaised = null;
         }
@@ -180,16 +167,16 @@ namespace NobunAtelier
 
         public void PlayAnimSequence()
         {
-            if (m_animSeqDefinition == null)
+            if (m_sequenceToPlay == null)
             {
-                Debug.LogWarning($"{this.name}.PlayAnimationDefintion: AnimationDefintion is not valid.");
+                Log.Record($"Provided {m_sequenceToPlay.GetType().Name} is not valid.", ContextualLogManager.LogTypeFilter.Warning);
                 return;
             }
 
             ResetAnimationSpeed();
 
             // Might be improve with more params...
-            Animator.CrossFadeInFixedTime(m_animSeqDefinition.stateNameHash, m_animSeqDefinition.crossFadeDuration, 0);
+            Animator.CrossFadeInFixedTime(m_sequenceToPlay.stateNameHash, m_sequenceToPlay.crossFadeDuration, 0);
         }
 
         public override void ResetAnimationSpeed()
@@ -203,14 +190,54 @@ namespace NobunAtelier
             base.ResetAnimationSpeed();
         }
 
-#if UNITY_EDITOR
+        private void Awake()
+        {
+            m_segmentTriggerMap = new Dictionary<AnimSegmentDefinition, SegmentTrigger>(m_segmentTriggers.Length);
 
-        [Button]
+            for (int i = m_segmentTriggers.Length - 1; i >= 0; i--)
+            {
+                if (m_segmentTriggerMap.ContainsKey(m_segmentTriggers[i].segment))
+                {
+                    Log.Record($"'{m_segmentTriggers[i].segment}' already exist! SegmentTriggers[{i}]'s event won't be triggered.",
+                        ContextualLogManager.LogTypeFilter.Error);
+                    continue;
+                }
+
+                m_segmentTriggerMap.Add(m_segmentTriggers[i].segment, m_segmentTriggers[i]);
+            }
+
+            m_animationSegmentsMap = new Dictionary<AnimSegmentDefinition, AnimSequenceDefinition.Segment>();
+            if (m_sequenceToPlay)
+            {
+                SetAnimSequence(m_sequenceToPlay);
+            }
+        }
+
+        private void Start()
+        {
+            if (Animator == null)
+            {
+                Log.Record("Animator reference is not set!", ContextualLogManager.LogTypeFilter.Error);
+                return;
+            }
+        }
+
+        private void OnEnable()
+        {
+            Log = ContextualLogManager.Register(this, m_LogSettings);
+        }
+
+        private void OnDisable()
+        {
+            ContextualLogManager.Unregister(Log);
+        }
+
+#if UNITY_EDITOR
+        [Button, ContextMenu("Debug_PlayAnimationSequence")]
         private void Debug_PlayAnimationSequence()
         {
             PlayAnimSequence();
         }
-
 #endif
 
         [System.Serializable]

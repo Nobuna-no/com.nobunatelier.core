@@ -1,8 +1,13 @@
+using NaughtyAttributes;
 using NobunAtelier;
 using UnityEngine;
 
 public class AnimSequenceBehaviour : StateMachineBehaviour
 {
+    [InfoBox("Animator's State for Ability animations needs to have their transition's " +
+        "Interuption Source set to `NextState` - Otherwise you might encounter issue " +
+        "when trying to chain ability animation or chaining start chain using trigger animator param.",
+        EInfoBoxType.Warning)]
     [SerializeField] private AnimSegmentDefinition m_animSegmentEnterDefinition;
     [SerializeField] private AnimSegmentDefinition m_animSegmentExitDefinition;
     private AnimSequenceController animSequenceController;

@@ -83,7 +83,6 @@ public class AbilityAnimationDefinition : AbilityModuleDefinition
                 return;
             }
 
-            m_animationModule.ResetAnimationSpeed();
             m_sfxFactory.UnregisterResources();
             m_vfxFactory.UnregisterResources();
             m_isRegistered = false;

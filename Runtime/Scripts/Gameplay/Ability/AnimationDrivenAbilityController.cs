@@ -115,6 +115,7 @@ namespace NobunAtelier
         {
             Log.Record();
             CompleteAbilityExecution();
+            m_animationModule.ResetAnimationSpeed();
         }
 
         //private void RefreshAnimData()

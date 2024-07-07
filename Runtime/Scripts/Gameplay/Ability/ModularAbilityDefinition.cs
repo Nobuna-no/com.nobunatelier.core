@@ -92,11 +92,16 @@ public partial class ModularAbilityDefinition : AbilityDefinition
     public class ActionModel
     {
         [SerializeField] private AbilityModuleDefinition[] m_Modules;
+        [Tooltip("When enabled, the action will happen without affecting the current state of the Ability. " +
+            "This means that the ability will not call:" +
+            "\n\t- OnAbilityStartExecution" +
+            "\n\t- OnAbilityChainOpportunity" +
+            "\nThis also meant the ability internal state (ExecutionState) will not change to:" +
+            "\n\t- InProgress" +
+            "\n\t- ChainOpportunity/Cooldown" +
+            "\n\nRecommended for for StartCharge/OnLevelReached.")]
+        [SerializeField] private bool m_BackgroundExecution = false;
 
-        [Tooltip("When enabled, AbilityController's OnAbilityStartExecution event is not raised." +
-            "\nUseful for StartCharge/OnLevelReached.")]
-        [SerializeField]
-        private bool m_QuietExecution = false;
         [Tooltip("Delay between the ability instance's 'Initiate' and 'Start'")]
         [SerializeField, AllowNesting, HideIf("HasProcessor"), Min(0)]
         private float m_ExecutionDelay = 0.0f;
@@ -123,8 +128,7 @@ public partial class ModularAbilityDefinition : AbilityDefinition
         public float UpdateDuration => m_UpdateDuration;
         public float ChainOpportunityDuration => m_ChainOpportunityDuration;
         public bool TerminateExecutionOnCompletion => m_TerminateExecutionOnCompletion;
-        public bool QuietExecution => m_QuietExecution;
-
+        public bool BackgroundExecution => m_BackgroundExecution;
 
 #if UNITY_EDITOR
         // Used by ShowIf Attribute.

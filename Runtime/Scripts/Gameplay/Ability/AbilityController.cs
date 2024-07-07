@@ -160,8 +160,6 @@ namespace NobunAtelier
         /// </summary>
         protected void StopAbilityEffect()
         {
-            var activeProcessor = GetProcessorAndInitializeIfNeeded();
-
             if (!isActiveAndEnabled)
             {
                 return;
@@ -169,6 +167,7 @@ namespace NobunAtelier
 
             Log.Record($"{this.name}{typeof(AnimComboModule).Name}: AttackHitEnd.");
 
+            var activeProcessor = GetProcessorAndInitializeIfNeeded();
             activeProcessor.StopAbilityModules();
             m_canExecuteNewAction = true;
         }

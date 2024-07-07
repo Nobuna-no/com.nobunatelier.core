@@ -27,6 +27,7 @@ namespace NobunAtelier
             if (m_isGrounded)
             {
                 currentVel.y = 0;
+                return currentVel;
             }
 
             Vector3 finalVelocity = currentVel + Vector3.up * Physics.gravity.y * m_gravityMultiplier * deltaTime;

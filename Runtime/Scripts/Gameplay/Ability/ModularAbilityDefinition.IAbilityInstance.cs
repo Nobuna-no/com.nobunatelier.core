@@ -42,12 +42,10 @@ public partial class ModularAbilityDefinition
             get => m_currentState;
             private set
             {
-                m_previousState = m_currentState;
                 m_currentState = value;
             }
         }
 
-        private IAbilityInstance.ExecutionState m_previousState = IAbilityInstance.ExecutionState.Ready;
         private IAbilityInstance.ExecutionState m_currentState = IAbilityInstance.ExecutionState.Ready;
 
         // private AbilityController m_controller;
@@ -202,23 +200,17 @@ public partial class ModularAbilityDefinition
             }
         }
 
-        private void ExecuteNewCommand(float deltaTime)
+        /// <summary>
+        /// Stop active command (modules effect) and change the state to Cooldown or ChainOpportunity.
+        /// </summary>
+        /// <param name="backgroundExecution">If set to true, only stop the active command and
+        /// prevents the change of state (Cooldown or ChainOpportunity).</param>
+        public void StopEffect()
         {
-            if (m_activeCommand != null)
-            {
-                // Should not be necessary, but just in case for now as
-                // non processor can't know when to stop...
-                m_activeCommand.Stop();
-            }
-
-            if (m_commandQueue.TryDequeue(out m_activeCommand))
-            {
-                m_activeCommand.Initiate();
-                ExecutionState = IAbilityInstance.ExecutionState.Starting;
-            }
+            StopEffect(false);
         }
 
-        public void StopEffect()
+        private void StopEffect(bool backgroundExecution)
         {
             if (m_activeCommand == null)
             {
@@ -229,6 +221,12 @@ public partial class ModularAbilityDefinition
 
             m_activeCommand.Stop();
             m_activeCommand = null;
+
+            if (backgroundExecution)
+            {
+                return;
+            }
+
             if (!Data.m_canChainOnSelf)
             {
                 ExecutionState = IAbilityInstance.ExecutionState.Cooldown;
@@ -239,13 +237,25 @@ public partial class ModularAbilityDefinition
             OnAbilityChainOpportunity?.Invoke();
         }
 
+        /// <summary>
+        /// Terminate the active command (module effects) and reset the ability instance.
+        /// </summary>
+        /// <param name="raiseEvent">If enabled, raise OnAbilityCompleteExecution event.</param>
         public void TerminateExecution()
+        {
+            TerminateExecution(true);
+        }
+
+        private void TerminateExecution(bool raiseEvent)
         {
             // Early exit in case we are not actually running an ability yet.
             if (ExecutionState == IAbilityInstance.ExecutionState.Ready)
             {
+                m_LogSection.Record("Early exit because no ability is running.", ContextualLogManager.LogTypeFilter.Warning);
                 return;
             }
+
+            m_LogSection.Record();
 
             if (m_activeCommand != null)
             {
@@ -257,8 +267,11 @@ public partial class ModularAbilityDefinition
             m_currentChargeLevel = -1;
             m_nextCommandCategory = CommandCategory.Default;
             ExecutionState = IAbilityInstance.ExecutionState.Ready;
-            OnAbilityCompleteExecution?.Invoke();
-            m_LogSection.Record("Execution terminated.");
+
+            if (raiseEvent)
+            {
+                OnAbilityCompleteExecution?.Invoke();
+            }
         }
 
         public void StartCharge()
@@ -360,6 +373,23 @@ public partial class ModularAbilityDefinition
             ExecutionState = IAbilityInstance.ExecutionState.Ready;
             IsCharging = false;
         }
+
+        private void ExecuteNewCommand(float deltaTime)
+        {
+            if (m_activeCommand != null)
+            {
+                // Should not be necessary, but just in case for now as
+                // non processor can't know when to stop...
+                m_activeCommand.Stop();
+            }
+
+            if (m_commandQueue.TryDequeue(out m_activeCommand))
+            {
+                m_activeCommand.Initiate();
+                ExecutionState = IAbilityInstance.ExecutionState.Starting;
+            }
+        }
+
 
         private void UpdateAbilityChargeLevel()
         {
@@ -586,7 +616,7 @@ public partial class ModularAbilityDefinition
             {
                 m_moduleController.InitiateModulesExecution(m_modules);
 
-                if (!m_abilityAction.QuietExecution)
+                if (!m_abilityAction.BackgroundExecution)
                 {
                     m_target.OnAbilityInitiated?.Invoke();
                 }
@@ -621,9 +651,9 @@ public partial class ModularAbilityDefinition
             private IEnumerator AutoExecuteRoutine()
             {
                 yield return new WaitForSeconds(m_abilityAction.ExecutionDelay);
-                Execute();
+                m_target.ExecuteEffect();
                 yield return new WaitForSeconds(m_abilityAction.UpdateDuration);
-                Stop();
+                m_target.StopEffect(m_abilityAction.BackgroundExecution);
                 yield return new WaitForSeconds(m_abilityAction.ChainOpportunityDuration);
 
                 if (!m_abilityAction.TerminateExecutionOnCompletion)

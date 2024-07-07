@@ -1,5 +1,6 @@
 using NaughtyAttributes;
 using UnityEngine;
+using static NobunAtelier.ContextualLogManager;
 
 namespace NobunAtelier
 {
@@ -23,6 +24,8 @@ namespace NobunAtelier
 
         [SerializeField, InfoBox("Kinematic implementation in progress...")]
         private bool m_isKinematic = false;
+
+        private bool m_hasChangeGroundedThisFrame = false;
 
         public override VelocityApplicationUpdate VelocityUpdate => VelocityApplicationUpdate.FixedUpdate;
 
@@ -118,22 +121,26 @@ namespace NobunAtelier
                 {
                     if (Physics.gravity.x != 0)
                     {
-                        newVelocity.x = m_targetRigidbody.linearVelocity.x;
+                        newVelocity.x += m_targetRigidbody.linearVelocity.x;
                     }
                     if (Physics.gravity.y != 0)
                     {
-                        newVelocity.y = m_targetRigidbody.linearVelocity.y;
+                        newVelocity.y += m_targetRigidbody.linearVelocity.y;
                     }
                     if (Physics.gravity.z != 0)
                     {
-                        newVelocity.z = m_targetRigidbody.linearVelocity.z;
+                        newVelocity.z += m_targetRigidbody.linearVelocity.z;
                     }
                 }
 
                 m_targetRigidbody.linearVelocity = newVelocity;
-            }
 
-            // m_isGrounded = false;
+                if (newVelocity.y != 0 && m_isGrounded)
+                {
+                    m_isGrounded = false;
+                    m_hasChangeGroundedThisFrame = true;
+                }
+            }
         }
 
         public override void OnModuleCollisionEnter(Collision collision)
@@ -148,6 +155,12 @@ namespace NobunAtelier
 
         public override void OnModuleCollisionStay(Collision collision)
         {
+            if (m_hasChangeGroundedThisFrame)
+            {
+                m_hasChangeGroundedThisFrame = false;
+                return;
+            }
+
             if (collision.gameObject.layer != m_groundLayer)
             {
                 return;

@@ -2,6 +2,7 @@ using NaughtyAttributes;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using static NobunAtelier.CharacterThirdPersonAim;
 
 namespace NobunAtelier
 {
@@ -11,6 +12,7 @@ namespace NobunAtelier
         private const string GamepadControlSchemeName = "Gamepad";
         private const string KeyboardAndMouseControlSchemeName = "Keyboard&Mouse";
 
+
         [Header("Third Person Camera")]
         [SerializeField, Required]
         private Transform m_cameraTarget;
@@ -18,6 +20,16 @@ namespace NobunAtelier
         [SerializeField, MinMaxSlider(-85f, 85f)]
         private Vector2 m_TiltAngleDegreeRange = new Vector2(-20, 60);
 
+
+        [Tooltip("How the player's rotation is coupled to the camera's rotation.  Three modes are available:\n"
+            + "<b>Coupled</b>: The player rotates with the camera.  Sideways movement will result in strafing.\n"
+            + "<b>Coupled When Moving</b>: Camera can rotate freely around the player when the player is stationary, "
+                + "but the player will rotate to face camera forward when it starts moving.\n"
+            + "<b>Decoupled</b>: The player's rotation is independent of the camera's rotation.")]
+        public CouplingMode PlayerRotation;
+        [Tooltip("How fast the player rotates to face the camera direction when the player starts moving.  "
+            + "Only used when Player Rotation is Coupled When Moving.")]
+        public float RotationDamping = 0.2f;
         // [SerializeField]
         // private float m_maxTiltAngleDegree = 60f;
 
@@ -42,10 +54,14 @@ namespace NobunAtelier
         private InputAction m_lookAction;
 
         private Vector2 m_lastLookInputValue;
+        private Quaternion m_DesiredWorldRotation;
+        private Vector2 m_currentLookInputValue;
+        private Vector2 m_lookInputDelta;
 
         public override void UpdateModule(float deltaTime)
         {
             CameraRotationUpdate();
+            UpdatePlayerRotation(deltaTime);
         }
 
         public override void EnableModuleInput(PlayerInput playerInput, InputActionMap activeActionMap)
@@ -54,6 +70,11 @@ namespace NobunAtelier
             Debug.Assert(m_lookAction != null, $"[{Time.frameCount}] {this}: Look action was not found in activeActionMap `{activeActionMap}`");
             m_lookAction.performed += OnLookActionPerformed;
             m_lookAction.canceled += OnLookActionCancelled;
+
+            if (ControlledCharacter)
+            {
+                ControlledCharacter.OnPostUpdate += PostUpdate;
+            }
         }
 
         public override void DisableModuleInput(PlayerInput playerInput, InputActionMap activeActionMap)
@@ -62,6 +83,11 @@ namespace NobunAtelier
             {
                 m_lookAction.performed -= OnLookActionPerformed;
                 m_lookAction.canceled -= OnLookActionCancelled;
+            }
+
+            if (ControlledCharacter)
+            {
+                ControlledCharacter.OnPostUpdate -= PostUpdate;
             }
 
             m_lookAction = null;
@@ -90,6 +116,7 @@ namespace NobunAtelier
 
             eulerRot.x = Mathf.Clamp(eulerRot.x, m_TiltAngleDegreeRange.x, m_TiltAngleDegreeRange.y);
             m_cameraTarget.rotation = Quaternion.Euler(eulerRot);
+            m_DesiredWorldRotation = m_cameraTarget.rotation;
         }
 
         private void OnLookActionPerformed(InputAction.CallbackContext obj)
@@ -107,5 +134,68 @@ namespace NobunAtelier
         {
             m_lastLookInputValue = Vector2.zero;
         }
+
+        private void UpdatePlayerRotation(float deltaTime)
+        {
+            // var t = m_cameraTarget;
+            // t.localRotation = Quaternion.Euler(m_currentLookInputValue.y, m_currentLookInputValue.x, 0);
+            // m_DesiredWorldRotation = t.rotation;
+            switch (PlayerRotation)
+            {
+                case CouplingMode.Coupled:
+                    RecenterPlayer(deltaTime);
+                    break;
+                case CouplingMode.CoupledWhenMoving:
+                    if (ControlledCharacter.IsMoving)
+                        RecenterPlayer(deltaTime, RotationDamping);
+                    break;
+                case CouplingMode.Decoupled:
+                    break;
+            }
+        }
+
+        private void PostUpdate()
+        {
+            if (PlayerRotation == CouplingMode.Decoupled)
+            {
+                ControlledCharacter.Transform.rotation = m_DesiredWorldRotation;
+                // var delta = (Quaternion.Inverse(m_cameraTarget.rotation) * m_DesiredWorldRotation).eulerAngles;
+                // m_currentLookInputValue.y = NormalizeAngle(delta.x);
+                // m_currentLookInputValue.x = NormalizeAngle(delta.y);
+            }
+        }
+
+        private void RecenterPlayer(float deltaTime, float damping = 0)
+        {
+            if (m_cameraTarget == null)
+                return;
+
+            // Get my rotation relative to parent
+            var rot = m_cameraTarget.localRotation.eulerAngles;
+            rot.y = NormalizeAngle(rot.y);
+            var delta = rot.y;
+            delta = Damper.Damp(delta, damping, deltaTime);
+
+            // Rotate the parent towards me
+            var t = ControlledCharacter.Transform;
+            t.rotation = Quaternion.AngleAxis(delta, t.up) * t.rotation;
+
+            // m_cameraTarget.rotation = Quaternion.AngleAxis(delta, m_cameraTarget.up) * m_cameraTarget.rotation;
+
+            // Rotate me in the opposite direction
+            // m_currentLookInputValue.y -= delta;
+            rot.y -= delta;
+            m_cameraTarget.localRotation = Quaternion.Euler(rot);
+        }
+
+        private float NormalizeAngle(float angle)
+        {
+            while (angle > 180)
+                angle -= 360;
+            while (angle < -180)
+                angle += 360;
+            return angle;
+        }
+
     }
 }
