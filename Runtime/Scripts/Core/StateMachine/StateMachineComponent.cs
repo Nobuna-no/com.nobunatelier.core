@@ -135,7 +135,7 @@ namespace NobunAtelier
             if (GetInitialStateDefinition() != null)
             {
                 m_activeStateDefinition = GetInitialStateDefinition();
-                while (m_activeStateDefinition.RequiredPriorState != null)
+                while (m_activeStateDefinition.RequiredPriorState != null && m_activeStateDefinition.RequiredPriorState != this.StateDefinition)
                 {
                     Debug.LogWarning($"Required condition <b>{m_activeStateDefinition.RequiredPriorState.name}</b> for state <b>{m_activeStateDefinition.name}</b>. " +
                         $"Rolling back state to <b>{m_activeStateDefinition.RequiredPriorState.name}</b>.");
@@ -166,6 +166,9 @@ namespace NobunAtelier
             {
                 m_statesMap[m_activeStateDefinition].Exit();
             }
+
+            // State Machine are paused when exited.
+            IsPaused = true;
         }
 
         public virtual void ExitStateMachine()
