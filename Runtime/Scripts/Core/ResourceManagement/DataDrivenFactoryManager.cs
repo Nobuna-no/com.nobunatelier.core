@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace NobunAtelier
@@ -28,6 +27,8 @@ namespace NobunAtelier
         [Header("Data-Driven Pool Factory")]
         [Tooltip("Parent transform. Set to null in release build for optimization.")]
         [SerializeField] private Transform m_reserveParent = null;
+        [Tooltip("Default spawn position offset. Useful to avoid spawning things at 0,0,0.")]
+        [SerializeField] private Vector3 m_SpawnOffset = Vector3.zero;
 
         [SerializeField]
         private PoolBehaviour m_behaviour =
@@ -42,7 +43,7 @@ namespace NobunAtelier
         // This can also be use by custom PoolObjectDefinition that can't be assigned to the collection.
         [SerializeField] private FactoryProductDefinition[] m_initialDefinitions = null;
 
-        private Dictionary<FactoryProductDefinition, List<FactoryProduct>> m_objectPoolPerID = new Dictionary<FactoryProductDefinition, List<FactoryProduct>>();
+        private Dictionary<FactoryProductDefinition, List<FactoryProduct>> m_productPerID = new Dictionary<FactoryProductDefinition, List<FactoryProduct>>();
 
         public static void Register(FactoryProductDefinition definition)
         {
@@ -123,7 +124,7 @@ namespace NobunAtelier
         {
             Debug.Assert(collection, this);
 
-            FillReserves(collection.Definitions);
+            FillReservesInBackbground(collection.Definitions);
         }
 
         private void UnregisterCollection<TCollection, TDefinition>(TCollection collection)
@@ -177,9 +178,9 @@ namespace NobunAtelier
 
         private void ResetPoolObjects()
         {
-            foreach (var key in m_objectPoolPerID.Keys)
+            foreach (var key in m_productPerID.Keys)
             {
-                foreach (var val in m_objectPoolPerID[key])
+                foreach (var val in m_productPerID[key])
                 {
                     val.ResetProduct();
                 }
@@ -348,37 +349,38 @@ namespace NobunAtelier
 
         private FactoryProduct GetProductSync(FactoryProductDefinition id)
         {
-            if (!m_objectPoolPerID.ContainsKey(id))
+            if (!m_productPerID.ContainsKey(id))
             {
-                while (FillReserveRoutine(id).MoveNext()) ;
-
+                // If this object don't exist yet in the pool, check if can lazy instantiate.
                 if ((m_behaviour & PoolBehaviour.WarmsLazyInstancing) != 0)
                 {
-                    Debug.LogWarning($"{this}[WARM]: Lazy instantiate of object: {id}.", this);
+                    Debug.LogWarning($"Factory: Lazy instantiate of object '{id}'.", this);
                 }
+
+                FillReserve(id);
             }
 
             // Could be optimized for speed
             // In the future, might be nice to provide a search method injection per object
             // This way, high frequency life cycle object can spend a bit more memory to get
             // a faster search (log(n) instead of n, using a second map to monitor inactive objects).
-            FactoryProduct product = m_objectPoolPerID[id].Find((obj) => { return !obj.IsProductActive; });
+            FactoryProduct product = m_productPerID[id].Find((obj) => { return !obj.IsProductActive; });
 
             if (product == null)
             {
                 if ((m_behaviour & PoolBehaviour.AllowsLazyInstancing) == 0)
                 {
-                    Debug.LogWarning($"Cannot force instantiate, object of id: {id}. Skipped...");
+                    Debug.LogWarning($"Factory: No more product '{id}' available! Toggle AllowsLazyInstancing if needed.", this);
                     return null;
                 }
 
                 if ((m_behaviour & PoolBehaviour.LogDebug) != 0)
                 {
-                    Debug.Log($"Instantiating new batch of {id}");
+                    Debug.Log($"Factory: Instantiating new batch of '{id}'", this);
                 }
 
-                FactoryProduct[] newProducts = InstantiateBatch(id, m_objectPoolPerID[id].Count + id.ReserveGrowCount);
-                m_objectPoolPerID[id].AddRange(newProducts);
+                FactoryProduct[] newProducts = InstantiateBatch(id, m_productPerID[id].Count + id.ReserveGrowCount);
+                m_productPerID[id].AddRange(newProducts);
                 product = newProducts[0];
             }
 
@@ -387,17 +389,17 @@ namespace NobunAtelier
 
         private IEnumerator GetProductRoutine(FactoryProductDefinition id, FactoryProduct product)
         {
-            if (!m_objectPoolPerID.ContainsKey(id))
+            if (!m_productPerID.ContainsKey(id))
             {
                 yield return FillReserveRoutine(id);
 
                 if ((m_behaviour & PoolBehaviour.WarmsLazyInstancing) != 0)
                 {
-                    Debug.LogWarning($"{this}[WARM]: Lazy instantiate of object: {id}.", this);
+                    Debug.LogWarning($"Factory: Lazy instantiate of object '{id}'.", this);
                 }
             }
 
-            product = m_objectPoolPerID[id].Find((obj) => { return !obj.IsProductActive; });
+            product = m_productPerID[id].Find((obj) => { return !obj.IsProductActive; });
 
             if (product == null)
             {
@@ -407,11 +409,12 @@ namespace NobunAtelier
                     yield break;
                 }
 
-                var handle = InstantiateBatchTask(id, m_objectPoolPerID[id].Count + id.ReserveGrowCount);
-                yield return handle;
+                var handle = InstantiateBatchTask(id, m_productPerID[id].Count + id.ReserveGrowCount);
+                yield return new WaitUntil(() => handle.GetAwaiter().IsCompleted);
 
-                m_objectPoolPerID[id].AddRange(handle.Result);
-                product = handle.Result[0];
+                var result = handle.GetAwaiter().GetResult();
+                m_productPerID[id].AddRange(result);
+                product = result[0];
             }
         }
 
@@ -431,23 +434,21 @@ namespace NobunAtelier
 
             for (int i = 0; i < count; ++i)
             {
-                out_array[i] = Instantiate(definition.Product, Vector3.zero, Quaternion.identity, m_reserveParent).GetComponent<FactoryProduct>();
+                out_array[i] = Instantiate(definition.Product, m_SpawnOffset, Quaternion.identity, m_reserveParent).GetComponent<FactoryProduct>();
                 out_array[i].ResetProduct();
             }
 
             return out_array;
         }
 
-        private async Task<FactoryProduct[]> InstantiateBatchTask(FactoryProductDefinition definition, int count)
+        private async Awaitable<FactoryProduct[]> InstantiateBatchTask(FactoryProductDefinition definition, int count)
         {
             if ((m_behaviour & PoolBehaviour.LogDebug) != 0)
             {
                 Debug.Log($"Async Instantiating of {count} new {definition}.");
             }
 
-            FactoryProduct[] out_array = new FactoryProduct[count];
-
-            AsyncInstantiateOperation<FactoryProduct> handle = InstantiateAsync(definition.Product, count, m_reserveParent, Vector3.zero, Quaternion.identity);
+            var handle = InstantiateAsync(definition.Product, count, m_reserveParent, m_SpawnOffset, Quaternion.identity);
             await handle;
 
             for (int i = 0, c = handle.Result.Length; i < c; ++i)
@@ -463,13 +464,13 @@ namespace NobunAtelier
         {
             foreach (var collection in m_initialCollections)
             {
-                FillReserves(collection.Definitions);
+                FillReservesInBackbground(collection.Definitions);
             }
 
-            FillReserves(m_initialDefinitions);
+            FillReservesInBackbground(m_initialDefinitions);
         }
 
-        private void FillReserves(IReadOnlyList<FactoryProductDefinition> definitions)
+        private void FillReservesInBackbground(IReadOnlyList<FactoryProductDefinition> definitions)
         {
             foreach (var def in definitions)
             {
@@ -477,36 +478,54 @@ namespace NobunAtelier
             }
         }
 
-        private IEnumerator FillReserveRoutine(FactoryProductDefinition def)
+        private void FillReserve(FactoryProductDefinition def)
         {
             FactoryProductDefinition productId = def;
-            if (!m_objectPoolPerID.ContainsKey(productId))
+            if (!m_productPerID.ContainsKey(productId))
             {
-                m_objectPoolPerID.Add(productId, new List<FactoryProduct>(def.ReserveSize));
+                m_productPerID.Add(productId, new List<FactoryProduct>(def.ReserveSize));
             }
 
             // it's ok if we have more object.
-            int reserveCountTarget = def.ReserveSize - m_objectPoolPerID[productId].Count;
+            int reserveCountTarget = def.ReserveSize - m_productPerID[productId].Count;
+            if (reserveCountTarget > 0)
+            {
+                FactoryProduct[] newProducts = InstantiateBatch(productId, reserveCountTarget);
+                m_productPerID[productId].AddRange(newProducts);
+            }
+        }
+
+        // Needs to be sync to avoid data race on the dictionary
+        private IEnumerator FillReserveRoutine(FactoryProductDefinition def)
+        {
+            FactoryProductDefinition productId = def;
+            if (!m_productPerID.ContainsKey(productId))
+            {
+                m_productPerID.Add(productId, new List<FactoryProduct>(def.ReserveSize));
+            }
+
+            // it's ok if we have more object.
+            int reserveCountTarget = def.ReserveSize - m_productPerID[productId].Count;
             if (reserveCountTarget > 0)
             {
                 var handle = InstantiateBatchTask(productId, reserveCountTarget);
-                yield return handle;
+                yield return new WaitUntil(() => handle.GetAwaiter().IsCompleted);
 
-                m_objectPoolPerID[productId].AddRange(handle.Result);
+                m_productPerID[productId].AddRange(handle.GetAwaiter().GetResult());
             }
         }
 
         private void ClearReserve<TDefinition>(TDefinition definition) where TDefinition : FactoryProductDefinition
         {
-            if (m_objectPoolPerID.ContainsKey(definition))
+            if (m_productPerID.ContainsKey(definition))
             {
-                var list = m_objectPoolPerID[definition];
+                var list = m_productPerID[definition];
                 foreach (var obj in list)
                 {
                     Destroy(obj.gameObject);
                 }
-                m_objectPoolPerID[definition].Clear();
-                m_objectPoolPerID.Remove(definition);
+                m_productPerID[definition].Clear();
+                m_productPerID.Remove(definition);
             }
         }
 
