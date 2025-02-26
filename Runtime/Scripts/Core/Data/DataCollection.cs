@@ -61,7 +61,7 @@ namespace NobunAtelier
 
 #if UNITY_EDITOR
         public override DataDefinition[] EditorDataDefinitions => m_dataDefinitions.ToArray();
-        
+
         public override Type GetDefinitionType()
         {
             return typeof(T);

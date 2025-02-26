@@ -1,0 +1,68 @@
+.header-label {
+    font-size: 14px;
+    -unity-font-style: bold;
+}
+
+.collection-item {
+    -unity-font-style: bold;
+}
+
+.empty-state-label {
+    -unity-text-align: middle-center;
+    -unity-font-style: italic;
+    color: var(--unity-colors-label-text-disabled);
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.inspector-header {
+    flex-direction: row;
+    background-color: var(--unity-colors-toolbar-background);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--unity-colors-toolbar-border);
+    padding: 5px;
+    height: 24px;
+    align-items: center;
+}
+
+#inspector-title {
+    -unity-font-style: bold;
+    flex-grow: 1;
+}
+
+.ping-button {
+    width: 50px;
+}
+
+.unity-tree-view__item-content {
+    padding: 2px 0;
+}
+
+.unity-tree-view__item:hover {
+    background-color: var(--unity-colors-highlight-background-hover);
+}
+
+.unity-tree-view__item--selected {
+    background-color: var(--unity-colors-highlight-background);
+}
+
+.unity-foldout {
+    margin-left: 0;
+    padding-left: 0;
+}
+
+.unity-foldout__toggle {
+    margin-left: 0;
+    padding-left: 0;
+}
+
+.unity-foldout__input {
+    align-self: center;
+}
+
+.unity-foldout__checkmark {
+    margin-right: -3px;
+}
