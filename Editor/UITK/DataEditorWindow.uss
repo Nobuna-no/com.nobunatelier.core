@@ -66,3 +66,21 @@
 .unity-foldout__checkmark {
     margin-right: -3px;
 }
+
+.toolbar-button {
+    margin-left: 4px;
+    padding: 2px 6px;
+}
+
+.toolbar-spacer {
+    flex-grow: 1;
+}
+
+.type-folder {
+    -unity-font-style: bold;
+}
+
+.virtual-folder {
+    -unity-font-style: bold;
+    color: var(--unity-colors-folder-name);
+}
