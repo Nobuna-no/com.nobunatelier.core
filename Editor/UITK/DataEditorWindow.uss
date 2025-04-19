@@ -4,7 +4,6 @@
 }
 
 .collection-item {
-    -unity-font-style: bold;
 }
 
 .empty-state-label {

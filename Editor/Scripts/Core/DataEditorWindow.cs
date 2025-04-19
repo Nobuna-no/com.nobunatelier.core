@@ -62,15 +62,11 @@ namespace NobunAtelier.Editor
                 a => GetViewModeStatus(DataExplorerSettings.ViewMode.Flat));
             viewMenu.menu.AppendAction("By Type", a => SetViewMode(DataExplorerSettings.ViewMode.ByType),
                 a => GetViewModeStatus(DataExplorerSettings.ViewMode.ByType));
-            viewMenu.menu.AppendAction("Virtual Folders", a => SetViewMode(DataExplorerSettings.ViewMode.VirtualFolders),
-                a => GetViewModeStatus(DataExplorerSettings.ViewMode.VirtualFolders));
             toolbar.Add(viewMenu);
 
             var helpButton = new ToolbarMenu { text = "Help" };
             helpButton.menu.AppendAction("About", (a) =>
                 EditorUtility.DisplayDialog("About", "Data Explorer Tool\nPart of NobunAtelier Framework", "Close"));
-            helpButton.menu.AppendAction("Documentation", (a) =>
-                Application.OpenURL("https://github.com/yourusername/NobunAtelier/wiki"));
             toolbar.Add(helpButton);
 
             toolbar.Add(new ToolbarSpacer { flex = true });
@@ -81,13 +77,6 @@ namespace NobunAtelier.Editor
             m_SearchField = new ToolbarSearchField();
             m_SearchField.RegisterValueChangedCallback(OnSearchChanged);
             toolbar.Add(m_SearchField);
-
-            // Add Virtual Folder management button
-            var vFolderMenu = new ToolbarMenu { text = "Virtual Folders" };
-            vFolderMenu.menu.AppendAction("New Folder...", _ => ShowCreateFolderDialog());
-            vFolderMenu.menu.AppendSeparator();
-            vFolderMenu.menu.AppendAction("Manage Folders...", _ => ShowManageFoldersDialog());
-            toolbar.Add(vFolderMenu);
         }
 
         private DropdownMenuAction.Status GetViewModeStatus(DataExplorerSettings.ViewMode mode)
@@ -95,75 +84,6 @@ namespace NobunAtelier.Editor
             return DataExplorerSettings.instance.CurrentViewMode == mode
                 ? DropdownMenuAction.Status.Checked
                 : DropdownMenuAction.Status.Normal;
-        }
-
-        private void ShowCreateFolderDialog()
-        {
-            string defaultName = "New Folder";
-            int index = 1;
-            string folderName = defaultName;
-
-            // Find unique name
-            while (DataExplorerSettings.instance.VirtualFolders.Any(f => f.Name == folderName))
-            {
-                folderName = $"{defaultName} {index++}";
-            }
-
-            DataExplorerSettings.instance.AddVirtualFolder(folderName);
-            RefreshData();
-        }
-
-        private void ShowManageFoldersDialog()
-        {
-            var window = EditorWindow.GetWindow<VirtualFolderManagerWindow>("Virtual Folders");
-            window.minSize = new Vector2(300, 200);
-            window.Show();
-        }
-
-        private void LoadVirtualFoldersView()
-        {
-            // Dictionary to track which collections are in folders
-            var collectionInFolders = new HashSet<string>();
-
-            // Create folder items
-            foreach (var folder in DataExplorerSettings.instance.VirtualFolders)
-            {
-                var folderItem = new DataTreeItem
-                {
-                    ID = System.Guid.NewGuid().ToString(),
-                    DisplayName = folder.Name,
-                    IsCollection = true,
-                    Children = new List<DataTreeItem>()
-                };
-                m_TreeItems.Add(folderItem);
-
-                // Add collections to folder
-                foreach (var guid in folder.CollectionGuids)
-                {
-                    string path = AssetDatabase.GUIDToAssetPath(guid);
-                    var collection = AssetDatabase.LoadAssetAtPath<DataCollection>(path);
-                    if (collection != null)
-                    {
-                        AddCollectionToTree(collection, folderItem);
-                        collectionInFolders.Add(guid);
-                    }
-                }
-            }
-
-            // Add remaining collections (not in any folder)
-            string[] allCollectionGuids = AssetDatabase.FindAssets("t:DataCollection");
-            foreach (string guid in allCollectionGuids)
-            {
-                if (!collectionInFolders.Contains(guid))
-                {
-                    string path = AssetDatabase.GUIDToAssetPath(guid);
-                    var collection = AssetDatabase.LoadAssetAtPath<DataCollection>(path);
-                    if (collection != null)
-                    {
-                        AddCollectionToTree(collection);
-                    }
-                }
-            }
         }
 
         private void SetViewMode(DataExplorerSettings.ViewMode mode)
@@ -243,14 +163,14 @@ namespace NobunAtelier.Editor
             var header = m_RootElement.Q<Label>("tree-header");
             if (header != null)
             {
-                string viewMode = DataExplorerSettings.instance.CurrentViewMode switch
+                if (DataExplorerSettings.instance.CurrentViewMode == DataExplorerSettings.ViewMode.ByType)
                 {
-                    DataExplorerSettings.ViewMode.Flat => "Flat",
-                    DataExplorerSettings.ViewMode.ByType => "By Type",
-                    DataExplorerSettings.ViewMode.VirtualFolders => "Virtual Folders",
-                    _ => "Unknown"
-                };
-                header.text = $"Data Collections ({viewMode})";
+                    header.text = $"Data Collections (By Type)";
+                }
+                else
+                {
+                    header.text = $"Data Collections";
+                }
             }
         }
 
@@ -352,9 +272,6 @@ namespace NobunAtelier.Editor
                     break;
                 case DataExplorerSettings.ViewMode.ByType:
                     LoadTypeView();
-                    break;
-                case DataExplorerSettings.ViewMode.VirtualFolders:
-                    LoadVirtualFoldersView();
                     break;
             }
 
@@ -606,54 +523,6 @@ namespace NobunAtelier.Editor
             public bool IsCollection;
             public List<DataTreeItem> Children;
             public DataTreeItem Parent;
-        }
-    }
-}
-
-
-public class VirtualFolderManagerWindow : EditorWindow
-{
-    private Vector2 scrollPosition;
-
-    private void OnGUI()
-    {
-        EditorGUILayout.Space(10);
-
-        scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
-
-        foreach (var folder in DataExplorerSettings.instance.VirtualFolders.ToList())
-        {
-            EditorGUILayout.BeginHorizontal();
-
-            // Folder name
-            var newName = EditorGUILayout.TextField(folder.Name);
-            if (newName != folder.Name)
-            {
-                folder.Name = newName;
-                DataExplorerSettings.instance.Save();
-            }
-
-            // Delete button
-            if (GUILayout.Button("X", GUILayout.Width(20)))
-            {
-                if (EditorUtility.DisplayDialog("Delete Folder",
-                    $"Are you sure you want to delete '{folder.Name}'?",
-                    "Delete", "Cancel"))
-                {
-                    DataExplorerSettings.instance.RemoveVirtualFolder(folder.Name);
-                }
-            }
-
-            EditorGUILayout.EndHorizontal();
-        }
-
-        EditorGUILayout.EndScrollView();
-
-        EditorGUILayout.Space(10);
-
-        if (GUILayout.Button("Add New Folder"))
-        {
-            DataExplorerSettings.instance.AddVirtualFolder("New Folder");
         }
     }
 }
