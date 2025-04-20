@@ -17,6 +17,11 @@ namespace NobunAtelier
             float speed = ModuleOwner.GetMoveSpeed();
             m_animator.SetFloat(m_moveSpeedParam, speed);
 
+            if (m_dustParticle == null)
+            {
+                return;
+            }
+
             if (speed > 1f)
             {
                 if (m_dustParticle.isPlaying)

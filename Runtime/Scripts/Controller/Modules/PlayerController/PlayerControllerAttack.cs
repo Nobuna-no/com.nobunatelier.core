@@ -72,7 +72,10 @@ namespace NobunAtelier
         [System.Serializable]
         private class ActionData
         {
+            // TODO: To remove next version
+            [HideInInspector]
             [SerializeField] private string m_actionName = "";
+            [SerializeField] private InputActionReference m_action;
             [SerializeField] private UnityEvent m_onActionPerformed;
             [SerializeField] private UnityEvent m_onActionCancelled;
             /// <summary>
@@ -96,8 +99,8 @@ namespace NobunAtelier
 
             public void EnableAction(InputActionMap map)
             {
-                m_inputAction = map.FindAction(m_actionName);
-                Debug.Assert(m_inputAction != null, $"Can't find '{m_actionName}' action");
+                m_inputAction = map.FindAction(m_action.action.name);
+                Debug.Assert(m_inputAction != null, $"Can't find '{m_action.name}' action");
                 m_inputAction.performed += Perform;
                 m_inputAction.canceled += Cancel;
             }

@@ -243,13 +243,13 @@ namespace NobunAtelier
             ContextualLogManager.Unregister(Log);
         }
 
-        public enum AbilityExecutionState
-        {
-            Ready,          // The idle and ready state.
-            InProgress,     // Ongoing ability execution.
-            ChainOpportunity, // Window for chaining ability.
-            Cooldown,       // CoolDown period after an ability when no followUp is available.
-            Charging,
-        }
+        //public enum AbilityExecutionState
+        //{
+        //    Ready,          // The idle and ready state.
+        //    InProgress,     // Ongoing ability execution.
+        //    ChainOpportunity, // Window for chaining ability.
+        //    Cooldown,       // CoolDown period after an ability when no followUp is available.
+        //    Charging,
+        //}
     }
 }

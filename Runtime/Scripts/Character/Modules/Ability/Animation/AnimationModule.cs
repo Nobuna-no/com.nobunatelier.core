@@ -41,5 +41,10 @@ namespace NobunAtelier
         {
             m_animator.speed = 1;
         }
+
+        public void AnimatorParameterSetTrigger(string name) => m_animator.SetTrigger(name);
+        public void AnimatorParameterResetTrigger(string name) => m_animator.ResetTrigger(name);
+        public void AnimatorParameterEnableBoolean(string name) => m_animator.SetBool(name, true);
+        public void AnimatorParameterDisableBoolean(string name) => m_animator.SetBool(name, false);
     }
 }
