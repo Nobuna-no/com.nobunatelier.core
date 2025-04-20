@@ -17,9 +17,9 @@ public class SplitScreenRatioCollectionEditor : DataCollectionEditor
 
     private void RefreshSize()
     {
-        for (int i = 0, c = m_collection.EditorDataDefinitions.Length; i < c; i++)
+        for (int i = 0, c = m_Collection.EditorDataDefinitions.Length; i < c; i++)
         {
-            var ssDef = m_collection.EditorDataDefinitions[i] as SplitScreenRatioDefinition;
+            var ssDef = m_Collection.EditorDataDefinitions[i] as SplitScreenRatioDefinition;
 
             if (i == 0)
             {
