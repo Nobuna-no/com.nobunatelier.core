@@ -1,6 +1,7 @@
 using UnityEngine;
 using NaughtyAttributes;
 using System.Collections.Generic;
+using UnityEngine.Serialization;
 
 [CreateAssetMenu]
 public partial class ModularAbilityDefinition : AbilityDefinition
@@ -23,38 +24,47 @@ public partial class ModularAbilityDefinition : AbilityDefinition
         "\n- OnAbilityExecutionCompletion: Raised every time a command reach end of the ChainOpportunity timing",
         type: (EInfoBoxType)3)]
     [SerializeField] private ActionModel m_Default;
-    [SerializeField] private bool m_canChainOnSelf = true;
+    [FormerlySerializedAs("m_canChainOnSelf")]
+    [SerializeField] private bool m_CanChainOnSelf = true;
 
     [Header("Charge")]
-    [SerializeField] private bool m_canBeCharged = false;
+    [FormerlySerializedAs("m_canBeCharged")]
+    [SerializeField] private bool m_CanBeCharged = false;
     [Tooltip("If released before the first charge level is reached, play normal modules.")]
-    [SerializeField, AllowNesting, ShowIf("m_canBeCharged")]
-    private bool m_playAbilityOnEarlyChargeRelease = true;
+    [SerializeField, AllowNesting, ShowIf("m_CanBeCharged")]
+    [FormerlySerializedAs("m_playAbilityOnEarlyChargeRelease")]
+    private bool m_PlayAbilityOnEarlyChargeRelease = true;
 
+    [FormerlySerializedAs("m_chargeTimeout")]
     [SerializeField, AllowNesting, ShowIf("HasTimeoutMode")]
-    private float m_chargeTimeout = 3f;
+    private float m_ChargeTimeout = 3f;
 
-    [SerializeField, AllowNesting, ShowIf("m_canBeCharged")]
-    private bool m_cancelAbilityChargeOnEarlyChargeRelease = true;
+    [FormerlySerializedAs("m_cancelAbilityChargeOnEarlyChargeRelease")]
+    [SerializeField, AllowNesting, ShowIf("CanBeChargedAndNotPlayingDefaultOnCancel")]
+    private bool m_CancelAbilityChargeOnEarlyChargeRelease = false;
 
-    [SerializeField, AllowNesting, ShowIf("m_canBeCharged")]
-    private ChargeReleaseConstraint m_chargeConstraint = ChargeReleaseConstraint.None;
+    [FormerlySerializedAs("m_chargeConstraint")]
+    [SerializeField, AllowNesting, ShowIf("m_CanBeCharged")]
+    private ChargeReleaseConstraint m_ChargeConstraint = ChargeReleaseConstraint.None;
 
-    [SerializeField, AllowNesting, ShowIf("m_canBeCharged")]
+    [SerializeField, AllowNesting, ShowIf("m_CanBeCharged")]
     private ActionModel m_ChargeStart;
 
-    [SerializeField, AllowNesting, ShowIf("m_cancelAbilityChargeOnEarlyChargeRelease")]
+    [FormerlySerializedAs("m_chargedAbilityLevels")]
+    [SerializeField, AllowNesting, ShowIf("m_CanBeCharged")]
+    private ChargeLevelData[] m_ChargedAbilityLevels;
+
+    [SerializeField, AllowNesting, ShowIf("CanChargeCancel")]
     public ActionModel m_ChargeCancel;
 
-    [SerializeField, AllowNesting, ShowIf("m_canBeCharged")]
-    private ChargeLevelData[] m_chargedAbilityLevels;
-
 #if UNITY_EDITOR
-    private bool HasTimeoutMode => m_canBeCharged
-        && (m_chargeConstraint == ChargeReleaseConstraint.ReleaseOnTimeout
-        || m_chargeConstraint == ChargeReleaseConstraint.CancelOnTimeout);
-    private bool DoesCancelTimeout => m_canBeCharged
-        && m_chargeConstraint == ChargeReleaseConstraint.CancelOnTimeout;
+    private bool HasTimeoutMode => m_CanBeCharged
+        && (m_ChargeConstraint == ChargeReleaseConstraint.ReleaseOnTimeout
+        || m_ChargeConstraint == ChargeReleaseConstraint.CancelOnTimeout);
+    private bool DoesCancelTimeout => m_CanBeCharged
+        && m_ChargeConstraint == ChargeReleaseConstraint.CancelOnTimeout;
+    private bool CanBeChargedAndNotPlayingDefaultOnCancel => m_CanBeCharged && m_PlayAbilityOnEarlyChargeRelease == false;
+    private bool CanChargeCancel => CanBeChargedAndNotPlayingDefaultOnCancel && m_CancelAbilityChargeOnEarlyChargeRelease;
 #endif
 
     public enum ChargeReleaseConstraint
