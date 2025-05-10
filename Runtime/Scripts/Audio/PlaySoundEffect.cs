@@ -1,16 +1,19 @@
 using NaughtyAttributes;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [RequireComponent(typeof(AudioSource))]
 public class PlaySoundEffect : MonoBehaviour
 {
     [SerializeField]
-    private AudioClip[] m_audioClipArray;
+    [FormerlySerializedAs("m_audioClipArray")]
+    private AudioClip[] m_AudioClipArray;
 
     [SerializeField]
     [MinMaxSlider(0, 2)]
-    private Vector2 m_pitchRange = new Vector2(0.85f, 1.15f);
+    [FormerlySerializedAs("m_pitchRange")]
+    private Vector2 m_PitchRange = new Vector2(0.85f, 1.15f);
 
     private AudioSource m_AudioSource;
 
@@ -79,7 +82,7 @@ public class PlaySoundEffect : MonoBehaviour
         }
 #endif
 
-        if (m_audioClipArray == null || m_audioClipArray.Length == 0)
+        if (m_AudioClipArray == null || m_AudioClipArray.Length == 0)
         {
             return;
         }
@@ -89,9 +92,9 @@ public class PlaySoundEffect : MonoBehaviour
             m_AudioSource.Stop();
         }
 
-        int clipIndex = Random.Range(0, m_audioClipArray.Length - 1);
-        m_AudioSource.clip = m_audioClipArray[clipIndex];
-        m_AudioSource.pitch = Random.Range(m_pitchRange.x, m_pitchRange.y);
+        int clipIndex = Random.Range(0, m_AudioClipArray.Length - 1);
+        m_AudioSource.clip = m_AudioClipArray[clipIndex];
+        m_AudioSource.pitch = Random.Range(m_PitchRange.x, m_PitchRange.y);
 
         m_AudioSource.Play();
 

@@ -2,6 +2,7 @@ using NaughtyAttributes;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
@@ -30,34 +31,38 @@ namespace NobunAtelier
         }
 
         [Header("State")]
-        [SerializeField]
-        private ActivationTrigger m_audioActionTrigger = ActivationTrigger.OnEnable;
+        [SerializeField, FormerlySerializedAs("m_audioActionTrigger")]
+        private ActivationTrigger m_AudioActionTrigger = ActivationTrigger.OnEnable;
 
         [SerializeField, ShowIf("DisplayDelay")]
-        private float m_delayBeforeAudioActionInSecond = 0.0f;
+        [FormerlySerializedAs("m_delayBeforeAudioActionInSecond")]
+        private float m_DelayBeforeAudioActionInSecond = 0.0f;
 
         [Header("Audio")]
         [SerializeField]
-        private AudioAction m_action = AudioAction.PlayResource;
+        [FormerlySerializedAs("m_action")]
+        private AudioAction m_Action = AudioAction.PlayResource;
 
         [SerializeField, ShowIf("DisplayAudioResourceDefinition")]
-        private AudioResourceDefinition m_audioResourceDefinition;
+        [FormerlySerializedAs("m_audioResourceDefinition")]
+        private AudioResourceDefinition m_AudioResourceDefinition;
 
         [SerializeField, ShowIf("DisplayAudioCollection")]
-        private AudioCollection m_audioCollection;
+        [FormerlySerializedAs("m_audioCollection")]
+        private AudioCollection m_AudioCollection;
 
-        private bool m_didAction = false;
+        private bool m_DidAction = false;
 
-        private bool DisplayAudioResourceDefinition => m_action == AudioAction.LoadResource || m_action == AudioAction.PlayResource || m_action == AudioAction.UnloadResource
-            || m_action == AudioAction.FadeInResource || m_action == AudioAction.FadeOutResource;
+        private bool DisplayAudioResourceDefinition => m_Action == AudioAction.LoadResource || m_Action == AudioAction.PlayResource || m_Action == AudioAction.UnloadResource
+            || m_Action == AudioAction.FadeInResource || m_Action == AudioAction.FadeOutResource;
 
-        private bool DisplayAudioCollection => m_action == AudioAction.LoadCollection || m_action == AudioAction.UnloadCollection;
+        private bool DisplayAudioCollection => m_Action == AudioAction.LoadCollection || m_Action == AudioAction.UnloadCollection;
 
         private void OnEnable()
         {
-            if (m_audioActionTrigger == ActivationTrigger.OnEnable)
+            if (m_AudioActionTrigger == ActivationTrigger.OnEnable)
             {
-                if (m_delayBeforeAudioActionInSecond <= 0f)
+                if (m_DelayBeforeAudioActionInSecond <= 0f)
                 {
                     DoAudioAction();
                 }
@@ -70,17 +75,17 @@ namespace NobunAtelier
 
         private IEnumerator UpdateRoutine()
         {
-            yield return new WaitForSeconds(m_delayBeforeAudioActionInSecond);
+            yield return new WaitForSeconds(m_DelayBeforeAudioActionInSecond);
             DoAudioAction();
         }
 
         private void OnDisable()
         {
-            if (m_audioActionTrigger == ActivationTrigger.OnDisable)
+            if (m_AudioActionTrigger == ActivationTrigger.OnDisable)
             {
                 DoAudioAction();
             }
-            else if (m_audioActionTrigger == ActivationTrigger.OnEnable && !m_didAction)
+            else if (m_AudioActionTrigger == ActivationTrigger.OnEnable && !m_DidAction)
             {
                 StopAllCoroutines();
                 Debug.LogWarning($"{this.name}: did not had time to call DoAudioAction before object was disabled, calling now.");
@@ -90,37 +95,37 @@ namespace NobunAtelier
 
         public void DoAudioAction()
         {
-            m_didAction = true;
+            m_DidAction = true;
             Debug.Assert(AudioManager.Instance, $"{this.name}: AudioManager instance is null!");
 
-            switch (m_action)
+            switch (m_Action)
             {
                 case AudioAction.LoadResource:
-                    AudioManager.Instance.LoadAudio(m_audioResourceDefinition);
+                    AudioManager.Instance.LoadAudio(m_AudioResourceDefinition);
                     break;
 
                 case AudioAction.UnloadResource:
-                    AudioManager.Instance.UnloadAudio(m_audioResourceDefinition);
+                    AudioManager.Instance.UnloadAudio(m_AudioResourceDefinition);
                     break;
 
                 case AudioAction.PlayResource:
-                    AudioManager.Instance.PlayAudio(m_audioResourceDefinition);
+                    AudioManager.Instance.PlayAudio(m_AudioResourceDefinition);
                     break;
 
                 case AudioAction.FadeInResource:
-                    AudioManager.Instance.FadeInAndPlayAudio(m_audioResourceDefinition);
+                    AudioManager.Instance.FadeInAndPlayAudio(m_AudioResourceDefinition);
                     break;
 
                 case AudioAction.FadeOutResource:
-                    AudioManager.Instance.FadeOutAndStopAudio(m_audioResourceDefinition);
+                    AudioManager.Instance.FadeOutAndStopAudio(m_AudioResourceDefinition);
                     break;
 
                 case AudioAction.LoadCollection:
-                    AudioManager.Instance.LoadAudioCollection(m_audioCollection);
+                    AudioManager.Instance.LoadAudioCollection(m_AudioCollection);
                     break;
 
                 case AudioAction.UnloadCollection:
-                    AudioManager.Instance.UnloadAudioCollection(m_audioCollection);
+                    AudioManager.Instance.UnloadAudioCollection(m_AudioCollection);
                     break;
 
                 case AudioAction.AudioPause:
