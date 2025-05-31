@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
@@ -7,61 +8,61 @@ namespace NobunAtelier
     public class AnimMontageDefinition : AnimSequenceDefinition
     {
         // public AnimSequenceDefinition AnimSequence => m_animSequence;
-        public ParticleEffect Particle => m_particle;
+        public ParticleEffect Particle => m_Particle;
 
-        public IReadOnlyList<SoundEffect> SoundEffects => m_soundEffects;
+        public IReadOnlyList<SoundEffect> SoundEffects => m_SoundEffects;
 
-        public bool HasFX => !string.IsNullOrEmpty(m_particle.AssetReference.AssetGUID);
+        public bool HasFX => !string.IsNullOrEmpty(m_Particle.AssetReference.AssetGUID);
 
-        public bool HasSFX => m_soundEffects != null && m_soundEffects.Length > 0;
+        public bool HasSFX => m_SoundEffects != null && m_SoundEffects.Length > 0;
 
         [Header("AnimMontage")]
-        [SerializeField]
-        private ParticleEffect m_particle;
+        [SerializeField, FormerlySerializedAs("m_particle")]
+        private ParticleEffect m_Particle;
 
-        [SerializeField]
-        private SoundEffect[] m_soundEffects;
+        [SerializeField, FormerlySerializedAs("m_soundEffects")]
+        private SoundEffect[] m_SoundEffects;
 
         [System.Serializable]
         public class ParticleEffect
         {
-            public LoadableParticleSystem AssetReference => m_particle;
-            public float StartDelay => m_fxStartDelay;
-            public Vector3 ParticleOffset => m_particleOffset;
-            public Vector3 ParticleRotation => m_particleRotation;
-            public Vector3 ParticleScale => m_particleScale;
+            public LoadableParticleSystem AssetReference => m_Particle;
+            public float StartDelay => m_FxStartDelay;
+            public Vector3 ParticleOffset => m_ParticleOffset;
+            public Vector3 ParticleRotation => m_ParticleRotation;
+            public Vector3 ParticleScale => m_ParticleScale;
 
-            [SerializeField]
-            private LoadableParticleSystem m_particle;
+            [SerializeField, FormerlySerializedAs("m_particle")]
+            private LoadableParticleSystem m_Particle;
 
-            [SerializeField]
-            private float m_fxStartDelay;
+            [SerializeField, FormerlySerializedAs("m_fxStartDelay")]
+            private float m_FxStartDelay;
 
-            [SerializeField, Tooltip("Offset relative to the actor spawning the particle.")]
-            private Vector3 m_particleOffset = Vector3.zero;
+            [SerializeField, Tooltip("Offset relative to the actor spawning the particle."), FormerlySerializedAs("m_particleOffset")]
+            private Vector3 m_ParticleOffset = Vector3.zero;
 
-            [SerializeField]
-            private Vector3 m_particleRotation = Vector3.zero;
+            [SerializeField, FormerlySerializedAs("m_particleRotation")]
+            private Vector3 m_ParticleRotation = Vector3.zero;
 
-            [SerializeField]
-            private Vector3 m_particleScale = Vector3.one;
+            [SerializeField, FormerlySerializedAs("m_particleScale")]
+            private Vector3 m_ParticleScale = Vector3.one;
         }
 
         [System.Serializable]
         public class SoundEffect
         {
-            public LoadableAudioSource AssetReference => m_audioSource;
-            public float StartDelay => m_sfxStartDelay;
-            public Vector3 AudioOffset => m_audioOffset;
+            public LoadableAudioSource AssetReference => m_AudioSource;
+            public float StartDelay => m_SfxStartDelay;
+            public Vector3 AudioOffset => m_AudioOffset;
 
-            [SerializeField]
-            private LoadableAudioSource m_audioSource;
+            [SerializeField, FormerlySerializedAs("m_audioSource")]
+            private LoadableAudioSource m_AudioSource;
 
-            [SerializeField]
-            private float m_sfxStartDelay;
+            [SerializeField, FormerlySerializedAs("m_sfxStartDelay")]
+            private float m_SfxStartDelay;
 
-            [SerializeField, Tooltip("Offset relative to the actor spawning the audio.")]
-            private Vector3 m_audioOffset = Vector3.zero;
+            [SerializeField, Tooltip("Offset relative to the actor spawning the audio."), FormerlySerializedAs("m_audioOffset")]
+            private Vector3 m_AudioOffset = Vector3.zero;
         }
     }
 }

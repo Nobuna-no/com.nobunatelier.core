@@ -1,11 +1,12 @@
 using NobunAtelier;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class AttackAnimationDefinition : AttackDefinition
 {
-    public AnimMontageDefinition AnimMontage => m_animation;
+    public AnimMontageDefinition AnimMontage => m_Animation;
 
     [Header("Animation")]
-    [SerializeField]
-    private AnimMontageDefinition m_animation;
+    [SerializeField, FormerlySerializedAs("m_animation")]
+    private AnimMontageDefinition m_Animation;
 }

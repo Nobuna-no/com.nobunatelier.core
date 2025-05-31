@@ -1,5 +1,6 @@
 using NaughtyAttributes;
 using UnityEngine;
+using UnityEngine.Serialization;
 using static NobunAtelier.AnimSequenceDefinition;
 using static Unity.Cinemachine.CinemachineFreeLookModifier;
 
@@ -44,53 +45,53 @@ namespace NobunAtelier
                 ForceDuration
             }
 
-            public float Duration => m_duration;
-            public float NewDuration => m_newDuration;
-            public AnimSegmentDefinition SegmentDefinition => m_definition;
-            public ModifierType Modifier => m_modifier;
-            public float AnimatorSpeed => m_animatorSpeed;
+            public float Duration => m_Duration;
+            public float NewDuration => m_NewDuration;
+            public AnimSegmentDefinition SegmentDefinition => m_Definition;
+            public ModifierType Modifier => m_Modifier;
+            public float AnimatorSpeed => m_AnimatorSpeed;
 
-            [SerializeField, AllowNesting, ReadOnly]
-            private float m_duration;
-            [SerializeField, AllowNesting, ReadOnly]
-            private AnimSegmentDefinition m_definition;
-            [SerializeField]
-            private ModifierType m_modifier;
-            [SerializeField, AllowNesting, ShowIf("ShowForceDuration")]
-            private float m_newDuration;
-            [SerializeField, AllowNesting, ShowIf("ShowForceAnimatorSpeed")]
-            private float m_animatorSpeed;
+            [SerializeField, AllowNesting, ReadOnly, FormerlySerializedAs("m_duration")]
+            private float m_Duration;
+            [SerializeField, AllowNesting, ReadOnly, FormerlySerializedAs("m_definition")]
+            private AnimSegmentDefinition m_Definition;
+            [SerializeField, FormerlySerializedAs("m_modifier")]
+            private ModifierType m_Modifier;
+            [SerializeField, AllowNesting, ShowIf("ShowForceDuration"), FormerlySerializedAs("m_newDuration")]
+            private float m_NewDuration;
+            [SerializeField, AllowNesting, ShowIf("ShowForceAnimatorSpeed"), FormerlySerializedAs("m_animatorSpeed")]
+            private float m_AnimatorSpeed;
 
 #if UNITY_EDITOR
             // NaughtyAttribute's ShowIf arguments.
-            public bool ShowForceDuration => m_modifier == ModifierType.ForceDuration;
-            public bool ShowForceAnimatorSpeed => m_modifier == ModifierType.ForceAnimatorSpeed;
+            public bool ShowForceDuration => m_Modifier == ModifierType.ForceDuration;
+            public bool ShowForceAnimatorSpeed => m_Modifier == ModifierType.ForceAnimatorSpeed;
 #endif
 
             public Segment(float duration, AnimSegmentDefinition segmentDef)
             {
-                m_duration = duration;
-                m_newDuration = duration;
-                m_definition = segmentDef;
-                m_animatorSpeed = 1;
+                m_Duration = duration;
+                m_NewDuration = duration;
+                m_Definition = segmentDef;
+                m_AnimatorSpeed = 1;
             }
 
             public float GetEstimatedDuration()
             {
-                switch (m_modifier)
+                switch (m_Modifier)
                 {
                     case AnimSequenceDefinition.Segment.ModifierType.None:
                     case AnimSequenceDefinition.Segment.ModifierType.ResetAnimatorSpeed:
-                        return m_duration;
+                        return m_Duration;
 
                     case AnimSequenceDefinition.Segment.ModifierType.ForceDuration:
-                        return m_newDuration;
+                        return m_NewDuration;
 
                     case AnimSequenceDefinition.Segment.ModifierType.ForceAnimatorSpeed:
-                        return m_duration * m_animatorSpeed;
+                        return m_Duration * m_AnimatorSpeed;
                 }
 
-                return m_duration;
+                return m_Duration;
             }
         }
 
