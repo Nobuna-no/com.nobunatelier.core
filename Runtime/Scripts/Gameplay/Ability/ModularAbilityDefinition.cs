@@ -35,17 +35,19 @@ public partial class ModularAbilityDefinition : AbilityDefinition
     [FormerlySerializedAs("m_playAbilityOnEarlyChargeRelease")]
     private bool m_PlayAbilityOnEarlyChargeRelease = true;
 
-    [FormerlySerializedAs("m_chargeTimeout")]
-    [SerializeField, AllowNesting, ShowIf("HasTimeoutMode")]
-    private float m_ChargeTimeout = 3f;
-
     [FormerlySerializedAs("m_cancelAbilityChargeOnEarlyChargeRelease")]
-    [SerializeField, AllowNesting, ShowIf("CanBeChargedAndNotPlayingDefaultOnCancel")]
+    [SerializeField, AllowNesting, ShowIf("m_CanBeCharged")]
+    [Tooltip("Should Cancel Charge modules be processed in case charge is released before reaching the first stage?\n" +
+        "Processing happens before Default ability processing in case 'PlayAbilityOnEarlyChargeRelease' is true.")]
     private bool m_CancelAbilityChargeOnEarlyChargeRelease = false;
 
     [FormerlySerializedAs("m_chargeConstraint")]
     [SerializeField, AllowNesting, ShowIf("m_CanBeCharged")]
     private ChargeReleaseConstraint m_ChargeConstraint = ChargeReleaseConstraint.None;
+
+    [FormerlySerializedAs("m_chargeTimeout")]
+    [SerializeField, AllowNesting, ShowIf("HasTimeoutMode")]
+    private float m_ChargeTimeout = 3f;
 
     [SerializeField, AllowNesting, ShowIf("m_CanBeCharged")]
     private ActionModel m_ChargeStart;
@@ -63,8 +65,7 @@ public partial class ModularAbilityDefinition : AbilityDefinition
         || m_ChargeConstraint == ChargeReleaseConstraint.CancelOnTimeout);
     private bool DoesCancelTimeout => m_CanBeCharged
         && m_ChargeConstraint == ChargeReleaseConstraint.CancelOnTimeout;
-    private bool CanBeChargedAndNotPlayingDefaultOnCancel => m_CanBeCharged && m_PlayAbilityOnEarlyChargeRelease == false;
-    private bool CanChargeCancel => CanBeChargedAndNotPlayingDefaultOnCancel && m_CancelAbilityChargeOnEarlyChargeRelease;
+    private bool CanChargeCancel => DoesCancelTimeout || (m_CanBeCharged && m_CancelAbilityChargeOnEarlyChargeRelease);
 #endif
 
     public enum ChargeReleaseConstraint
