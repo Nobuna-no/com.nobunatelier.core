@@ -208,6 +208,8 @@ namespace NobunAtelier
                     // TO DO FOR SIMULACRA - Add something that allows to conserve current velocity...
             }
 
+            m_velocity = Vector3.ClampMagnitude(m_velocity, m_maxSpeed);
+
             if (m_ignoreThirdAxis)
             {
                 var diffVec = Vector3.one - GetMovementSpace();
@@ -226,8 +228,6 @@ namespace NobunAtelier
             }
 
             m_movementVector = Vector3.zero;
-
-            m_velocity = Vector3.ClampMagnitude(m_velocity, m_maxSpeed);
 
             return m_velocity;
         }

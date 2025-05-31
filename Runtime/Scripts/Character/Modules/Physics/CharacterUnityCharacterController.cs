@@ -17,6 +17,14 @@ namespace NobunAtelier
         [SerializeField]
         private bool m_useSimpleMove = false;
 
+        [SerializeField]
+        private float m_groundCheckDistance = 0.1f;
+
+        [SerializeField]
+        private LayerMask m_groundLayers = -1; // All layers by default
+
+        private Vector3 m_currentVelocity = Vector3.zero;
+
         public override VelocityApplicationUpdate VelocityUpdate
         {
             get
@@ -31,7 +39,11 @@ namespace NobunAtelier
             set => m_targetCharacterController.transform.position = value;
         }
 
-        public override Vector3 Velocity { get; set; }
+        public override Vector3 Velocity
+        {
+            get => m_currentVelocity;
+            set => m_currentVelocity = value;
+        }
 
         public override Quaternion Rotation
         {
@@ -44,8 +56,6 @@ namespace NobunAtelier
                 m_targetCharacterController.transform.rotation = value;
             }
         }
-
-        public override bool IsGrounded => m_targetCharacterController.isGrounded;
 
         public override void ModuleInit(Character character)
         {
@@ -65,6 +75,26 @@ namespace NobunAtelier
             }
         }
 
+        private bool DoRaycastGroundCheck()
+        {
+            if (m_targetCharacterController == null)
+                return false;
+                
+            // Get the bottom center of the character controller
+            Vector3 rayStart = transform.position + m_targetCharacterController.center;
+            rayStart.y -= (m_targetCharacterController.height / 2f - m_targetCharacterController.radius);
+            
+            // Cast a short ray downward
+            return Physics.SphereCast(
+                rayStart, 
+                m_targetCharacterController.radius * 0.9f, 
+                Vector3.down, 
+                out RaycastHit hit, 
+                m_groundCheckDistance, 
+                m_groundLayers
+            );
+        }
+
         public override void ApplyVelocity(Vector3 newVelocity, float deltaTime)
         {
             newVelocity.x = Mathf.Clamp(newVelocity.x, -m_maxVelocity.x, m_maxVelocity.x);
@@ -81,7 +111,20 @@ namespace NobunAtelier
                 m_targetCharacterController.Move(newVelocity * deltaTime);
             }
 
-            Velocity = newVelocity;
+            m_currentVelocity = newVelocity;
         }
+        
+        protected override bool CheckGroundedState()
+        {
+            // First check Unity's built-in ground detection
+            bool unityGroundCheck = m_targetCharacterController.isGrounded;
+            
+            // Then do our own raycast check for more reliability
+            bool raycastGroundCheck = DoRaycastGroundCheck();
+            
+            // We're grounded if either method detects ground
+            return unityGroundCheck || raycastGroundCheck;
+        }
+
     }
 }
