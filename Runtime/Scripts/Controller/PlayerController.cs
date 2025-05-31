@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
@@ -7,21 +8,23 @@ namespace NobunAtelier
     public class PlayerController : CharacterControllerBase<PlayerControllerModuleBase>
     {
         public override bool IsAI => false;
-        public PlayerInput PlayerInput => m_playerInput;
+        public PlayerInput PlayerInput => m_PlayerInput;
 
         [Header("Player Controller")]
         [SerializeField]
-        protected PlayerInput m_playerInput;
+        [FormerlySerializedAs("m_playerInput")]
+        protected PlayerInput m_PlayerInput;
 
         [SerializeField, Tooltip("Action map used by this controller to get bindings from.")]
-        private string m_actionMapName = "Player";
+        [FormerlySerializedAs("m_actionMapName")]
+        private string m_ActionMapName = "Player";
 
-        protected InputActionMap ActionMap => m_actionMap;
-        protected string ActionMapName => m_actionMapName;
-        protected InputActionMap ActiveActionMap => m_actionMap;
+        protected InputActionMap ActionMap => m_ActionMap;
+        protected string ActionMapName => m_ActionMapName;
+        protected InputActionMap ActiveActionMap => m_ActionMap;
         public bool IsInputReady { get; private set; } = false;
 
-        private InputActionMap m_actionMap;
+        private InputActionMap m_ActionMap;
 
         protected override void Awake()
         {
@@ -32,7 +35,7 @@ namespace NobunAtelier
 
         public virtual void MountPlayerInput(PlayerInput player, bool enableInput = true)
         {
-            m_playerInput = player;
+            m_PlayerInput = player;
 
             if (enableInput)
             {
@@ -43,20 +46,20 @@ namespace NobunAtelier
         public virtual void UnMountPlayerInput()
         {
             DisableInput();
-            m_playerInput = null;
+            m_PlayerInput = null;
         }
 
         public override void EnableInput()
         {
-            Debug.Assert(m_playerInput != null, $"[{Time.frameCount}] {this}: PlayerInput is required");
+            Debug.Assert(m_PlayerInput != null, $"[{Time.frameCount}] {this}: PlayerInput is required");
 
-            m_playerInput.ActivateInput();
-            m_playerInput.SwitchCurrentActionMap(m_actionMapName);
-            m_actionMap = m_playerInput.actions.FindActionMap(m_actionMapName);
+            m_PlayerInput.ActivateInput();
+            m_PlayerInput.SwitchCurrentActionMap(m_ActionMapName);
+            m_ActionMap = m_PlayerInput.actions.FindActionMap(m_ActionMapName);
 
             IsInputReady = true;
 
-            foreach (var extension in m_modules)
+            foreach (var extension in m_Modules)
             {
                 if (!extension.enabled)
                 {
@@ -69,11 +72,11 @@ namespace NobunAtelier
 
         public override void DisableInput()
         {
-            m_playerInput.DeactivateInput();
-            m_actionMap = null;
+            m_PlayerInput.DeactivateInput();
+            m_ActionMap = null;
             IsInputReady = false;
 
-            foreach (var extension in m_modules)
+            foreach (var extension in m_Modules)
             {
                 if (!extension.enabled)
                 {
@@ -86,7 +89,7 @@ namespace NobunAtelier
 
         private bool IsPlayerInputValid()
         {
-            return m_playerInput != null;
+            return m_PlayerInput != null;
         }
 
         protected override void OnDestroy()
@@ -107,14 +110,14 @@ namespace NobunAtelier
 
         private void CapturePlayerInputAndSetBehaviour()
         {
-            if (m_playerInput == null)
+            if (m_PlayerInput == null)
             {
-                m_playerInput = GetComponentInParent<PlayerInput>();
+                m_PlayerInput = GetComponentInParent<PlayerInput>();
             }
 
-            if (m_playerInput)
+            if (m_PlayerInput)
             {
-                m_playerInput.notificationBehavior = PlayerNotifications.InvokeCSharpEvents;
+                m_PlayerInput.notificationBehavior = PlayerNotifications.InvokeCSharpEvents;
             }
         }
     }

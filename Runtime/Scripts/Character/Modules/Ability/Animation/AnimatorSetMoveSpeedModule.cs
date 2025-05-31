@@ -1,44 +1,44 @@
 using NaughtyAttributes;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
     public class AnimatorSetMoveSpeedModule : AnimationModule
     {
-        [AnimatorParam("m_animator", AnimatorControllerParameterType.Float)]
-        public int m_moveSpeedParam;
+        [AnimatorParam("m_Animator", AnimatorControllerParameterType.Float), FormerlySerializedAs("m_moveSpeedParam")]
+        public int m_MoveSpeedParam;
 
-        [SerializeField] private ParticleSystem m_dustParticle;
+        [SerializeField, FormerlySerializedAs("m_dustParticle")]
+        private ParticleSystem m_DustParticle;
 
         private void LateUpdate()
         {
             float speed = ModuleOwner.GetMoveSpeed();
-            m_animator.SetFloat(m_moveSpeedParam, speed);
+            m_Animator.SetFloat(m_MoveSpeedParam, speed);
 
-            if (m_dustParticle == null)
+            if (m_DustParticle == null)
             {
                 return;
             }
 
             if (speed > 1f)
             {
-                if (m_dustParticle.isPlaying)
+                if (m_DustParticle.isPlaying)
                 {
                     return;
                 }
 
-                m_dustParticle.Play();
+                m_DustParticle.Play();
             }
             else
             {
-                if (!m_dustParticle.isPlaying)
+                if (!m_DustParticle.isPlaying)
                 {
                     return;
                 }
 
-                m_dustParticle.Stop();
+                m_DustParticle.Stop();
             }
         }
     }

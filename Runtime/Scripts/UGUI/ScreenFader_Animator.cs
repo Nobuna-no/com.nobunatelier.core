@@ -1,5 +1,6 @@
 using NaughtyAttributes;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
@@ -8,76 +9,82 @@ namespace NobunAtelier
     public class ScreenFader_Animation : ScreenFader
     {
         [Header("Screen Fader: Animator")]
-        [SerializeField, AnimatorParam("m_animator")] private string m_filledTrigger;
+        [SerializeField, AnimatorParam("m_Animator"), FormerlySerializedAs("m_filledTrigger")]
+        private string m_FilledTrigger;
 
-        [SerializeField, AnimatorParam("m_animator")] private string m_clearTrigger;
+        [SerializeField, AnimatorParam("m_Animator"), FormerlySerializedAs("m_clearTrigger")]
+        private string m_ClearTrigger;
 
-        [SerializeField] private AnimationClip m_fadeInAnimation;
-        [SerializeField, AnimatorParam("m_animator")] private string m_fadeInTrigger;
-        [SerializeField] private AnimationClip m_fadeOutAnimation;
-        [SerializeField, AnimatorParam("m_animator")] private string m_fadeOutTrigger;
+        [SerializeField, FormerlySerializedAs("m_fadeInAnimation")]
+        private AnimationClip m_FadeInAnimation;
+        [SerializeField, AnimatorParam("m_Animator"), FormerlySerializedAs("m_fadeInTrigger")]
+        private string m_FadeInTrigger;
+        [SerializeField, FormerlySerializedAs("m_fadeOutAnimation")]
+        private AnimationClip m_FadeOutAnimation;
+        [SerializeField, AnimatorParam("m_Animator"), FormerlySerializedAs("m_fadeOutTrigger")]
+        private string m_FadeOutTrigger;
 
-        public override bool IsFadeInProgress => m_fadeEstimatedRemainingTime != -1;
+        public override bool IsFadeInProgress => m_FadeEstimatedRemainingTime != -1;
 
-        private Animator m_animator;
-        private float m_fadeEstimatedRemainingTime = -1;
+        private Animator m_Animator;
+        private float m_FadeEstimatedRemainingTime = -1;
 
         protected override void OnSingletonAwake()
         {
-            m_animator = GetComponent<Animator>();
-            AddAnimationEvent("FadeInEnd", m_fadeInAnimation.name);
-            AddAnimationEvent("FadeOutEnd", m_fadeOutAnimation.name);
+            m_Animator = GetComponent<Animator>();
+            AddAnimationEvent("FadeInEnd", m_FadeInAnimation.name);
+            AddAnimationEvent("FadeOutEnd", m_FadeOutAnimation.name);
         }
 
         protected override void FillImpl()
         {
-            m_fadeEstimatedRemainingTime = -1f;
+            m_FadeEstimatedRemainingTime = -1f;
 
-            if (!m_animator)
+            if (!m_Animator)
             {
                 return;
             }
 
-            m_animator.SetTrigger(m_filledTrigger);
+            m_Animator.SetTrigger(m_FilledTrigger);
         }
 
         // Instantly fill the screen
         protected override void ClearImpl()
         {
-            m_fadeEstimatedRemainingTime = -1f;
+            m_FadeEstimatedRemainingTime = -1f;
 
-            if (!m_animator)
+            if (!m_Animator)
             {
                 return;
             }
 
-            m_animator.SetTrigger(m_clearTrigger);
+            m_Animator.SetTrigger(m_ClearTrigger);
         }
 
         protected override void FadeInImpl(float duration)
         {
-            if (!m_animator)
+            if (!m_Animator)
             {
                 return;
             }
 
-            m_animator.speed = m_fadeInAnimation.length / duration;
-            m_animator.SetTrigger(m_fadeInTrigger);
+            m_Animator.speed = m_FadeInAnimation.length / duration;
+            m_Animator.SetTrigger(m_FadeInTrigger);
 
-            m_fadeEstimatedRemainingTime = m_fadeInAnimation.length * duration;
+            m_FadeEstimatedRemainingTime = m_FadeInAnimation.length * duration;
         }
 
         protected override void FadeOutImpl(float duration)
         {
-            if (!m_animator)
+            if (!m_Animator)
             {
                 return;
             }
 
-            m_animator.speed = m_fadeOutAnimation.length / duration;
-            m_animator.SetTrigger(m_fadeOutTrigger);
+            m_Animator.speed = m_FadeOutAnimation.length / duration;
+            m_Animator.SetTrigger(m_FadeOutTrigger);
 
-            m_fadeEstimatedRemainingTime = m_fadeOutAnimation.length * duration;
+            m_FadeEstimatedRemainingTime = m_FadeOutAnimation.length * duration;
         }
 
         protected override void FadeInEnd()
@@ -94,7 +101,7 @@ namespace NobunAtelier
 
         private void ResetFaderDuration()
         {
-            m_animator.speed = 1f;
+            m_Animator.speed = 1f;
         }
 
         private void AddAnimationEvent(string evtFunctionName, string targetAnimationName/*, out AnimationClip targetAnimationClip, out AnimationEvent targetAnimEvent*/)
@@ -102,7 +109,7 @@ namespace NobunAtelier
             AnimationEvent targetAnimEvent = null;
             AnimationClip targetAnimationClip = null;
 
-            var clips = m_animator.runtimeAnimatorController.animationClips;
+            var clips = m_Animator.runtimeAnimatorController.animationClips;
             foreach (var clip in clips)
             {
                 if (clip.name != targetAnimationName)
@@ -120,25 +127,25 @@ namespace NobunAtelier
                 return;
             }
 
-            Debug.LogError($"No fade in animation clip named {m_fadeInAnimation.name} found in the animator.");
+            Debug.LogError($"No fade in animation clip named {m_FadeInAnimation.name} found in the animator.");
         }
 
         private void OnValidate()
         {
-            m_animator = GetComponent<Animator>();
+            m_Animator = GetComponent<Animator>();
         }
 
         private void FixedUpdate()
         {
-            if (m_fadeEstimatedRemainingTime == -1)
+            if (m_FadeEstimatedRemainingTime == -1)
             {
                 return;
             }
 
-            m_fadeEstimatedRemainingTime -= Time.fixedDeltaTime;
-            if (m_fadeEstimatedRemainingTime <= 0f)
+            m_FadeEstimatedRemainingTime -= Time.fixedDeltaTime;
+            if (m_FadeEstimatedRemainingTime <= 0f)
             {
-                m_fadeEstimatedRemainingTime = -1f;
+                m_FadeEstimatedRemainingTime = -1f;
             }
         }
     }

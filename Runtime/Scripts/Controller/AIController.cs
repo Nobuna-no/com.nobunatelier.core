@@ -9,7 +9,7 @@ namespace NobunAtelier
 
         public override void EnableInput()
         {
-            foreach (var extension in m_modules)
+            foreach (var extension in m_Modules)
             {
                 extension.EnableAIModule();
             }
@@ -17,7 +17,7 @@ namespace NobunAtelier
 
         public override void DisableInput()
         {
-            foreach (var extension in m_modules)
+            foreach (var extension in m_Modules)
             {
                 extension.DisableAIModule();
             }

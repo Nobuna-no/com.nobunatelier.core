@@ -1,14 +1,16 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
     public abstract class CharacterModuleBase : MonoBehaviour
     {
         public Character ModuleOwner { get; private set; }
-        public int Priority => m_priority;
+        public int Priority => m_Priority;
 
         [SerializeField]
-        private int m_priority = 0;
+        [FormerlySerializedAs("m_priority")]
+        private int m_Priority = 0;
 
         public virtual void ModuleInit(Character character)
         {
