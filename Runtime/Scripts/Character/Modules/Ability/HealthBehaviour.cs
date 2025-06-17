@@ -38,7 +38,18 @@ namespace NobunAtelier.Gameplay
 
         private static HitDefinition s_killHit = null;
 
-        public TeamDefinition Team => m_teamModule.Team;
+        public TeamDefinition Team 
+        {
+            get 
+            {
+                if (m_teamModule == null)
+                {
+                    m_teamModule = GetComponent<TeamModule>();
+                }
+                
+                return m_teamModule.Team;
+            }
+        } 
 
         [Header("Definition")]
         [SerializeField, Required]
