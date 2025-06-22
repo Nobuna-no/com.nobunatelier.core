@@ -126,6 +126,15 @@ namespace NobunAtelier.Gameplay
             }
         }
 
+        public void SetDefinition(HealthDefinition definition, bool reset = true)
+        {
+            m_definition = definition;
+            if (reset)
+            {
+                Reset();
+            }
+        }
+
         public override void ModuleInit(Character character)
         {
             base.ModuleInit(character);
