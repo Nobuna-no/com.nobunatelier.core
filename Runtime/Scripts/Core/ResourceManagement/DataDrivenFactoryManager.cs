@@ -25,6 +25,8 @@ namespace NobunAtelier
         }
 
         [Header("Data-Driven Pool Factory")]
+        [Tooltip("Force all instantiation to be sync. There is currently a bug in the async instantiation that can cause a race condition.")]
+        [SerializeField] private bool m_ForceInstantiateSync = false;
         [Tooltip("Parent transform. Set to null in release build for optimization.")]
         [SerializeField] private Transform m_reserveParent = null;
         [Tooltip("Default spawn position offset. Useful to avoid spawning things at 0,0,0.")]
@@ -409,12 +411,20 @@ namespace NobunAtelier
                     yield break;
                 }
 
-                var handle = InstantiateBatchTask(id, m_productPerID[id].Count + id.ReserveGrowCount);
-                yield return new WaitUntil(() => handle.GetAwaiter().IsCompleted);
-
-                var result = handle.GetAwaiter().GetResult();
-                m_productPerID[id].AddRange(result);
-                product = result[0];
+                if (m_ForceInstantiateSync)
+                {
+                    var result = InstantiateBatch(id, m_productPerID[id].Count + id.ReserveGrowCount);
+                    m_productPerID[id].AddRange(result);
+                    product = result[0];
+                }
+                else
+                {
+                    var handle = InstantiateBatchTask(id, m_productPerID[id].Count + id.ReserveGrowCount);
+                    yield return new WaitUntil(() => handle.GetAwaiter().IsCompleted);
+                    var result = handle.GetAwaiter().GetResult();
+                    m_productPerID[id].AddRange(result);
+                    product = result[0];
+                }
             }
         }
 
@@ -508,10 +518,16 @@ namespace NobunAtelier
             int reserveCountTarget = def.ReserveSize - m_productPerID[productId].Count;
             if (reserveCountTarget > 0)
             {
-                var handle = InstantiateBatchTask(productId, reserveCountTarget);
-                yield return new WaitUntil(() => handle.GetAwaiter().IsCompleted);
-
-                m_productPerID[productId].AddRange(handle.GetAwaiter().GetResult());
+                if (m_ForceInstantiateSync)
+                {
+                    m_productPerID[productId].AddRange(InstantiateBatch(productId, reserveCountTarget));
+                }
+                else
+                {
+                    var handle = InstantiateBatchTask(productId, reserveCountTarget);
+                    yield return new WaitUntil(() => handle.GetAwaiter().IsCompleted);
+                    m_productPerID[productId].AddRange(handle.GetAwaiter().GetResult());
+                }
             }
         }
 
