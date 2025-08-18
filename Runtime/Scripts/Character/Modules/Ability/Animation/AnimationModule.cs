@@ -1,50 +1,51 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
     public class AnimationModule : CharacterAbilityModuleBase
     {
-        [SerializeField]
-        protected Animator m_animator;
+        [SerializeField, FormerlySerializedAs("m_animator")]
+        protected Animator m_Animator;
 
-        public Animator Animator => m_animator;
+        public Animator Animator => m_Animator;
 
         public override void ModuleInit(Character character)
         {
             base.ModuleInit(character);
 
-            if (m_animator != null)
+            if (m_Animator != null)
             {
                 return;
             }
 
-            m_animator = character.GetComponentInChildren<Animator>();
-            Debug.Assert(m_animator, $"{this.name}: no Animation found in {character.name} children.");
+            m_Animator = character.GetComponentInChildren<Animator>();
+            Debug.Assert(m_Animator, $"{this.name}: no Animation found in {character.name} children.");
         }
 
         public virtual void AttachAnimator(Animator animator, bool destroyCurrent = true)
         {
             if (destroyCurrent && Animator)
             {
-                Destroy(m_animator.gameObject);
+                Destroy(m_Animator.gameObject);
             }
 
-            m_animator = Instantiate(animator.gameObject, this.transform).GetComponent<Animator>();
+            m_Animator = Instantiate(animator.gameObject, this.transform).GetComponent<Animator>();
         }
 
         public virtual void SetAnimationSpeed(float speed)
         {
-            m_animator.speed = speed;
+            m_Animator.speed = speed;
         }
 
         public virtual void ResetAnimationSpeed()
         {
-            m_animator.speed = 1;
+            m_Animator.speed = 1;
         }
 
-        public void AnimatorParameterSetTrigger(string name) => m_animator.SetTrigger(name);
-        public void AnimatorParameterResetTrigger(string name) => m_animator.ResetTrigger(name);
-        public void AnimatorParameterEnableBoolean(string name) => m_animator.SetBool(name, true);
-        public void AnimatorParameterDisableBoolean(string name) => m_animator.SetBool(name, false);
+        public void AnimatorParameterSetTrigger(string name) => m_Animator.SetTrigger(name);
+        public void AnimatorParameterResetTrigger(string name) => m_Animator.ResetTrigger(name);
+        public void AnimatorParameterEnableBoolean(string name) => m_Animator.SetBool(name, true);
+        public void AnimatorParameterDisableBoolean(string name) => m_Animator.SetBool(name, false);
     }
 }

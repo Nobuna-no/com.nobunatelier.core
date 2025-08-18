@@ -1,5 +1,6 @@
 using NaughtyAttributes;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
@@ -21,18 +22,21 @@ namespace NobunAtelier
 
         [Header("Controller")]
         [SerializeField]
-        protected Character m_controlledCharacter;
+        [FormerlySerializedAs("m_controlledCharacter")]
+        protected Character m_ControlledCharacter;
 
-        public Character ControlledCharacter => m_controlledCharacter;
+        public Character ControlledCharacter => m_ControlledCharacter;
 
         // [SerializeField]
         // protected bool m_mountCharacterOnStart = true;
 
         [SerializeField]
-        private EnableInputBehaviour m_enableInputBehaviour = EnableInputBehaviour.OnAwake;
+        [FormerlySerializedAs("m_enableInputBehaviour")]
+        private EnableInputBehaviour m_EnableInputBehaviour = EnableInputBehaviour.OnAwake;
 
         [SerializeField, Tooltip("DisableInput is always called OnDestroy.")]
-        private DisableInputBehaviour m_disableInputBehaviour = DisableInputBehaviour.Manual;
+        [FormerlySerializedAs("m_disableInputBehaviour")]
+        private DisableInputBehaviour m_DisableInputBehaviour = DisableInputBehaviour.Manual;
 
         [Button(enabledMode: EButtonEnableMode.Playmode)]
         public abstract void EnableInput();
@@ -42,12 +46,12 @@ namespace NobunAtelier
 
         public virtual void SetCharacterReference(Character character)
         {
-            m_controlledCharacter = character;
+            m_ControlledCharacter = character;
         }
 
         protected virtual void Awake()
         {
-            if (m_enableInputBehaviour == EnableInputBehaviour.OnAwake)
+            if (m_EnableInputBehaviour == EnableInputBehaviour.OnAwake)
             {
                 EnableInput();
             }
@@ -55,12 +59,12 @@ namespace NobunAtelier
 
         protected virtual void Start()
         {
-            if (m_enableInputBehaviour == EnableInputBehaviour.OnStart)
+            if (m_EnableInputBehaviour == EnableInputBehaviour.OnStart)
             {
                 EnableInput();
             }
 
-            m_controlledCharacter?.SetController(this);
+            m_ControlledCharacter?.SetController(this);
         }
 
         protected virtual void UpdateController(float deltaTime)
@@ -68,7 +72,7 @@ namespace NobunAtelier
 
         protected virtual void OnEnable()
         {
-            if (m_enableInputBehaviour == EnableInputBehaviour.OnEnable)
+            if (m_EnableInputBehaviour == EnableInputBehaviour.OnEnable)
             {
                 EnableInput();
             }
@@ -76,7 +80,7 @@ namespace NobunAtelier
 
         protected virtual void OnDisable()
         {
-            if (m_disableInputBehaviour == DisableInputBehaviour.OnDisable)
+            if (m_DisableInputBehaviour == DisableInputBehaviour.OnDisable)
             {
                 DisableInput();
             }
@@ -88,22 +92,25 @@ namespace NobunAtelier
     {
         [Header("Modules")]
         [SerializeField]
-        protected T[] m_modules;
+        [FormerlySerializedAs("m_modules")]
+        protected T[] m_Modules;
 
-        [SerializeField] private bool m_autoCaptureModule = true;
+        [FormerlySerializedAs("m_autoCaptureModule")]
+        [SerializeField] private bool m_AutoCaptureModule = true;
 
         [SerializeField, Tooltip("Is the controller use in standalone without a character?")]
-        private bool m_isStandalone = false;
+        [FormerlySerializedAs("m_isStandalone")]
+        private bool m_IsStandalone = false;
 
         public abstract bool IsAI { get; }
-        public bool IsStandalone => m_isStandalone;
+        public bool IsStandalone => m_IsStandalone;
 
         public bool TryGetModule<ModuleType>(out ModuleType outModule) where ModuleType : CharacterControllerModuleBase
         {
             outModule = null;
-            for (int i = 0, c = m_modules.Length; i < c; ++i)
+            for (int i = 0, c = m_Modules.Length; i < c; ++i)
             {
-                var module = m_modules[i];
+                var module = m_Modules[i];
                 if (module.GetType() == typeof(ModuleType))
                 {
                     outModule = module as ModuleType;
@@ -116,19 +123,19 @@ namespace NobunAtelier
 
         protected override void Awake()
         {
-            if (!m_controlledCharacter && !m_isStandalone)
+            if (!m_ControlledCharacter && !m_IsStandalone)
             {
                 Debug.LogWarning($"No Character set on {this}, searching for one in the parent hierarchy...");
-                m_controlledCharacter = transform.parent.GetComponentInChildren<Character>();
-                Debug.Assert(m_controlledCharacter, $"No Character found for {this.transform.parent.gameObject.name}/{this}");
+                m_ControlledCharacter = transform.parent.GetComponentInChildren<Character>();
+                Debug.Assert(m_ControlledCharacter, $"No Character found for {this.transform.parent.gameObject.name}/{this}");
             }
 
-            if (m_autoCaptureModule)
+            if (m_AutoCaptureModule)
             {
                 CaptureCharacterControllerModules();
             }
 
-            foreach (var module in m_modules)
+            foreach (var module in m_Modules)
             {
                 module.InitModule(this);
             }
@@ -143,12 +150,12 @@ namespace NobunAtelier
 
         protected override void UpdateController(float deltaTime)
         {
-            if (!m_isStandalone && m_controlledCharacter == null)
+            if (!m_IsStandalone && m_ControlledCharacter == null)
             {
                 return;
             }
 
-            foreach (var module in m_modules)
+            foreach (var module in m_Modules)
             {
                 if (!module.IsAvailable())
                 {
@@ -161,7 +168,7 @@ namespace NobunAtelier
 
         protected override void OnEnable()
         {
-            foreach (var module in m_modules)
+            foreach (var module in m_Modules)
             {
                 module.enabled = true;
             }
@@ -171,7 +178,7 @@ namespace NobunAtelier
 
         protected override void OnDisable()
         {
-            foreach (var module in m_modules)
+            foreach (var module in m_Modules)
             {
                 module.enabled = false;
             }
@@ -181,7 +188,7 @@ namespace NobunAtelier
 
         protected virtual void OnValidate()
         {
-            if (m_autoCaptureModule)
+            if (m_AutoCaptureModule)
             {
                 CaptureCharacterControllerModules();
             }
@@ -190,7 +197,7 @@ namespace NobunAtelier
         [NaughtyAttributes.Button("Refresh modules")]
         protected virtual void CaptureCharacterControllerModules()
         {
-            m_modules = GetComponents<T>();
+            m_Modules = GetComponents<T>();
         }
     }
 }

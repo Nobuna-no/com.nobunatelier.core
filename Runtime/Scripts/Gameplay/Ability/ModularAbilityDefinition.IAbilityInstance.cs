@@ -74,13 +74,13 @@ public partial class ModularAbilityDefinition
                 { (int)CommandCategory.Default,  new Command(this, Data.m_Default) },
             };
 
-            if (Data.m_canBeCharged)
+            if (Data.m_CanBeCharged)
             {
                 m_commandLookupTable.Add((int)CommandCategory.ChargeStart, new Command(this, Data.m_ChargeStart));
                 m_commandLookupTable.Add((int)CommandCategory.ChargeCancel, new Command(this, Data.m_ChargeCancel));
 
                 int i = 0;
-                foreach (var chargeData in Data.m_chargedAbilityLevels)
+                foreach (var chargeData in Data.m_ChargedAbilityLevels)
                 {
                     m_commandLookupTable.Add((int)CommandCategory.ChargeLevelReached + i, new Command(this, chargeData.OnLevelReached));
                     m_commandLookupTable.Add((int)CommandCategory.ChargeExecution + i, new Command(this, chargeData.OnChargeReleased));
@@ -226,7 +226,7 @@ public partial class ModularAbilityDefinition
                 return;
             }
 
-            if (!Data.m_canChainOnSelf)
+            if (!Data.m_CanChainOnSelf)
             {
                 ExecutionState = IAbilityInstance.ExecutionState.Cooldown;
                 return;
@@ -287,13 +287,13 @@ public partial class ModularAbilityDefinition
             // This would be a lot of work, but would allow to achieve MHW like result.
             // Tbf, after a few test it feel solid, just like a fighting game, where if you
             // input too early, nothing happen, but right in time and you can chain smoothly
-            if (Data.m_canBeCharged && ExecutionState == IAbilityInstance.ExecutionState.InProgress)
+            if (Data.m_CanBeCharged && ExecutionState == IAbilityInstance.ExecutionState.InProgress)
             {
                 m_LogSection.Record("Aborted because an ability is in progress...");
                 return;
             }
 
-            if (!Data.m_canBeCharged || (ExecutionState != IAbilityInstance.ExecutionState.Ready
+            if (!Data.m_CanBeCharged || (ExecutionState != IAbilityInstance.ExecutionState.Ready
                     && ExecutionState != IAbilityInstance.ExecutionState.ChainOpportunity))
             {
                 m_LogSection.Record($"Ability can't be charged. Playing normal ability instead.", ContextualLogManager.LogTypeFilter.Warning);
@@ -329,13 +329,13 @@ public partial class ModularAbilityDefinition
                 // In case the ability was not charged enough, we can PlayAbility instead.
                 // we don't need to bother about module effect has none has started yet.
 
-                if (Data.m_cancelAbilityChargeOnEarlyChargeRelease)
+                if (Data.m_CancelAbilityChargeOnEarlyChargeRelease)
                 {
                     m_LogSection.Record("[1] - Canceling Ability Charge On Early Charge Release");
                     CancelCharge();
                 }
 
-                if (Data.m_playAbilityOnEarlyChargeRelease)
+                if (Data.m_PlayAbilityOnEarlyChargeRelease)
                 {
                     // TODO: This is for ability chain
                     // m_hasAlreadyBeenChainFromStartCharge = State == IAbilityInstance.ExecutionState.ChainOpportunity;
@@ -399,13 +399,13 @@ public partial class ModularAbilityDefinition
 
             // Log("<b>UpdateAbilityChargeLevel</b>");
 
-            switch (Data.m_chargeConstraint)
+            switch (Data.m_ChargeConstraint)
             {
                 case ChargeReleaseConstraint.None:
                     break;
 
                 case ChargeReleaseConstraint.ReleaseOnMaxChargeReached:
-                    if (m_currentChargeLevel >= Data.m_chargedAbilityLevels.Length - 1)
+                    if (m_currentChargeLevel >= Data.m_ChargedAbilityLevels.Length - 1)
                     {
                         m_LogSection.Record($"ReleaseOnMaxChargeReached");
                         ReleaseCharge();
@@ -414,7 +414,7 @@ public partial class ModularAbilityDefinition
                     break;
 
                 case ChargeReleaseConstraint.ReleaseOnTimeout:
-                    if (m_lastChargeDuration >= Data.m_chargeTimeout)
+                    if (m_lastChargeDuration >= Data.m_ChargeTimeout)
                     {
                         m_LogSection.Record($"ReleaseOnTimeout");
                         ReleaseCharge();
@@ -423,7 +423,7 @@ public partial class ModularAbilityDefinition
                     break;
 
                 case ChargeReleaseConstraint.CancelOnTimeout:
-                    if (m_lastChargeDuration >= Data.m_chargeTimeout)
+                    if (m_lastChargeDuration >= Data.m_ChargeTimeout)
                     {
                         m_LogSection.Record($"CancelOnTimeout");
                         CancelCharge();
@@ -432,7 +432,7 @@ public partial class ModularAbilityDefinition
                     break;
             }
 
-            int maxLevel = Data.m_chargedAbilityLevels.Length;
+            int maxLevel = Data.m_ChargedAbilityLevels.Length;
 
             // If we already reached the max level, exit now.
             if (m_currentChargeLevel >= maxLevel - 1)
@@ -443,7 +443,7 @@ public partial class ModularAbilityDefinition
             float cumulativeDuration = 0;
             for (int i = 0; i < maxLevel; i++)
             {
-                ChargeLevelData level = Data.m_chargedAbilityLevels[i];
+                ChargeLevelData level = Data.m_ChargedAbilityLevels[i];
                 cumulativeDuration += level.TresholdDuration;
 
                 // Reach level duration treshold.

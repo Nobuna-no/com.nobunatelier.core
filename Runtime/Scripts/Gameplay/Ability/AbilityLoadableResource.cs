@@ -38,7 +38,7 @@ namespace NobunAtelier
             m_map = null;
         }
 
-        internal void RegisterResources()
+        public void RegisterResources()
         {
             if (TargetResources == null || TargetResources.Count == 0)
             {
@@ -56,7 +56,7 @@ namespace NobunAtelier
             }
         }
 
-        internal void UnregisterResources()
+        public void UnregisterResources()
         {
             if (m_map == null || m_map.Count == 0)
             {

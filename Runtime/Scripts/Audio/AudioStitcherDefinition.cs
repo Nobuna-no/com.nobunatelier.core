@@ -1,26 +1,30 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
     public class AudioStitcherDefinition : AudioResourceDefinition
     {
-        public AudioDescription[] StitchedAudios => m_stitchedAudios;
+        public AudioDescription[] StitchedAudios => m_StitchedAudios;
 
         [SerializeField]
-        private AudioDescription[] m_stitchedAudios;
+        [FormerlySerializedAs("m_stitchedAudios")]
+        private AudioDescription[] m_StitchedAudios;
 
         [System.Serializable]
         public class AudioDescription
         {
-            public AudioDefinition AudioDefinition => m_audioDefinition;
+            public AudioDefinition AudioDefinition => m_AudioDefinition;
 
             [SerializeField]
-            private AudioDefinition m_audioDefinition;
+            [FormerlySerializedAs("m_audioDefinition")]
+            private AudioDefinition m_AudioDefinition;
 
-            public double Delay => m_delayInSeconds;
+            public double Delay => m_DelayInSeconds;
 
             [SerializeField]
-            private double m_delayInSeconds = -1;
+            [FormerlySerializedAs("m_delayInSeconds")]
+            private double m_DelayInSeconds = -1;
         }
     }
 }

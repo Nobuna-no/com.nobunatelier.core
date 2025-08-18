@@ -26,7 +26,7 @@ namespace NobunAtelier
         {
             if (m_isGrounded)
             {
-                currentVel.y = 0;
+                currentVel.y = -0.5f;
                 return currentVel;
             }
 

@@ -2,6 +2,7 @@ using NaughtyAttributes;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
@@ -14,7 +15,7 @@ namespace NobunAtelier
         // public virtual bool IsTargetable => true;
         public Transform Transform => Body ? Body.transform : transform;
 
-        public CharacterPhysicsModule Body => m_physicsModule;
+        public CharacterPhysicsModule Body => m_PhysicsModule;
         public Vector3 Position => Body ? Body.Position : transform.position;
         public Quaternion Rotation => Body ? Body.Rotation : transform.rotation;
 
@@ -22,30 +23,37 @@ namespace NobunAtelier
         public event Action OnPostUpdate;
 
         [SerializeField]
-        private CharacterPhysicsModule m_physicsModule;
+        [FormerlySerializedAs("m_physicsModule")]
+        private CharacterPhysicsModule m_PhysicsModule;
 
         [SerializeField, Tooltip("Each frame, the modules are sorted per priority and availability and then executed.")]
-        private List<CharacterVelocityModuleBase> m_velocityModules = new List<CharacterVelocityModuleBase>();
+        [FormerlySerializedAs("m_velocityModules")]
+        private List<CharacterVelocityModuleBase> m_VelocityModules = new List<CharacterVelocityModuleBase>();
 
         [SerializeField, Tooltip("Only one rotation module executed per frame. The best module is evaluated based on availability and priority.")]
-        private List<CharacterRotationModuleBase> m_rotationModules = new List<CharacterRotationModuleBase>();
+        [FormerlySerializedAs("m_rotationModules")]
+        private List<CharacterRotationModuleBase> m_RotationModules = new List<CharacterRotationModuleBase>();
 
         [SerializeField, Tooltip("Each frame, the modules are sorted per priority and availability and then executed.")]
-        private List<CharacterAbilityModuleBase> m_abilityModules = new List<CharacterAbilityModuleBase>();
+        [FormerlySerializedAs("m_abilityModules")]
+        private List<CharacterAbilityModuleBase> m_AbilityModules = new List<CharacterAbilityModuleBase>();
 
         [SerializeField, ReadOnly]
-        private Vector3 currentVel = Vector3.zero;
+        [FormerlySerializedAs("currentVel")]
+        private Vector3 m_CurrentVel = Vector3.zero;
 
         [SerializeField]
-        private bool m_ignoreMissingModule = false;
-        [SerializeField] private bool m_autoCaptureModules = true;
+        [FormerlySerializedAs("m_ignoreMissingModule")]
+        private bool m_IgnoreMissingModule = false;
+        [FormerlySerializedAs("m_autoCaptureModules")]
+        [SerializeField] private bool m_AutoCaptureModules = true;
 
         public bool TryGetAbilityModule<T>(out T outModule) where T : CharacterAbilityModuleBase
         {
             outModule = null;
-            for (int i = 0, c = m_abilityModules.Count; i < c; ++i)
+            for (int i = 0, c = m_AbilityModules.Count; i < c; ++i)
             {
-                var module = m_abilityModules[i];
+                var module = m_AbilityModules[i];
                 if (module.GetType() == typeof(T))
                 {
                     outModule = module as T;
@@ -59,9 +67,9 @@ namespace NobunAtelier
         public bool TryGetVelocityModule<T>(out T outModule) where T : CharacterVelocityModuleBase
         {
             outModule = null;
-            for (int i = 0, c = m_velocityModules.Count; i < c; ++i)
+            for (int i = 0, c = m_VelocityModules.Count; i < c; ++i)
             {
-                var module = m_velocityModules[i];
+                var module = m_VelocityModules[i];
                 if (module.GetType() == typeof(T))
                 {
                     outModule = module as T;
@@ -75,9 +83,9 @@ namespace NobunAtelier
         public bool TryGetRotationModule<T>(out T outModule) where T : CharacterRotationModuleBase
         {
             outModule = null;
-            for (int i = 0, c = m_rotationModules.Count; i < c; ++i)
+            for (int i = 0, c = m_RotationModules.Count; i < c; ++i)
             {
-                var module = m_rotationModules[i];
+                var module = m_RotationModules[i];
                 if (module.GetType() == typeof(T))
                 {
                     outModule = module as T;
@@ -95,26 +103,26 @@ namespace NobunAtelier
 
         public Vector3 GetMoveVector()
         {
-            return currentVel;
+            return m_CurrentVel;
         }
 
         public float GetMoveSpeed()
         {
-            return currentVel.magnitude;
+            return m_CurrentVel.magnitude;
         }
 
-        public bool IsMoving => currentVel.sqrMagnitude > kMinimumMovementTreshold;
+        public bool IsMoving => m_CurrentVel.sqrMagnitude > kMinimumMovementTreshold;
 
         public Vector3 GetNormalizedMoveSpeed()
         {
-            return Vector3.Normalize(m_physicsModule.Velocity);
+            return Vector3.Normalize(m_PhysicsModule.Velocity);
         }
 
         public void Move(Vector3 direction)
         {
-            for (int i = 0, c = m_velocityModules.Count; i < c; ++i)
+            for (int i = 0, c = m_VelocityModules.Count; i < c; ++i)
             {
-                m_velocityModules[i].MoveInput(direction);
+                m_VelocityModules[i].MoveInput(direction);
             }
         }
 
@@ -152,21 +160,21 @@ namespace NobunAtelier
 
             CaptureModules();
 
-            if (m_ignoreMissingModule)
+            if (m_IgnoreMissingModule)
             {
                 return;
             }
-            
-            if (m_physicsModule == null)
+
+            if (m_PhysicsModule == null)
             {
-                m_physicsModule = gameObject.AddComponent<CharacterUnityCharacterController>();
+                m_PhysicsModule = gameObject.AddComponent<CharacterUnityCharacterController>();
                 Debug.LogWarning($"No physics module found on {this}, instancing a default CharacterUnityCharacterController.");
             }
-            if (m_velocityModules == null || m_velocityModules.Count == 0)
+            if (m_VelocityModules == null || m_VelocityModules.Count == 0)
             {
                 Debug.LogWarning($"No velocity module found on {this}.");
             }
-            if (m_rotationModules == null || m_rotationModules.Count == 0)
+            if (m_RotationModules == null || m_RotationModules.Count == 0)
             {
                 Debug.LogWarning($"No rotation module found on {this}.");
             }
@@ -194,7 +202,7 @@ namespace NobunAtelier
 
             AbilityProcessing(deltaTime);
 
-            if (m_physicsModule?.VelocityUpdate != CharacterPhysicsModule.VelocityApplicationUpdate.Update)
+            if (m_PhysicsModule?.VelocityUpdate != CharacterPhysicsModule.VelocityApplicationUpdate.Update)
             {
                 return;
             }
@@ -206,7 +214,7 @@ namespace NobunAtelier
 
         private void FixedUpdate()
         {
-            if (m_physicsModule?.VelocityUpdate != CharacterPhysicsModule.VelocityApplicationUpdate.FixedUpdate)
+            if (m_PhysicsModule?.VelocityUpdate != CharacterPhysicsModule.VelocityApplicationUpdate.FixedUpdate)
             {
                 return;
             }
@@ -216,17 +224,17 @@ namespace NobunAtelier
 
         private void OnCollisionEnter(Collision collision)
         {
-            m_physicsModule?.OnModuleCollisionEnter(collision);
+            m_PhysicsModule?.OnModuleCollisionEnter(collision);
         }
 
         private void OnCollisionStay(Collision collision)
         {
-            m_physicsModule?.OnModuleCollisionStay(collision);
+            m_PhysicsModule?.OnModuleCollisionStay(collision);
         }
 
         private void OnCollisionExit(Collision collision)
         {
-            m_physicsModule?.OnModuleCollisionExit(collision);
+            m_PhysicsModule?.OnModuleCollisionExit(collision);
         }
 
         private void OnValidate()
@@ -237,40 +245,40 @@ namespace NobunAtelier
         [Button("Refresh modules")]
         private void CaptureModules()
         {
-            if (!m_autoCaptureModules)
+            if (!m_AutoCaptureModules)
             {
                 return;
             }
 
-            m_physicsModule = GetComponent<CharacterPhysicsModule>();
+            m_PhysicsModule = GetComponent<CharacterPhysicsModule>();
 
-            m_abilityModules.Clear();
-            m_abilityModules.AddRange(GetComponentsInChildren<CharacterAbilityModuleBase>());
+            m_AbilityModules.Clear();
+            m_AbilityModules.AddRange(GetComponentsInChildren<CharacterAbilityModuleBase>());
 
-            m_velocityModules.Clear();
-            m_velocityModules.AddRange(GetComponents<CharacterVelocityModuleBase>());
+            m_VelocityModules.Clear();
+            m_VelocityModules.AddRange(GetComponents<CharacterVelocityModuleBase>());
 
-            m_rotationModules.Clear();
-            m_rotationModules.AddRange(GetComponents<CharacterRotationModuleBase>());
+            m_RotationModules.Clear();
+            m_RotationModules.AddRange(GetComponents<CharacterRotationModuleBase>());
         }
 
         private void ModulesInit()
         {
-            m_physicsModule?.ModuleInit(this);
+            m_PhysicsModule?.ModuleInit(this);
 
-            for (int i = 0, c = m_abilityModules.Count; i < c; ++i)
+            for (int i = 0, c = m_AbilityModules.Count; i < c; ++i)
             {
-                m_abilityModules[i].ModuleInit(this);
+                m_AbilityModules[i].ModuleInit(this);
             }
 
-            for (int i = 0, c = m_velocityModules.Count; i < c; ++i)
+            for (int i = 0, c = m_VelocityModules.Count; i < c; ++i)
             {
-                m_velocityModules[i].ModuleInit(this);
+                m_VelocityModules[i].ModuleInit(this);
             }
 
-            for (int i = 0, c = m_rotationModules.Count; i < c; ++i)
+            for (int i = 0, c = m_RotationModules.Count; i < c; ++i)
             {
-                m_rotationModules[i].ModuleInit(this);
+                m_RotationModules[i].ModuleInit(this);
             }
         }
 
@@ -279,7 +287,7 @@ namespace NobunAtelier
         // However, if all modules with the same highest priority will be computed.
         private CharacterRotationModuleBase[] GetBestRotationModules()
         {
-            if (m_rotationModules == null || m_rotationModules.Count == 0)
+            if (m_RotationModules == null || m_RotationModules.Count == 0)
             {
                 return null;
             }
@@ -288,22 +296,22 @@ namespace NobunAtelier
             int bestPriority = -1;
             List<CharacterRotationModuleBase> bestModules = new List<CharacterRotationModuleBase>();
             // Sort ascending order (lower first).
-            m_rotationModules.Sort((x, y) => x.Priority.CompareTo(y.Priority));
+            m_RotationModules.Sort((x, y) => x.Priority.CompareTo(y.Priority));
 
-            for (int i = 0, c = m_rotationModules.Count; i < c; i++)
+            for (int i = 0, c = m_RotationModules.Count; i < c; i++)
             {
-                if (!m_rotationModules[i].CanBeExecuted())
+                if (!m_RotationModules[i].CanBeExecuted())
                 {
                     continue;
                 }
 
-                if (bestModules.Count > 0 && m_rotationModules[i].Priority > bestPriority)
+                if (bestModules.Count > 0 && m_RotationModules[i].Priority > bestPriority)
                 {
                     break;
                 }
 
-                bestModules.Add(m_rotationModules[i]);
-                bestPriority = m_rotationModules[i].Priority;
+                bestModules.Add(m_RotationModules[i]);
+                bestPriority = m_RotationModules[i].Priority;
             }
 
             return bestModules.ToArray();
@@ -311,36 +319,36 @@ namespace NobunAtelier
 
         private void MovementProcessing(float deltaTime)
         {
-            if (!m_physicsModule)
+            if (!m_PhysicsModule)
             {
                 return;
             }
 
-            m_velocityModules.Sort((x, y) => x.Priority.CompareTo(y.Priority));
+            m_VelocityModules.Sort((x, y) => x.Priority.CompareTo(y.Priority));
 
-            currentVel = m_physicsModule.Velocity;
-            bool isGrounded = m_physicsModule.IsGrounded;
+            m_CurrentVel = m_PhysicsModule.Velocity;
+            bool isGrounded = m_PhysicsModule.IsGrounded;
 
-            for (int i = 0, c = m_velocityModules.Count; i < c; ++i)
+            for (int i = 0, c = m_VelocityModules.Count; i < c; ++i)
             {
-                var vModule = m_velocityModules[i];
+                var vModule = m_VelocityModules[i];
                 vModule.StateUpdate(isGrounded);
                 if (vModule.CanBeExecuted())
                 {
-                    currentVel = vModule.VelocityUpdate(currentVel, deltaTime);
+                    m_CurrentVel = vModule.VelocityUpdate(m_CurrentVel, deltaTime);
                 }
             }
 
-            m_physicsModule.ApplyVelocity(currentVel, deltaTime);
+            m_PhysicsModule.ApplyVelocity(m_CurrentVel, deltaTime);
         }
 
         private void AbilityProcessing(float deltaTime)
         {
-            m_abilityModules.Sort((x, y) => x.Priority.CompareTo(y.Priority));
+            m_AbilityModules.Sort((x, y) => x.Priority.CompareTo(y.Priority));
 
-            for (int i = 0, c = m_abilityModules.Count; i < c; ++i)
+            for (int i = 0, c = m_AbilityModules.Count; i < c; ++i)
             {
-                var vModule = m_abilityModules[i];
+                var vModule = m_AbilityModules[i];
                 if (vModule.CanBeExecuted())
                 {
                     vModule.AbilityUpdate(deltaTime);

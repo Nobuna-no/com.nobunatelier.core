@@ -1,42 +1,49 @@
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Audio;
+using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
     public class AudioResourceDefinition : DataDefinition
     {
-        public bool CanStartDelayed => m_canStartDelayedToPreventCPUOverhead;
+        public bool CanStartDelayed => m_CanStartDelayedToPreventCPUOverhead;
 
         [SerializeField]
-        private bool m_canStartDelayedToPreventCPUOverhead = true;
+        [FormerlySerializedAs("m_canStartDelayedToPreventCPUOverhead")]
+        private bool m_CanStartDelayedToPreventCPUOverhead = true;
     }
 
     public class AudioDefinition : AudioResourceDefinition
     {
-        public AssetReference AudioAssetReference => m_audioAssetReference;
+        public AssetReference AudioAssetReference => m_AudioAssetReference;
 
         [SerializeField]
-        private AssetReference m_audioAssetReference;
+        [FormerlySerializedAs("m_audioAssetReference")]
+        private AssetReference m_AudioAssetReference;
 
-        public AudioMixerGroup MixerGroup => m_mixerGroup;
+        public AudioMixerGroup MixerGroup => m_MixerGroup;
 
         [SerializeField]
-        private AudioMixerGroup m_mixerGroup;
+        [FormerlySerializedAs("m_mixerGroup")]
+        private AudioMixerGroup m_MixerGroup;
 
-        public float Volume => m_volume;
+        public float Volume => m_Volume;
 
         [SerializeField, Range(0f, 1f)]
-        private float m_volume = 1.0f;
+        [FormerlySerializedAs("m_volume")]
+        private float m_Volume = 1.0f;
 
-        public bool Loop => m_loop;
+        public bool Loop => m_Loop;
 
         [SerializeField]
-        private bool m_loop = false;
+        [FormerlySerializedAs("m_loop")]
+        private bool m_Loop = false;
 
-        public bool ReleaseResourceOnStop => m_releaseResourceOnStop;
+        public bool ReleaseResourceOnStop => m_ReleaseResourceOnStop;
 
         [SerializeField, Tooltip("Should resource be unloaded from memory when stopped?")]
-        private bool m_releaseResourceOnStop = true;
+        [FormerlySerializedAs("m_releaseResourceOnStop")]
+        private bool m_ReleaseResourceOnStop = true;
     }
 }

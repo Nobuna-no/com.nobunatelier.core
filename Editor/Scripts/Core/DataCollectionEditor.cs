@@ -23,6 +23,30 @@ namespace NobunAtelier.Editor
         private bool m_ShowBasicData;
         private Foldout m_InspectorFoldout;
 
+        private void OnEnable()
+        {
+            // Register for hierarchy window change to catch when the user comes back to this view
+            EditorApplication.hierarchyChanged += OnHierarchyChanged;
+        }
+
+        private void OnDisable()
+        {
+            // Unregister when the editor is disabled
+            EditorApplication.hierarchyChanged -= OnHierarchyChanged;
+        }
+
+        private void OnHierarchyChanged()
+        {
+            // Only refresh if our list view exists
+            if (m_DefinitionListView != null)
+            {
+                // Reset the ListView's data source
+                m_DefinitionListView.itemsSource = null;
+                m_DefinitionListView.itemsSource = m_Collection?.EditorDataDefinitions;
+                m_DefinitionListView.Rebuild();
+            }
+        }
+
         public override VisualElement CreateInspectorGUI()
         {
             m_Collection = target as DataCollection;
@@ -193,6 +217,21 @@ namespace NobunAtelier.Editor
             {
                 m_Collection.CreateDefinition();
             }
+
+            // Force Unity to update serialization
+            serializedObject.Update();
+            
+            // Ensure we refresh the view properly
+            EditorUtility.SetDirty(m_Collection);
+            AssetDatabase.SaveAssetIfDirty(m_Collection);
+            
+            // Reset the data source completely to ensure we're working with the updated instances
+            // Then completely rebuild the list
+            EditorApplication.delayCall += () => {
+                // Reset the ListView's data source
+                m_DefinitionListView.itemsSource = null;
+                m_DefinitionListView.itemsSource = m_Collection.EditorDataDefinitions;
+            };
         }
 
         private void OnItemsRemoved(IEnumerable<int> indexes)
@@ -202,6 +241,21 @@ namespace NobunAtelier.Editor
                 var definition = m_Collection.EditorDataDefinitions[index];
                 m_Collection.DeleteDefinition(index, definition.name);
             }
+            
+            // Force Unity to update serialization
+            serializedObject.Update();
+            
+            // Ensure we refresh the view properly
+            EditorUtility.SetDirty(m_Collection);
+            AssetDatabase.SaveAssetIfDirty(m_Collection);
+            
+            // Reset the data source completely to ensure we're working with the updated instances
+            // Then completely rebuild the list
+            EditorApplication.delayCall += () => {
+                // Reset the ListView's data source
+                m_DefinitionListView.itemsSource = null;
+                m_DefinitionListView.itemsSource = m_Collection.EditorDataDefinitions;
+            };
         }
 
         private void OnItemMoved(int oldIndex, int newIndex)

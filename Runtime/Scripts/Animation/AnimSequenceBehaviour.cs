@@ -1,6 +1,7 @@
 using NaughtyAttributes;
 using NobunAtelier;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class AnimSequenceBehaviour : StateMachineBehaviour
 {
@@ -8,19 +9,23 @@ public class AnimSequenceBehaviour : StateMachineBehaviour
         "Interuption Source set to `NextState` - Otherwise you might encounter issue " +
         "when trying to chain ability animation or chaining start chain using trigger animator param.",
         EInfoBoxType.Warning)]
-    [SerializeField] private AnimSegmentDefinition m_animSegmentEnterDefinition;
-    [SerializeField] private AnimSegmentDefinition m_animSegmentExitDefinition;
+    [SerializeField, FormerlySerializedAs("m_animSegmentEnterDefinition")]
+    private AnimSegmentDefinition m_AnimSegmentEnterDefinition;
+
+    [SerializeField, FormerlySerializedAs("m_animSegmentExitDefinition")]
+    private AnimSegmentDefinition m_AnimSegmentExitDefinition;
+
     private AnimSequenceController animSequenceController;
 
     // OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
     public override void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        if (!m_animSegmentEnterDefinition || !RefreshAnimSequenceController(animator, stateInfo))
+        if (!m_AnimSegmentEnterDefinition || !RefreshAnimSequenceController(animator, stateInfo))
         {
             return;
         }
 
-        animSequenceController.OnAnimationSegmentTrigger(m_animSegmentEnterDefinition);
+        animSequenceController.OnAnimationSegmentTrigger(m_AnimSegmentEnterDefinition);
     }
 
     // OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
@@ -32,12 +37,12 @@ public class AnimSequenceBehaviour : StateMachineBehaviour
     // OnStateExit is called when a transition ends and the state machine finishes evaluating this state
     public override void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        if (!m_animSegmentExitDefinition || !RefreshAnimSequenceController(animator, stateInfo))
+        if (!m_AnimSegmentExitDefinition || !RefreshAnimSequenceController(animator, stateInfo))
         {
             return;
         }
 
-        animSequenceController.OnAnimationSegmentTrigger(m_animSegmentExitDefinition);
+        animSequenceController.OnAnimationSegmentTrigger(m_AnimSegmentExitDefinition);
     }
 
     // OnStateMove is called right after Animator.OnAnimatorMove()

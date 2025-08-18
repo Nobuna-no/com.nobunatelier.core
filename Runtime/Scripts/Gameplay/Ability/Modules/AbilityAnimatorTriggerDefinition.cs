@@ -1,16 +1,18 @@
 using NaughtyAttributes;
 using NobunAtelier;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 // This one is a bit tricky and require custom AnimationDrivenBattleAbilityController.
 public class AbilityAnimatorTriggerDefinition : AbilityModuleDefinition
 {
 #if UNITY_EDITOR
-    [SerializeField] private Animator m_animatorPrefab;
+    [SerializeField, FormerlySerializedAs("m_animatorPrefab")]
+    private Animator m_AnimatorPrefab;
 #endif
     // For now let's start small... Could be extended to support bool later...
-    [SerializeField, AnimatorParam("m_animatorPrefab", AnimatorControllerParameterType.Trigger)]
-    private string m_triggerName;
+    [SerializeField, AnimatorParam("m_AnimatorPrefab", AnimatorControllerParameterType.Trigger), FormerlySerializedAs("m_triggerName")]
+    private string m_TriggerName;
 
     public override IAbilityModuleInstance CreateInstance(AbilityController controller)
     {
@@ -47,7 +49,7 @@ public class AbilityAnimatorTriggerDefinition : AbilityModuleDefinition
                 return;
             }
 
-            m_animator.SetTrigger(Data.m_triggerName);
+            m_animator.SetTrigger(Data.m_TriggerName);
         }
 
         public override void Stop()
@@ -57,7 +59,7 @@ public class AbilityAnimatorTriggerDefinition : AbilityModuleDefinition
                 return;
             }
 
-            m_animator.ResetTrigger(Data.m_triggerName);
+            m_animator.ResetTrigger(Data.m_TriggerName);
         }
     }
 }

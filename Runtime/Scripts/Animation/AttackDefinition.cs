@@ -1,6 +1,7 @@
 using NobunAtelier;
 using NobunAtelier.Gameplay;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class AttackDefinition : DataDefinition
 {
@@ -10,52 +11,52 @@ public class AttackDefinition : DataDefinition
         RelativeToTarget
     }
 
-    public HitDefinition Hit => m_hitDefinition;
-    public TeamDefinition.Target HitTarget => m_hitTarget;
+    public HitDefinition Hit => m_HitDefinition;
+    public TeamDefinition.Target HitTarget => m_HitTarget;
 
-    public AttackPositioning HitPositioning => m_hitPositioning;
+    public AttackPositioning HitPositioning => m_HitPositioning;
 
-    public LoadableHitbox HitboxReference => m_hitboxReference;
-    public Vector3 HitboxOffset => m_hitboxOffset;
-    public Vector3 HitboxRotation => m_hitboxRotation;
-    public Vector3 HitboxScale => m_hitboxScale;
+    public LoadableHitbox HitboxReference => m_HitboxReference;
+    public Vector3 HitboxOffset => m_HitboxOffset;
+    public Vector3 HitboxRotation => m_HitboxRotation;
+    public Vector3 HitboxScale => m_HitboxScale;
 
-    public LoadableParticleSystem ImpactParticleReference => m_impactParticleReference;
-    public Vector3 ParticleOffset => m_particleOffset;
-    public Vector3 ParticleRotation => m_particleRotation;
-    public Vector3 ParticleScale => m_particleScale;
+    public LoadableParticleSystem ImpactParticleReference => m_ImpactParticleReference;
+    public Vector3 ParticleOffset => m_ParticleOffset;
+    public Vector3 ParticleRotation => m_ParticleRotation;
+    public Vector3 ParticleScale => m_ParticleScale;
 
     [Header("Attack")]
-    [SerializeField]
-    private HitDefinition m_hitDefinition;
+    [SerializeField, FormerlySerializedAs("m_hitDefinition")]
+    private HitDefinition m_HitDefinition;
 
-    [SerializeField]
-    private TeamDefinition.Target m_hitTarget = TeamDefinition.Target.Enemies;
+    [SerializeField, FormerlySerializedAs("m_hitTarget")]
+    private TeamDefinition.Target m_HitTarget = TeamDefinition.Target.Enemies;
 
-    [SerializeField]
-    private LoadableHitbox m_hitboxReference;
+    [SerializeField, FormerlySerializedAs("m_hitboxReference")]
+    private LoadableHitbox m_HitboxReference;
 
-    [SerializeField]
-    private AttackPositioning m_hitPositioning = AttackPositioning.RelativeToSelf;
+    [SerializeField, FormerlySerializedAs("m_hitPositioning")]
+    private AttackPositioning m_HitPositioning = AttackPositioning.RelativeToSelf;
 
-    [SerializeField]
-    private Vector3 m_hitboxOffset = Vector3.zero;
+    [SerializeField, FormerlySerializedAs("m_hitboxOffset")]
+    private Vector3 m_HitboxOffset = Vector3.zero;
 
-    [SerializeField]
-    private Vector3 m_hitboxRotation = Vector3.zero;
+    [SerializeField, FormerlySerializedAs("m_hitboxRotation")]
+    private Vector3 m_HitboxRotation = Vector3.zero;
 
-    [SerializeField]
-    private Vector3 m_hitboxScale = Vector3.one;
+    [SerializeField, FormerlySerializedAs("m_hitboxScale")]
+    private Vector3 m_HitboxScale = Vector3.one;
 
-    [SerializeField]
-    private LoadableParticleSystem m_impactParticleReference;
+    [SerializeField, FormerlySerializedAs("m_impactParticleReference")]
+    private LoadableParticleSystem m_ImpactParticleReference;
 
-    [SerializeField]
-    private Vector3 m_particleOffset = Vector3.zero;
+    [SerializeField, FormerlySerializedAs("m_particleOffset")]
+    private Vector3 m_ParticleOffset = Vector3.zero;
 
-    [SerializeField]
-    private Vector3 m_particleRotation = Vector3.zero;
+    [SerializeField, FormerlySerializedAs("m_particleRotation")]
+    private Vector3 m_ParticleRotation = Vector3.zero;
 
-    [SerializeField]
-    private Vector3 m_particleScale = Vector3.one;
+    [SerializeField, FormerlySerializedAs("m_particleScale")]
+    private Vector3 m_ParticleScale = Vector3.one;
 }

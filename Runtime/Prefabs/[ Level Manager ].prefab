@@ -45,9 +45,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d251c81914b838c459880adc107d8bda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_destroyGameObjectIfAlreadyExist: 1
   m_dontDestroyOnLoad: 0
-  m_persistentScene: Persistent
+  m_onlyDestroyDuplicatedComponent: 1
+  m_persistentScene: SampleScene
+  m_logDebug: 0
   OnSceneLoaded:
     m_PersistentCalls:
       m_Calls: []

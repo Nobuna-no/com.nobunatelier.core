@@ -38,7 +38,18 @@ namespace NobunAtelier.Gameplay
 
         private static HitDefinition s_killHit = null;
 
-        public TeamDefinition Team => m_teamModule.Team;
+        public TeamDefinition Team 
+        {
+            get 
+            {
+                if (m_teamModule == null)
+                {
+                    m_teamModule = GetComponent<TeamModule>();
+                }
+                
+                return m_teamModule.Team;
+            }
+        } 
 
         [Header("Definition")]
         [SerializeField, Required]
@@ -110,6 +121,15 @@ namespace NobunAtelier.Gameplay
         private void Start()
         {
             if (m_resetOnStart)
+            {
+                Reset();
+            }
+        }
+
+        public void SetDefinition(HealthDefinition definition, bool reset = true)
+        {
+            m_definition = definition;
+            if (reset)
             {
                 Reset();
             }

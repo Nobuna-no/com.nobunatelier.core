@@ -1,49 +1,65 @@
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
     [AddComponentMenu("NobunAtelier/Character/Velocity/VelocityModule: Basic Jump")]
     public class CharacterBasicJumpVelocity : CharacterVelocityModuleBase
     {
-        [SerializeField]
-        private float m_jumpHeight = 20;
+        [SerializeField, FormerlySerializedAs("m_jumpHeight")]
+        private float m_JumpHeight = 20;
+
+        [SerializeField, FormerlySerializedAs("m_maxJumpCount")]
+        private int m_MaxJumpCount = 1;
+
+        [SerializeField, FormerlySerializedAs("m_currentJumpCount")]
+        private int m_CurrentJumpCount = 0;
 
         [SerializeField]
-        private int m_maxJumpCount = 1;
+        private UnityEvent m_OnJump;
 
-        private int m_currentJumpCount = 0;
-        private bool m_canJump = true;
-        private bool m_wantToJump = false;
+        [SerializeField, Tooltip("The time in seconds that a jump input will be buffered, allowing players to press jump slightly before landing")]
+        private float m_InputBufferTime = 0.2f;
+
+        private bool m_CanJump = true;
+        private CharacterInputBuffer m_JumpBuffer;
+
+        public override void ModuleInit(Character character)
+        {
+            base.ModuleInit(character);
+            m_JumpBuffer = new CharacterInputBuffer(m_InputBufferTime);
+        }
 
         public void DoJump()
         {
-            if (m_canJump)
+            if (m_CanJump)
             {
-                m_wantToJump = true;
+                m_JumpBuffer.RequestAction();
             }
         }
 
         private float Jump()
         {
-            // ModuleOwner.Body.IsGrounded = false;
-            ++m_currentJumpCount;
-            m_wantToJump = false;
-            return Mathf.Sqrt(2f * -Physics.gravity.y * m_jumpHeight);
+            ++m_CurrentJumpCount;
+            m_JumpBuffer.ConsumeRequest();
+            m_OnJump?.Invoke();
+            return Mathf.Sqrt(2f * -Physics.gravity.y * m_JumpHeight);
         }
 
         public override void StateUpdate(bool grounded)
         {
             if (grounded)
             {
-                m_currentJumpCount = 0;
+                m_CurrentJumpCount = 0;
             }
 
-            m_canJump = m_currentJumpCount < m_maxJumpCount;
+            m_CanJump = m_CurrentJumpCount < m_MaxJumpCount;
         }
 
         public override bool CanBeExecuted()
         {
-            return base.CanBeExecuted() && m_wantToJump && m_canJump;
+            return base.CanBeExecuted() && m_JumpBuffer.HasActiveRequest() && m_CanJump;
         }
 
         public override Vector3 VelocityUpdate(Vector3 currentVel, float deltaTime)

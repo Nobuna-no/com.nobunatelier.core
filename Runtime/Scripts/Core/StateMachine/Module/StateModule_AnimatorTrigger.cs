@@ -1,21 +1,22 @@
 using NaughtyAttributes;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
     [AddComponentMenu("NobunAtelier/States/Modules/StateModule: Trigger Animator Param")]
     public class StateModule_AnimatorTrigger : StateComponentModule
     {
-        [SerializeField]
-        private Animator m_animator;
+        [SerializeField, FormerlySerializedAs("m_animator")]
+        private Animator m_Animator;
 
-        [SerializeField, AnimatorParam("m_animator")]
-        private string m_animParamName;
+        [SerializeField, AnimatorParam("m_Animator"), FormerlySerializedAs("m_animParamName")]
+        private string m_AnimParamName;
 
         public override void Enter()
         {
-            Debug.Assert(m_animator, $"No animator assigned!", this);
-            m_animator.SetTrigger(m_animParamName);
+            Debug.Assert(m_Animator, $"No animator assigned!", this);
+            m_Animator.SetTrigger(m_AnimParamName);
 
             base.Enter();
         }

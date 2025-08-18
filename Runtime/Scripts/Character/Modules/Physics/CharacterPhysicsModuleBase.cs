@@ -15,7 +15,9 @@ namespace NobunAtelier
         public abstract Vector3 Position { get; set; }
         public abstract Vector3 Velocity { get; set; }
         public abstract Quaternion Rotation { get; set; }
-        public abstract bool IsGrounded { get; }
+        public bool IsGrounded => CanBeGrounded && CheckGroundedState();
+        
+        public bool CanBeGrounded { get; set; } = true;
 
         public Character ModuleOwner { get; private set; }
 
@@ -34,5 +36,7 @@ namespace NobunAtelier
 
         public virtual void OnModuleCollisionStay(Collision collision)
         { }
+
+        protected abstract bool CheckGroundedState();
     }
 }
