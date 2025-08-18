@@ -6,9 +6,9 @@ using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
-    public class AudioBehaviour : MonoBehaviour
+    public class AudioAction : MonoBehaviour
     {
-        private enum AudioAction
+        private enum AudioActionType
         {
             LoadResource,
             LoadCollection,
@@ -41,7 +41,7 @@ namespace NobunAtelier
         [Header("Audio")]
         [SerializeField]
         [FormerlySerializedAs("m_action")]
-        private AudioAction m_Action = AudioAction.PlayResource;
+        private AudioActionType m_Action = AudioActionType.PlayResource;
 
         [SerializeField, ShowIf("DisplayAudioResourceDefinition")]
         [FormerlySerializedAs("m_audioResourceDefinition")]
@@ -53,10 +53,12 @@ namespace NobunAtelier
 
         private bool m_DidAction = false;
 
-        private bool DisplayAudioResourceDefinition => m_Action == AudioAction.LoadResource || m_Action == AudioAction.PlayResource || m_Action == AudioAction.UnloadResource
-            || m_Action == AudioAction.FadeInResource || m_Action == AudioAction.FadeOutResource;
+        private bool DisplayAudioResourceDefinition => m_Action == AudioActionType.LoadResource || m_Action == AudioActionType.PlayResource || m_Action == AudioActionType.UnloadResource
+            || m_Action == AudioActionType.FadeInResource || m_Action == AudioActionType.FadeOutResource;
 
-        private bool DisplayAudioCollection => m_Action == AudioAction.LoadCollection || m_Action == AudioAction.UnloadCollection;
+        private bool DisplayAudioCollection => m_Action == AudioActionType.LoadCollection || m_Action == AudioActionType.UnloadCollection;
+
+        private bool DisplayDelay => m_AudioActionTrigger == ActivationTrigger.OnEnable;
 
         private void OnEnable()
         {
@@ -100,47 +102,47 @@ namespace NobunAtelier
 
             switch (m_Action)
             {
-                case AudioAction.LoadResource:
+                case AudioActionType.LoadResource:
                     AudioManager.Instance.LoadAudio(m_AudioResourceDefinition);
                     break;
 
-                case AudioAction.UnloadResource:
+                case AudioActionType.UnloadResource:
                     AudioManager.Instance.UnloadAudio(m_AudioResourceDefinition);
                     break;
 
-                case AudioAction.PlayResource:
+                case AudioActionType.PlayResource:
                     AudioManager.Instance.PlayAudio(m_AudioResourceDefinition);
                     break;
 
-                case AudioAction.FadeInResource:
+                case AudioActionType.FadeInResource:
                     AudioManager.Instance.FadeInAndPlayAudio(m_AudioResourceDefinition);
                     break;
 
-                case AudioAction.FadeOutResource:
+                case AudioActionType.FadeOutResource:
                     AudioManager.Instance.FadeOutAndStopAudio(m_AudioResourceDefinition);
                     break;
 
-                case AudioAction.LoadCollection:
+                case AudioActionType.LoadCollection:
                     AudioManager.Instance.LoadAudioCollection(m_AudioCollection);
                     break;
 
-                case AudioAction.UnloadCollection:
+                case AudioActionType.UnloadCollection:
                     AudioManager.Instance.UnloadAudioCollection(m_AudioCollection);
                     break;
 
-                case AudioAction.AudioPause:
+                case AudioActionType.AudioPause:
                     AudioManager.Instance.PauseAudioVolume();
                     break;
 
-                case AudioAction.AudioResume:
+                case AudioActionType.AudioResume:
                     AudioManager.Instance.ResumeAudioSnapshot();
                     break;
 
-                case AudioAction.AudioFadeIn:
+                case AudioActionType.AudioFadeIn:
                     AudioManager.Instance.FadeInAudioSnapshot();
                     break;
 
-                case AudioAction.AudioFadeOut:
+                case AudioActionType.AudioFadeOut:
                     AudioManager.Instance.FadeOutAudioSnapshot();
                     break;
             }
