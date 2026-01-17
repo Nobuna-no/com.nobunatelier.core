@@ -2,13 +2,15 @@ using NaughtyAttributes;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
     public abstract partial class AbilityController : CharacterAbilityModuleBase
     {
         [Header("Ability Controller")]
-        [SerializeField] private AbilityDefinition m_defaultAbility;
+        [FormerlySerializedAs("m_defaultAbility")]
+        [SerializeField] private AbilityDefinition m_DefaultAbility;
         [SerializeField] private UnityEvent OnAbilityStartCharge;
         [SerializeField] private UnityEvent OnAbilityStartExecution;
         [SerializeField] private UnityEvent OnAbilityChainOpportunity;
@@ -17,33 +19,33 @@ namespace NobunAtelier
         [Header("Log")]
         [SerializeField] private ContextualLogManager.LogSettings m_LogSettings;
 
-        public TeamModule Team => m_teamModule;
+        public TeamModule Team => m_TeamModule;
         public ContextualLogManager.LogPartition Log { get; private set; }
 
-        private Queue<System.Action> m_actionsQueue = new Queue<System.Action>();
+        private Queue<System.Action> m_ActionsQueue = new Queue<System.Action>();
 
-        private Processor m_abilityProcessor;
-        private Processor m_abilityProcessorOverride;
-        private TeamModule m_teamModule;
-        private bool m_canExecuteNewAction = true;
+        private Processor m_AbilityProcessor;
+        private Processor m_AbilityProcessorOverride;
+        private TeamModule m_TeamModule;
+        private bool m_CanExecuteNewAction = true;
 
         public override void ModuleInit(Character character)
         {
             base.ModuleInit(character);
             // m_chainIndex = 0;
-            ModuleOwner.TryGetAbilityModule(out m_teamModule);
-            Debug.Assert(m_teamModule, $"{this.name}: Owner need to be part of a team!", this);
+            ModuleOwner.TryGetAbilityModule(out m_TeamModule);
+            Debug.Assert(m_TeamModule, $"{this.name}: Owner need to be part of a team!", this);
         }
 
         [Button]
         public virtual void PlayAbility()
         {
-            if (!isActiveAndEnabled || !m_canExecuteNewAction)
+            if (!isActiveAndEnabled || !m_CanExecuteNewAction)
             {
                 return;
             }
 
-            if (m_defaultAbility == null)
+            if (m_DefaultAbility == null)
             {
                 Debug.LogWarning($"{this.name}: Trying to PlayAbility, but no active {typeof(AbilityDefinition).Name} set." +
                     $"Call 'SetActiveAbility' or 'PlayAbility({typeof(AbilityDefinition).Name} ability)' instead.", this);
@@ -70,9 +72,9 @@ namespace NobunAtelier
 
             Log.Record($"{typeof(AnimComboModule).Name}: StopCombo.");
 
-            if (m_abilityProcessorOverride != null)
+            if (m_AbilityProcessorOverride != null)
             {
-                m_abilityProcessorOverride = null;
+                m_AbilityProcessorOverride = null;
             }
         }
 
@@ -103,7 +105,7 @@ namespace NobunAtelier
 
         public virtual void SetAbility(AbilityDefinition ability)
         {
-            m_defaultAbility = ability;
+            m_DefaultAbility = ability;
         }
 
         protected override void OnAbilityUpdate(float deltaTime)
@@ -113,15 +115,15 @@ namespace NobunAtelier
             var activeProcessor = GetProcessorAndInitializeIfNeeded();
             activeProcessor.Update(deltaTime);
 
-            if (!m_canExecuteNewAction || m_actionsQueue.Count == 0)
+            if (!m_CanExecuteNewAction || m_ActionsQueue.Count == 0)
             {
                 return;
             }
 
             Log.Record($"{this.name}{typeof(AnimComboModule).Name}: Dequeue next attack.");
 
-            m_actionsQueue.Dequeue().Invoke();
-            m_canExecuteNewAction = false;
+            m_ActionsQueue.Dequeue().Invoke();
+            m_CanExecuteNewAction = false;
         }
 
         /// <summary>
@@ -169,7 +171,7 @@ namespace NobunAtelier
 
             var activeProcessor = GetProcessorAndInitializeIfNeeded();
             activeProcessor.StopAbilityModules();
-            m_canExecuteNewAction = true;
+            m_CanExecuteNewAction = true;
         }
 
         /// <summary>
@@ -189,7 +191,7 @@ namespace NobunAtelier
             Log.Record();
 
             activeProcessor.Terminate();
-            m_canExecuteNewAction = true;
+            m_CanExecuteNewAction = true;
         }
 
         internal void QueueInitiateAbilityExecution()
@@ -197,7 +199,7 @@ namespace NobunAtelier
             Log.Record();
 
             // Cache the combo action in a queue, later we can improve the queue with a TimingQueue.
-            m_actionsQueue.Enqueue(() =>
+            m_ActionsQueue.Enqueue(() =>
             {
                 InitiateAbilityExecution();
             });
@@ -211,13 +213,13 @@ namespace NobunAtelier
         private Processor GetProcessorAndInitializeIfNeeded()
         {
             // If default processor not setup yet, init.
-            if (m_abilityProcessor == null)
+            if (m_AbilityProcessor == null)
             {
-                m_abilityProcessor = new Processor();
-                m_abilityProcessor.Initialize(this, m_defaultAbility);
+                m_AbilityProcessor = new Processor();
+                m_AbilityProcessor.Initialize(this, m_DefaultAbility);
             }
 
-            return m_abilityProcessorOverride != null ? m_abilityProcessorOverride : m_abilityProcessor;
+            return m_AbilityProcessorOverride != null ? m_AbilityProcessorOverride : m_AbilityProcessor;
         }
 
         private void InitiateAbilityExecution()
@@ -230,7 +232,7 @@ namespace NobunAtelier
             }
 
             activeProcessor.Execute();
-            m_canExecuteNewAction = false;
+            m_CanExecuteNewAction = false;
         }
 
         private void OnEnable()

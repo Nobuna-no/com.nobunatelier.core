@@ -16,6 +16,10 @@ public interface IModularAbilityProcessor
     public void RequestExecution();
 }
 
+/// <summary>
+/// Runtime instance of a behavior composing an ability, each module defines its own behavior such as damage, animation, audio, ...
+/// </summary>
+/// <typeparam name="T">AbilityModuleDefinition</typeparam>
 public abstract class AbilityModuleInstance<T> : DataInstance<T>, IAbilityModuleInstance
     where T : AbilityModuleDefinition
 {

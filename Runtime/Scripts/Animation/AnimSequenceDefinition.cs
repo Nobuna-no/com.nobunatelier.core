@@ -1,8 +1,6 @@
 using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.Serialization;
-using static NobunAtelier.AnimSequenceDefinition;
-using static Unity.Cinemachine.CinemachineFreeLookModifier;
 
 namespace NobunAtelier
 {

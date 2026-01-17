@@ -52,23 +52,40 @@ namespace NobunAtelier
         where AssetRefT : LoadableComponent<T>
         where PoolT : LoadableComponentPool<T, AssetRefT>
     {
-        private static Dictionary<string, PoolT> s_addressableFactoriesMap = null;
-        private static GameObject s_atelierFactoryGao;
+        private static Dictionary<string, PoolT> s_AddressableFactoriesMap = null;
+        private static GameObject s_AtelierFactoryGao;
 
         [SerializeField]
-        private AssetReferenceGameObject objectPoolPrefab = null;
+        private AssetReferenceGameObject m_ObjectPoolPrefab = null;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            if (s_AtelierFactoryGao != null)
+            {
+                Object.Destroy(s_AtelierFactoryGao);
+                s_AtelierFactoryGao = null;
+            }
+            
+            foreach (var factory in s_AddressableFactoriesMap)
+            {
+                factory.Value.ObjectPool.Clear();
+            }
+
+            s_AddressableFactoriesMap = null;
+        }
 
         private static Dictionary<string, PoolT> Instance
         {
             get
             {
-                if (s_addressableFactoriesMap == null)
+                if (s_AddressableFactoriesMap == null)
                 {
-                    s_addressableFactoriesMap = new Dictionary<string, PoolT>();
-                    s_atelierFactoryGao = new GameObject($"Atelier Factory ({typeof(T).Name})");
+                    s_AddressableFactoriesMap = new Dictionary<string, PoolT>();
+                    s_AtelierFactoryGao = new GameObject($"Atelier Factory ({typeof(T).Name})");
                 }
 
-                return s_addressableFactoriesMap;
+                return s_AddressableFactoriesMap;
             }
         }
 
@@ -82,7 +99,7 @@ namespace NobunAtelier
 
             if (!Instance.ContainsKey(assetRef.AssetGUID))
             {
-                Instance.Add(assetRef.AssetGUID, s_atelierFactoryGao.AddComponent<PoolT>());
+                Instance.Add(assetRef.AssetGUID, s_AtelierFactoryGao.AddComponent<PoolT>());
                 Instance[assetRef.AssetGUID].SetInitialSize(initialReserve);
                 Instance[assetRef.AssetGUID].SetAssetReference(assetRef);
                 Instance[assetRef.AssetGUID].ResetPool();
@@ -119,14 +136,14 @@ namespace NobunAtelier
         // This is going to be used by each individual factory.
         public override void SetAssetReference(AssetRefT assetReference)
         {
-            objectPoolPrefab = assetReference;
+            m_ObjectPoolPrefab = assetReference;
         }
 
         // invoked when creating an item to populate the object pool
         protected override T OnProductCreation()
         {
 #if UNITY_EDITOR
-            AsyncOperationHandle<GameObject> poolHandle = objectPoolPrefab.InstantiateAsync(Vector3.zero, Quaternion.identity, transform);
+            AsyncOperationHandle<GameObject> poolHandle = m_ObjectPoolPrefab.InstantiateAsync(Vector3.zero, Quaternion.identity, transform);
 #else
             AsyncOperationHandle<GameObject> poolHandle = objectPoolPrefab.InstantiateAsync(Vector3.zero, Quaternion.identity);
 #endif
@@ -149,7 +166,7 @@ namespace NobunAtelier
         // invoked when we exceed the maximum number of pooled items (i.e. destroy the pooled object)
         protected override void OnProductDestruction(T product)
         {
-            objectPoolPrefab.ReleaseInstance(product.gameObject);
+            m_ObjectPoolPrefab.ReleaseInstance(product.gameObject);
         }
     }
 }

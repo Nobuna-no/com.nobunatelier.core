@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Pool;
+using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
@@ -16,19 +17,23 @@ namespace NobunAtelier
     public abstract class MonoBehaviourPool<T> : MonoBehaviour, IPool<T>
         where T : class
     {
-        public int ReserveSize => m_initialSize;
+        public int ReserveSize => m_InitialSize;
 
         [SerializeField]
-        private bool m_createPoolOnAwake;
+        [FormerlySerializedAs("m_createPoolOnAwake")]
+        private bool m_CreatePoolOnAwake;
 
         [SerializeField]
-        protected int m_initialSize = 10;
+        [FormerlySerializedAs("m_initialSize")]
+        protected int m_InitialSize = 10;
 
         [SerializeField]
-        private int m_maxSize = 100;
+        [FormerlySerializedAs("m_maxSize")]
+        private int m_MaxSize = 100;
 
         [SerializeField, Tooltip("Should an exception be thrown if we try to return an existing item, already in the pool?")]
-        private bool m_collectionCheck = true;
+        [FormerlySerializedAs("m_collectionCheck")]
+        private bool m_CollectionCheck = true;
 
         public IObjectPool<T> ObjectPool { get; protected set; } = null;
 
@@ -63,7 +68,7 @@ namespace NobunAtelier
 
         private void Awake()
         {
-            if (m_createPoolOnAwake)
+            if (m_CreatePoolOnAwake)
             {
                 ResetPool();
             }
@@ -71,7 +76,7 @@ namespace NobunAtelier
 
         public void SetInitialSize(int value)
         {
-            m_initialSize = value;
+            m_InitialSize = value;
         }
 
         public virtual void ResetPool()
@@ -83,15 +88,15 @@ namespace NobunAtelier
             }
 
             ObjectPool = new ObjectPool<T>(OnProductCreation, OnGetFromPool,
-                OnProductReleased, OnProductDestruction, m_collectionCheck, m_initialSize, m_maxSize);
+                OnProductReleased, OnProductDestruction, m_CollectionCheck, m_InitialSize, m_MaxSize);
 
-            T[] products = new T[m_initialSize];
-            for (int i = 0; i < m_initialSize; i++)
+            T[] products = new T[m_InitialSize];
+            for (int i = 0; i < m_InitialSize; i++)
             {
                 products[i] = ObjectPool.Get();
             }
 
-            for (int i = 0; i < m_initialSize; i++)
+            for (int i = 0; i < m_InitialSize; i++)
             {
                 ObjectPool.Release(products[i]);
             }
