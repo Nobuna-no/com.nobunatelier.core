@@ -17,22 +17,25 @@ namespace NobunAtelier
     public abstract class MonoBehaviourPool<T> : MonoBehaviour, IPool<T>
         where T : class
     {
-        public int ReserveSize => m_InitialSize;
+        /// <summary>
+        /// The initial size of the pool.
+        /// </summary>
+        public int ReserveSize => m_DefaultReserveSize;
 
-        [SerializeField]
         [FormerlySerializedAs("m_createPoolOnAwake")]
+        [SerializeField]
         private bool m_CreatePoolOnAwake;
 
-        [SerializeField]
         [FormerlySerializedAs("m_initialSize")]
-        protected int m_InitialSize = 10;
-
         [SerializeField]
+        protected int m_DefaultReserveSize = 10;
+
         [FormerlySerializedAs("m_maxSize")]
+        [SerializeField]
         private int m_MaxSize = 100;
 
-        [SerializeField, Tooltip("Should an exception be thrown if we try to return an existing item, already in the pool?")]
         [FormerlySerializedAs("m_collectionCheck")]
+        [SerializeField, Tooltip("Should an exception be thrown if we try to return an existing item, already in the pool?")]
         private bool m_CollectionCheck = true;
 
         public IObjectPool<T> ObjectPool { get; protected set; } = null;
@@ -74,29 +77,29 @@ namespace NobunAtelier
             }
         }
 
-        public void SetInitialSize(int value)
+        /// <summary>
+        /// Reset the pool. If the pool is not allocated, it will be allocated. If the pool is allocated, it will be cleared.
+        /// </summary>
+        /// <param name="reserveSize">The size of the pool. If less than or equal to 0, the default reserve size will be used.</param>
+        public virtual void ResetPool(int reserveSize = -1)
         {
-            m_InitialSize = value;
-        }
+            ObjectPool?.Clear();
 
-        public virtual void ResetPool()
-        {
-            if (ObjectPool != null)
+            int reserveSizeToUse = reserveSize <= 0 ? m_DefaultReserveSize : Mathf.Max(1, m_DefaultReserveSize);
+
+            if (ObjectPool == null)
             {
-                ObjectPool.Clear();
-                ObjectPool = null;
+                ObjectPool = new ObjectPool<T>(OnProductCreation, OnGetFromPool,
+                    OnProductReleased, OnProductDestruction, m_CollectionCheck, reserveSizeToUse, m_MaxSize);
             }
 
-            ObjectPool = new ObjectPool<T>(OnProductCreation, OnGetFromPool,
-                OnProductReleased, OnProductDestruction, m_CollectionCheck, m_InitialSize, m_MaxSize);
-
-            T[] products = new T[m_InitialSize];
-            for (int i = 0; i < m_InitialSize; i++)
+            T[] products = new T[reserveSizeToUse];
+            for (int i = 0; i < reserveSizeToUse; i++)
             {
                 products[i] = ObjectPool.Get();
             }
 
-            for (int i = 0; i < m_InitialSize; i++)
+            for (int i = 0; i < reserveSizeToUse; i++)
             {
                 ObjectPool.Release(products[i]);
             }
