@@ -68,7 +68,7 @@ namespace NobunAtelier
         /// </summary>
         public IReadOnlyList<ResourceT> TargetResources { get; private set; }
         
-        private HashSet<ResourceT> m_RegisteredResources;
+        private HashSet<string> m_RegisteredResources;
         private CancellationTokenSource m_CancellationTokenSource;
         
         /// <summary>
@@ -91,7 +91,7 @@ namespace NobunAtelier
         /// </summary>
         public AbilityLoadableResourceFactory()
         {
-            m_RegisteredResources = new HashSet<ResourceT>();
+            m_RegisteredResources = new HashSet<string>();
             m_State = ResourceState.Unregistered;
 #if UNITY_EDITOR
             DebugInfo = new ResourceDebugInfo(this);
@@ -104,7 +104,7 @@ namespace NobunAtelier
         /// <param name="data">The list of resources to manage.</param>
         public AbilityLoadableResourceFactory(IReadOnlyList<ResourceT> data)
         {
-            m_RegisteredResources = new HashSet<ResourceT>(data.Count);
+            m_RegisteredResources = new HashSet<string>(data.Count);
             TargetResources = data;
             m_CancellationTokenSource = new CancellationTokenSource();
             m_State = ResourceState.Unregistered;
@@ -151,12 +151,12 @@ namespace NobunAtelier
 
             foreach (ResourceT resource in TargetResources)
             {
-                if (m_RegisteredResources.Contains(resource))
+                if (m_RegisteredResources.Contains(resource.Resource.AssetGUID))
                 {
                     continue;
                 }
 
-                m_RegisteredResources.Add(resource);
+                m_RegisteredResources.Add(resource.Resource.AssetGUID);
                 Warm(resource);
             }
 
@@ -211,7 +211,7 @@ namespace NobunAtelier
         }
 
         /// <summary>
-        /// Plays a specific resource on the specified target transform.
+        /// Plays a specific resource on the specified target transform. If the resource has a start delay, it will be played asynchronously.
         /// </summary>
         /// <param name="resource">The resource to play.</param>
         /// <param name="target">The target transform to play the resource on.</param>
@@ -230,12 +230,36 @@ namespace NobunAtelier
                     + "Fix this by registering the resources before playing them. This is slow and should be avoided.");
             }
 
-            if (!m_RegisteredResources.Contains(resource))
+            if (!m_RegisteredResources.Contains(resource.Resource.AssetGUID))
             {
                 Debug.LogError($"Trying to play an unknown resource of type {typeof(T).Name}. Make sure to ConfigureAndRegister() resources.");
                 return;
             }
 
+            if (resource.StartDelay > 0)
+            {
+                PlayWithDelayAsync(resource, target, CancellationTokenSource.Token).FireAndForget();
+            }
+            else
+            {
+                Play_Internal(resource, target);
+            }
+        }
+
+        /// <summary>
+        /// Plays all resources on the specified target transform.
+        /// </summary>
+        /// <param name="target">The target transform to play the resources on.</param>
+        public void PlayAll(Transform target)
+        {
+            for (int i = 0; i < TargetResources.Count; i++)
+            {
+                Play(TargetResources[i], target);
+            }
+        }
+
+        private void Play_Internal(ResourceT resource, Transform target)
+        {
             T product = GetProduct(resource);
 
             SetupBeforePlay(resource, product, target);
@@ -254,33 +278,13 @@ namespace NobunAtelier
         }
 
         /// <summary>
-        /// Plays all resources on the specified target transform.
-        /// </summary>
-        /// <param name="target">The target transform to play the resources on.</param>
-        public void PlayAll(Transform target)
-        {
-            for (int i = 0; i < TargetResources.Count; i++)
-            {
-                ResourceT resource = TargetResources[i];
-                if (resource.StartDelay > 0)
-                {
-                    PlayDelayedAsync(resource, target).FireAndForget();
-                }
-                else
-                {
-                    Play(resource, target);
-                }
-            }
-        }
-
-        /// <summary>
         /// Asynchronously plays a resource on the target transform after a delay.
         /// </summary>
         /// <param name="resource">The resource to play.</param>
         /// <param name="target">The target transform to play the resource on.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the delayed play operation.</param>
         /// <returns>An awaitable task.</returns>
-        public async Awaitable PlayDelayedAsync(ResourceT resource, Transform target, CancellationToken cancellationToken = default)
+        private async Awaitable PlayWithDelayAsync(ResourceT resource, Transform target, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -288,7 +292,7 @@ namespace NobunAtelier
 
                 if (resource != null)
                 {
-                    Play(resource, target);
+                    Play_Internal(resource, target);
                 }
             }
             catch (OperationCanceledException)
