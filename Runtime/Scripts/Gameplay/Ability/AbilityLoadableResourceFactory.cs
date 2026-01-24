@@ -179,9 +179,16 @@ namespace NobunAtelier
                 return;
             }
 
-            // Cancel the cancellation token source to stop the release operations
-            m_CancellationTokenSource?.Cancel();
-            m_CancellationTokenSource?.Dispose();
+            if (m_CancellationTokenSource != null)
+            {
+                try
+                {
+                    // Cancel the cancellation token source to stop the release operations
+                    m_CancellationTokenSource?.Cancel();
+                    m_CancellationTokenSource?.Dispose();
+                }
+                catch {} // Expected if disposed on exit playmode
+            }
 
             m_RegisteredResources.Clear();
             m_State = ResourceState.Unregistered;
