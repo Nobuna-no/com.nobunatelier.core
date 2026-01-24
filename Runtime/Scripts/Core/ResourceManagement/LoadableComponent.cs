@@ -1,4 +1,8 @@
 using System.Collections.Generic;
+#if UNITY_EDITOR
+using System;
+using System.Reflection;
+#endif
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -30,6 +34,50 @@ namespace NobunAtelier
 #endif
         }
     }
+
+#if UNITY_EDITOR
+    /// <summary>
+    /// This class is used to reset all pool factories on application startup.
+    /// </summary>
+    public static class PoolFactoryRuntimeReset
+    {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void ResetAllFactories()
+        {
+            ResetGenericFactories();
+        }
+
+        static void ResetGenericFactories()
+        {
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+            foreach (var assembly in assemblies)
+            {
+                foreach (var type in assembly.GetTypes())
+                {
+                    var baseType = type.BaseType;
+                    if (baseType == null)
+                        continue;
+
+                    if (!baseType.IsGenericType)
+                        continue;
+
+                    if (baseType.ContainsGenericParameters)
+                        continue;
+
+                    if (baseType.GetGenericTypeDefinition() != typeof(LoadableComponentPoolFactory<,,>))
+                        continue;
+
+                    var resetMethod = baseType.GetMethod(
+                        "RuntimeReset",
+                        BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+
+                    resetMethod?.Invoke(null, null);
+                }
+            }
+        }
+    }
+#endif
 
     /// <summary>
     /// Provides product based on a Unity Component type and manages them in a Unity IObjectPool.
@@ -73,11 +121,20 @@ namespace NobunAtelier
             }
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void ResetOnInitialization()
+        private static void RuntimeReset()
         {
+            // Debug.Log($"Resetting pool factory {typeof(T)}");
+
+            if (s_FactoryGao != null)
+            {
+                UnityEngine.Object.DestroyImmediate(s_FactoryGao);
+                s_FactoryGao = null;
+            }
+
+            s_AddressableFactoryMap?.Clear();
             s_AddressableFactoryMap = null;
-            s_FactoryGao = null;
+
+            Instance?.Clear();
         }
 
         public static void CreateFactory(AssetRefT assetRef, int initialReserve = 3)
@@ -88,9 +145,9 @@ namespace NobunAtelier
                 return;
             }
 
-            if (!Instance.ContainsKey(assetRef.AssetGUID))
+            if (!Instance.ContainsKey(assetRef.AssetGUID) || Instance[assetRef.AssetGUID] == null)
             {
-                Instance.Add(assetRef.AssetGUID, s_FactoryGao.AddComponent<PoolT>());
+                Instance[assetRef.AssetGUID] = s_FactoryGao.AddComponent<PoolT>();
             }
 
             Instance[assetRef.AssetGUID].SetAssetReference(assetRef);
@@ -163,7 +220,10 @@ namespace NobunAtelier
         // invoked when we exceed the maximum number of pooled items (i.e. destroy the pooled object)
         protected override void OnProductDestruction(T product)
         {
-            objectPoolPrefab.ReleaseInstance(product.gameObject);
+            if (product != null)
+            {
+                objectPoolPrefab.ReleaseInstance(product.gameObject);
+            }
         }
     }
 }
