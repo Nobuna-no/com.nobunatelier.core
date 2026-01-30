@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
-    public abstract partial class AbilityController : ITargeter
+    public partial class AbilityController : ITargeter
     {
         [Header("ITargeter")]
         [SerializeField] private Transform m_target;

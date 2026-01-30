@@ -6,7 +6,7 @@ using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
-    public abstract partial class AbilityController : CharacterAbilityModuleBase
+    public partial class AbilityController : CharacterAbilityModuleBase
     {
         [Header("Ability Controller")]
         [FormerlySerializedAs("m_defaultAbility")]
@@ -63,6 +63,13 @@ namespace NobunAtelier
         /// </summary>
         public virtual void StopAbility()
         {
+            if (m_DefaultAbility == null)
+            {
+                Debug.LogWarning($"{this.name}: Trying to StopAbility, but no active {typeof(AbilityDefinition).Name} set." +
+                    $"Call 'SetActiveAbility' or 'StopAbility({typeof(AbilityDefinition).Name} ability)' instead.", this);
+                return;
+            }
+
             var activeProcessor = GetProcessorAndInitializeIfNeeded();
 
             if (activeProcessor != null)
@@ -129,7 +136,9 @@ namespace NobunAtelier
         /// <summary>
         /// Called when an ability has been initiated.
         /// </summary>
-        protected abstract void OnAbilitySetup();
+        protected virtual void OnAbilitySetup()
+        {
+        }
 
         /// <summary>
         /// Calls to handles the execution of an ability.
@@ -138,7 +147,9 @@ namespace NobunAtelier
         /// 2. StopAbilityEffect(); // Stop the ability modules. ExecutionState -> ChainOpportunity.
         /// 3. CompleteAbilityExecution(); // Reset internal state. ExecutionState -> Ready.
         /// </summary>
-        protected abstract void OnAbilityExecution();
+        protected virtual void OnAbilityExecution()
+        {
+        }
 
         /// <summary>
         /// Play the ability modules effect.
@@ -192,6 +203,24 @@ namespace NobunAtelier
 
             activeProcessor.Terminate();
             m_CanExecuteNewAction = true;
+        }
+
+        public void HandleEffectStartEvent()
+        {
+            Log.Record("Effect start event triggered");
+            StartAbilityEffect();
+        }
+
+        public void HandleEffectStopEvent()
+        {
+            Log.Record("Effect stop event triggered");
+            StopAbilityEffect();
+        }
+
+        public void HandleAnimationEndEvent()
+        {
+            Log.Record("Animation end event triggered");
+            CompleteAbilityExecution();
         }
 
         internal void QueueInitiateAbilityExecution()

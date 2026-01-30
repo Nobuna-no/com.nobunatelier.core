@@ -1,10 +1,9 @@
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace NobunAtelier
 {
-    public abstract partial class AbilityController
+    public partial class AbilityController
     {
         /// <summary>
         /// I've made the Instance processing in this subclass just for sake of splitting
@@ -31,7 +30,7 @@ namespace NobunAtelier
             {
                 m_controller = controller;
 
-                if (m_activeAbilityInstance != null && m_activeAbilityInstance.Ability == activeAbility)
+                if (activeAbility == null || (m_activeAbilityInstance != null && m_activeAbilityInstance.Ability == activeAbility))
                 {
                     return;
                 }
@@ -84,7 +83,7 @@ namespace NobunAtelier
 
             public void Update(float deltaTime)
             {
-                m_activeAbilityInstance.UpdateEffect(deltaTime);
+                m_activeAbilityInstance?.UpdateEffect(deltaTime);
             }
 
             public void StopAbilityModules()
