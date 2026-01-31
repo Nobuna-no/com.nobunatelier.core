@@ -1,7 +1,7 @@
 using NobunAtelier;
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 
 public partial class ModularAbilityDefinition
@@ -23,7 +23,7 @@ public partial class ModularAbilityDefinition
         Error = 1 << 4,
     }
 
-    public class Instance : DataInstance<ModularAbilityDefinition>, IAbilityInstance, ContextualLogManager.IStateProvider
+    public class Instance : DataInstance<ModularAbilityDefinition>, IAbilityInstance, ContextualLogManager.IStateProvider, IDisposable
     {
         public event Action OnAbilityStartCharge;
 
@@ -52,9 +52,9 @@ public partial class ModularAbilityDefinition
         private float m_lastChargeDuration = 0;
         private int m_currentChargeLevel = -1;
 
-        private Dictionary<int, Command> m_commandLookupTable;
-        private Queue<Command> m_commandQueue;
-        private Command m_activeCommand;
+        private Dictionary<int, AbilityCommand> m_commandLookupTable;
+        private Queue<AbilityCommand> m_commandQueue;
+        private CommandRunner m_activeCommandRunner;
         private CommandCategory m_nextCommandCategory = CommandCategory.Default;
         public bool IsCharging { get; private set; }
         private ContextualLogManager.LogPartition m_LogSection;
@@ -66,35 +66,32 @@ public partial class ModularAbilityDefinition
             m_LogSection = ContextualLogManager.Register(controller, Data.m_LogSettings, this);
 
             m_moduleController = new AbilityModuleController(controller);
-            m_activeCommand = null;
+            m_activeCommandRunner = null;
             //m_controller = controller;
 
-            m_commandLookupTable = new Dictionary<int, Command>()
+            m_commandLookupTable = new Dictionary<int, AbilityCommand>()
             {
-                { (int)CommandCategory.Default,  new Command(this, Data.m_Default) },
+                { (int)CommandCategory.Default,  new AbilityCommand(Data.m_Default) },
             };
 
             if (Data.m_CanBeCharged)
             {
-                m_commandLookupTable.Add((int)CommandCategory.ChargeStart, new Command(this, Data.m_ChargeStart));
-                m_commandLookupTable.Add((int)CommandCategory.ChargeCancel, new Command(this, Data.m_ChargeCancel));
+                m_commandLookupTable.Add((int)CommandCategory.ChargeStart, new AbilityCommand(Data.m_ChargeStart));
+                m_commandLookupTable.Add((int)CommandCategory.ChargeCancel, new AbilityCommand(Data.m_ChargeCancel));
 
                 int i = 0;
                 foreach (var chargeData in Data.m_ChargedAbilityLevels)
                 {
-                    m_commandLookupTable.Add((int)CommandCategory.ChargeLevelReached + i, new Command(this, chargeData.OnLevelReached));
-                    m_commandLookupTable.Add((int)CommandCategory.ChargeExecution + i, new Command(this, chargeData.OnChargeReleased));
+                    m_commandLookupTable.Add((int)CommandCategory.ChargeLevelReached + i, new AbilityCommand(chargeData.OnLevelReached));
+                    m_commandLookupTable.Add((int)CommandCategory.ChargeExecution + i, new AbilityCommand(chargeData.OnChargeReleased));
                     ++i;
                 }
             }
 
-            m_commandQueue = new Queue<Command>();
+            m_commandQueue = new Queue<AbilityCommand>();
         }
 
-        ~Instance()
-        {
-            ContextualLogManager.Unregister(m_LogSection);
-        }
+        private bool m_IsDisposed;
 
         /// <summary>
         /// AtelierLog.IStateProvider implementation.
@@ -105,6 +102,23 @@ public partial class ModularAbilityDefinition
             return $"{typeof(Instance).Name} of <b>{Data.name}</b>:" +
                 $"\nState: {ExecutionState}; IsCharging: {IsCharging}; Command Queue Count: {m_commandQueue.Count};" +
                 $"\nCurrentChargeLevel: {m_currentChargeLevel}; LastChargeDuration: {m_lastChargeDuration}s";
+        }
+
+        public void Dispose()
+        {
+            if (m_IsDisposed)
+            {
+                return;
+            }
+
+            m_IsDisposed = true;
+            if (ExecutionState != IAbilityInstance.ExecutionState.Ready)
+            {
+                TerminateExecution(false);
+            }
+            m_commandQueue.Clear();
+            IsCharging = false;
+            ContextualLogManager.Unregister(m_LogSection);
         }
 
         public bool CanExecute()
@@ -120,14 +134,14 @@ public partial class ModularAbilityDefinition
 
         public void ExecuteEffect()
         {
-            if (m_activeCommand == null)
+            if (m_activeCommandRunner == null)
             {
                 return;
             }
 
             m_LogSection.Record();
 
-            m_activeCommand.Execute();
+            m_activeCommandRunner.Execute();
             m_nextCommandCategory = CommandCategory.Default;
         }
 
@@ -135,7 +149,7 @@ public partial class ModularAbilityDefinition
         {
             if (ExecutionState != IAbilityInstance.ExecutionState.InProgress &&
                 ExecutionState != IAbilityInstance.ExecutionState.Charging &&
-                (m_activeCommand == null && m_commandQueue.Count == 0))
+                (m_activeCommandRunner == null && m_commandQueue.Count == 0))
             {
                 return;
             }
@@ -156,7 +170,7 @@ public partial class ModularAbilityDefinition
 
                 case IAbilityInstance.ExecutionState.InProgress:
                     {
-                        m_activeCommand.Update(deltaTime);
+                        m_activeCommandRunner.Update(deltaTime);
                         // m_stateMachine.Update(deltaTime);
                         break;
                     }
@@ -165,20 +179,20 @@ public partial class ModularAbilityDefinition
                     {
                         if (m_commandQueue.Count > 0)
                         {
-                            if (m_activeCommand != null)
+                            if (m_activeCommandRunner != null)
                             {
-                                m_activeCommand.Stop();
+                                m_activeCommandRunner.Stop(true);
                             }
 
-                            if (m_commandQueue.TryDequeue(out m_activeCommand))
+                            if (m_commandQueue.TryDequeue(out var command))
                             {
-                                m_activeCommand.Initiate();
+                                ActivateCommand(command);
                             }
                         }
-                        else if (m_activeCommand != null)
+                        else if (m_activeCommandRunner != null)
                         {
                             // else update existing if any...
-                            m_activeCommand.Update(deltaTime);
+                            m_activeCommandRunner.Update(deltaTime);
                         }
 
                         // We need to ensure that the first frame after a charge release,
@@ -211,15 +225,15 @@ public partial class ModularAbilityDefinition
 
         private void StopEffect(bool backgroundExecution)
         {
-            if (m_activeCommand == null)
+            if (m_activeCommandRunner == null)
             {
                 return;
             }
 
             m_LogSection.Record();
 
-            m_activeCommand.Stop();
-            m_activeCommand = null;
+            m_activeCommandRunner.Stop(false);
+            m_activeCommandRunner = null;
 
             if (backgroundExecution)
             {
@@ -256,11 +270,11 @@ public partial class ModularAbilityDefinition
 
             m_LogSection.Record();
 
-            if (m_activeCommand != null)
+            if (m_activeCommandRunner != null)
             {
                 m_LogSection.Record("StopEffect");
-                m_activeCommand.Stop();
-                m_activeCommand = null;
+                m_activeCommandRunner.Stop(true);
+                m_activeCommandRunner = null;
             }
 
             m_currentChargeLevel = -1;
@@ -375,18 +389,24 @@ public partial class ModularAbilityDefinition
 
         private void ExecuteNewCommand(float deltaTime)
         {
-            if (m_activeCommand != null)
+            if (m_activeCommandRunner != null)
             {
                 // Should not be necessary, but just in case for now as
                 // non processor can't know when to stop...
-                m_activeCommand.Stop();
+                m_activeCommandRunner.Stop(true);
             }
 
-            if (m_commandQueue.TryDequeue(out m_activeCommand))
+            if (m_commandQueue.TryDequeue(out var command))
             {
-                m_activeCommand.Initiate();
+                ActivateCommand(command);
                 ExecutionState = IAbilityInstance.ExecutionState.Starting;
             }
+        }
+
+        private void ActivateCommand(AbilityCommand command)
+        {
+            m_activeCommandRunner = new CommandRunner(this, command);
+            m_activeCommandRunner.Initiate();
         }
 
 
@@ -578,27 +598,41 @@ public partial class ModularAbilityDefinition
 
             public void ExitState()
             {
-                m_moduleController.StopModules(m_modules);
+            m_moduleController.StopModules(m_modules, true);
             }
         }
 
-        private class Command
+        private readonly struct AbilityCommand
+        {
+            public readonly ActionModel ActionModel;
+
+            public AbilityCommand(ActionModel actionModel)
+            {
+                ActionModel = actionModel;
+            }
+        }
+
+        private class CommandRunner
         {
             private ActionModel m_abilityAction;
             private IReadOnlyList<AbilityModuleDefinition> m_modules;
             private AbilityModuleController m_moduleController;
             private Instance m_target;
             private IModularAbilityProcessor m_processor;
+            private CancellationTokenSource m_CancellationTokenSource;
 
-            public Command(Instance target, ActionModel abilityAction)
+            public CommandRunner(Instance target, AbilityCommand command)
             {
-                m_abilityAction = abilityAction;
-                m_modules = abilityAction.Modules;
+                m_abilityAction = command.ActionModel;
+                m_modules = m_abilityAction != null ? m_abilityAction.Modules : Array.Empty<AbilityModuleDefinition>();
                 m_target = target;
                 m_moduleController = target.m_moduleController;
-                m_moduleController.Add(abilityAction.Modules);
+                if (m_modules.Count > 0)
+                {
+                    m_moduleController.Add(m_modules);
+                }
 
-                foreach (var module in abilityAction.Modules)
+                foreach (var module in m_modules)
                 {
                     if (m_moduleController.m_modulesMap.TryGetValue(module, out var instance))
                     {
@@ -613,6 +647,12 @@ public partial class ModularAbilityDefinition
 
             public void Initiate()
             {
+                if (m_abilityAction == null)
+                {
+                    m_target.m_LogSection.Record("Missing ActionModel for command.", ContextualLogManager.LogTypeFilter.Warning);
+                    return;
+                }
+
                 m_moduleController.InitiateModulesExecution(m_modules);
 
                 if (!m_abilityAction.BackgroundExecution)
@@ -628,36 +668,79 @@ public partial class ModularAbilityDefinition
                 }
                 else
                 {
-                    CoroutineManager.Start(AutoExecuteRoutine());
+                    RestartAutoExecute();
                 }
             }
 
             public void Execute()
             {
+                if (m_abilityAction == null)
+                {
+                    return;
+                }
+
                 m_moduleController.ExecuteModules(m_modules);
             }
 
             public void Update(float deltaTime)
             {
+                if (m_abilityAction == null)
+                {
+                    return;
+                }
+
                 m_moduleController.UpdateModules(deltaTime, m_modules);
             }
 
-            public void Stop()
+            public void Stop(bool includeProcessors)
             {
-                m_moduleController.StopModules(m_modules);
+                CancelAutoExecute();
+                m_moduleController.StopModules(m_modules, includeProcessors);
             }
 
-            private IEnumerator AutoExecuteRoutine()
+            private void RestartAutoExecute()
             {
-                yield return new WaitForSeconds(m_abilityAction.ExecutionDelay);
+                CancelAutoExecute();
+                m_CancellationTokenSource = new CancellationTokenSource();
+                AutoExecuteAsync(m_CancellationTokenSource.Token).FireAndForget();
+            }
+
+            private void CancelAutoExecute()
+            {
+                if (m_CancellationTokenSource == null)
+                {
+                    return;
+                }
+
+                m_CancellationTokenSource.Cancel();
+                m_CancellationTokenSource.Dispose();
+                m_CancellationTokenSource = null;
+            }
+
+            private async Awaitable AutoExecuteAsync(CancellationToken cancellationToken)
+            {
+                if (m_abilityAction.ExecutionDelay > 0f)
+                {
+                    await Awaitable.WaitForSecondsAsync(m_abilityAction.ExecutionDelay, cancellationToken);
+                }
+
                 m_target.ExecuteEffect();
-                yield return new WaitForSeconds(m_abilityAction.UpdateDuration);
+
+                if (m_abilityAction.UpdateDuration > 0f)
+                {
+                    await Awaitable.WaitForSecondsAsync(m_abilityAction.UpdateDuration, cancellationToken);
+                }
+
                 m_target.StopEffect(m_abilityAction.BackgroundExecution);
-                yield return new WaitForSeconds(m_abilityAction.ChainOpportunityDuration);
+
+                if (m_abilityAction.ChainOpportunityDuration > 0f)
+                {
+                    await Awaitable.WaitForSecondsAsync(m_abilityAction.ChainOpportunityDuration, cancellationToken);
+                }
 
                 if (!m_abilityAction.TerminateExecutionOnCompletion)
                 {
-                    yield break;
+                    return;
                 }
 
                 m_target.TerminateExecution();

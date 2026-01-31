@@ -70,20 +70,30 @@ public class AbilityModuleController
         }
     }
 
-    public void StopModule(AbilityModuleDefinition module)
+    public void StopModule(AbilityModuleDefinition module, bool includeProcessors)
     {
         if (m_modulesMap.TryGetValue(module, out var instance))
         {
+            if (!includeProcessors && instance is IModularAbilityProcessor)
+            {
+                return;
+            }
+
             instance.Stop();
         }
     }
 
-    public void StopModules(IReadOnlyCollection<AbilityModuleDefinition> modules)
+    public void StopModules(IReadOnlyCollection<AbilityModuleDefinition> modules, bool includeProcessors)
     {
         foreach (var module in modules)
         {
             if (m_modulesMap.TryGetValue(module, out var instance))
             {
+                if (!includeProcessors && instance is IModularAbilityProcessor)
+                {
+                    continue;
+                }
+
                 instance.Stop();
             }
         }
@@ -118,7 +128,7 @@ public class AbilityModuleController
             {
                 if (!instance.RunUpdate)
                 {
-                    return;
+                    continue;
                 }
 
                 instance.Update(deltaTime);

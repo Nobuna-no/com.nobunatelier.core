@@ -145,11 +145,13 @@ namespace NobunAtelier
                 m_Partitions = new List<LogSubPartition>();
             }
 
+            [HideInCallstack]
             public void Record(LogTypeFilter flags = LogTypeFilter.Info, [CallerMemberName] string funcName = null)
             {
                 Record(string.Empty, flags, funcName);
             }
 
+            [HideInCallstack]
             public void Record(string message, LogTypeFilter flags = LogTypeFilter.Info, [CallerMemberName] string funcName = null)
             {
                 if ((Settings.Filter & flags) == 0)
@@ -207,6 +209,7 @@ namespace NobunAtelier
                 m_Partitions.Clear();
             }
 
+            [HideInCallstack]
             private void LogToConsole(string message, LogTypeFilter flags)
             {
                 if ((flags & LogTypeFilter.Error) != 0)

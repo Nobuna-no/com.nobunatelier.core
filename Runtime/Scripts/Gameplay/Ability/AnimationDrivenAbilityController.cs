@@ -26,7 +26,7 @@ namespace NobunAtelier
             Debug.Assert(m_animationModule, $"{this.name}: No animation module found in character {ModuleOwner.name}.", this);
         }
 
-        protected override void OnAbilitySetup()
+        internal override void OnAbilitySetup()
         {
             if (!enabled)
             {
@@ -39,7 +39,7 @@ namespace NobunAtelier
             RemoveListenersFromAnimSegments();
         }
 
-        protected override void OnAbilityExecution()
+        internal override void OnAbilityExecution()
         {
             RefreshAnimSegmentsListeners();
         }

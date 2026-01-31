@@ -1,5 +1,4 @@
 using NaughtyAttributes;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
@@ -11,23 +10,25 @@ namespace NobunAtelier
         [Header("Ability Controller")]
         [FormerlySerializedAs("m_defaultAbility")]
         [SerializeField] private AbilityDefinition m_DefaultAbility;
-        [SerializeField] private UnityEvent OnAbilityStartCharge;
-        [SerializeField] private UnityEvent OnAbilityStartExecution;
-        [SerializeField] private UnityEvent OnAbilityChainOpportunity;
-        [SerializeField] private UnityEvent OnAbilityCompleteExecution;
+        [SerializeField] internal UnityEvent OnAbilityStartCharge;
+        [SerializeField] internal UnityEvent OnAbilityStartExecution;
+        [SerializeField] internal UnityEvent OnAbilityChainOpportunity;
+        [SerializeField] internal UnityEvent OnAbilityCompleteExecution;
+
+        [Header("Input Buffer")]
+        [SerializeField] private float m_InputBufferDuration = 0.15f;
+        [SerializeField] private bool m_InputBufferUseUnscaledTime = false;
 
         [Header("Log")]
         [SerializeField] private ContextualLogManager.LogSettings m_LogSettings;
 
         public TeamModule Team => m_TeamModule;
         public ContextualLogManager.LogPartition Log { get; private set; }
+        internal float InputBufferDuration => m_InputBufferDuration;
+        internal bool InputBufferUseUnscaledTime => m_InputBufferUseUnscaledTime;
 
-        private Queue<System.Action> m_ActionsQueue = new Queue<System.Action>();
-
-        private Processor m_AbilityProcessor;
-        private Processor m_AbilityProcessorOverride;
         private TeamModule m_TeamModule;
-        private bool m_CanExecuteNewAction = true;
+        private AbilityRuntime m_Runtime;
 
         public override void ModuleInit(Character character)
         {
@@ -40,7 +41,7 @@ namespace NobunAtelier
         [Button]
         public virtual void PlayAbility()
         {
-            if (!isActiveAndEnabled || !m_CanExecuteNewAction)
+            if (!isActiveAndEnabled)
             {
                 return;
             }
@@ -53,9 +54,8 @@ namespace NobunAtelier
             }
 
             // ensure we have a default processor setup.
-            GetProcessorAndInitializeIfNeeded();
-
-            QueueInitiateAbilityExecution();
+            var runtime = GetRuntimeAndInitializeIfNeeded();
+            runtime.QueueInitiateAbilityExecution();
         }
 
         /// <summary>
@@ -70,33 +70,25 @@ namespace NobunAtelier
                 return;
             }
 
-            var activeProcessor = GetProcessorAndInitializeIfNeeded();
-
-            if (activeProcessor != null)
-            {
-                activeProcessor.Terminate();
-            }
+            var runtime = GetRuntimeAndInitializeIfNeeded();
+            runtime.StopAbility();
 
             Log.Record($"{typeof(AnimComboModule).Name}: StopCombo.");
 
-            if (m_AbilityProcessorOverride != null)
-            {
-                m_AbilityProcessorOverride = null;
-            }
         }
 
         // Play ability but trying to use charge level settings.
         // If no charge level available, PlayAbility is called instead.
         public virtual void StartAbilityCharge()
         {
-            var activeProcessor = GetProcessorAndInitializeIfNeeded();
-            activeProcessor.StartCharge();
+            var runtime = GetRuntimeAndInitializeIfNeeded();
+            runtime.StartCharge();
         }
 
         public virtual void ReleaseAbilityCharge()
         {
-            var activeProcessor = GetProcessorAndInitializeIfNeeded();
-            activeProcessor.ReleaseCharge();
+            var runtime = GetRuntimeAndInitializeIfNeeded();
+            runtime.ReleaseCharge();
         }
 
         /// <summary>
@@ -106,37 +98,28 @@ namespace NobunAtelier
         /// </summary>
         public virtual void CancelAbilityCharge()
         {
-            var activeProcessor = GetProcessorAndInitializeIfNeeded();
-            activeProcessor.CancelCharge();
+            var runtime = GetRuntimeAndInitializeIfNeeded();
+            runtime.CancelCharge();
         }
 
         public virtual void SetAbility(AbilityDefinition ability)
         {
             m_DefaultAbility = ability;
+            m_Runtime?.SetAbility(ability);
         }
 
         protected override void OnAbilityUpdate(float deltaTime)
         {
             base.OnAbilityUpdate(deltaTime);
 
-            var activeProcessor = GetProcessorAndInitializeIfNeeded();
-            activeProcessor.Update(deltaTime);
-
-            if (!m_CanExecuteNewAction || m_ActionsQueue.Count == 0)
-            {
-                return;
-            }
-
-            Log.Record($"{this.name}{typeof(AnimComboModule).Name}: Dequeue next attack.");
-
-            m_ActionsQueue.Dequeue().Invoke();
-            m_CanExecuteNewAction = false;
+            var runtime = GetRuntimeAndInitializeIfNeeded();
+            runtime.Update(deltaTime);
         }
 
         /// <summary>
         /// Called when an ability has been initiated.
         /// </summary>
-        protected virtual void OnAbilitySetup()
+        internal virtual void OnAbilitySetup()
         {
         }
 
@@ -147,52 +130,48 @@ namespace NobunAtelier
         /// 2. StopAbilityEffect(); // Stop the ability modules. ExecutionState -> ChainOpportunity.
         /// 3. CompleteAbilityExecution(); // Reset internal state. ExecutionState -> Ready.
         /// </summary>
-        protected virtual void OnAbilityExecution()
+        internal virtual void OnAbilityExecution()
         {
         }
 
         /// <summary>
         /// Play the ability modules effect.
         /// </summary>
-        protected void StartAbilityEffect()
+        internal void StartAbilityEffect()
         {
             if (!isActiveAndEnabled/* || ActiveAbility == null*/)
             {
                 return;
             }
 
-            Log.Record($"{this.name}{typeof(AnimComboModule).Name}: AbilityEffectBegin.");
+            Log.Record();
 
-            var activeProcessor = GetProcessorAndInitializeIfNeeded();
-            activeProcessor.PlayAbilityModules();
-            // m_abilitiesModulesMap[m_activeAbility].PlayModules();
+            var runtime = GetRuntimeAndInitializeIfNeeded();
+            runtime.PlayAbilityModules();
         }
 
         /// <summary>
         /// Stop the ability modules effect and change ExecutionState to ChainOpportunity.
         /// </summary>
-        protected void StopAbilityEffect()
+        internal void StopAbilityEffect()
         {
             if (!isActiveAndEnabled)
             {
                 return;
             }
 
-            Log.Record($"{this.name}{typeof(AnimComboModule).Name}: AttackHitEnd.");
+            Log.Record();
 
-            var activeProcessor = GetProcessorAndInitializeIfNeeded();
-            activeProcessor.StopAbilityModules();
-            m_CanExecuteNewAction = true;
+            var runtime = GetRuntimeAndInitializeIfNeeded();
+            runtime.StopAbilityModules();
         }
 
         /// <summary>
         /// To be called after OnAbilityExecution to complete the ability life cycle.
         /// Reset execution state to Ready.
         /// </summary>
-        protected void CompleteAbilityExecution()
+        internal void CompleteAbilityExecution()
         {
-            var activeProcessor = GetProcessorAndInitializeIfNeeded();
-
             if (!isActiveAndEnabled)// || State == AbilityExecutionState.Charging)
             {
                 Log.Record("Failed AttackEnd", ContextualLogManager.LogTypeFilter.Warning);
@@ -201,37 +180,32 @@ namespace NobunAtelier
 
             Log.Record();
 
-            activeProcessor.Terminate();
-            m_CanExecuteNewAction = true;
+            var runtime = GetRuntimeAndInitializeIfNeeded();
+            runtime.CompleteAbilityExecution();
         }
 
         public void HandleEffectStartEvent()
         {
-            Log.Record("Effect start event triggered");
+            Log.Record("Start ability effect event triggered");
             StartAbilityEffect();
         }
 
         public void HandleEffectStopEvent()
         {
-            Log.Record("Effect stop event triggered");
+            Log.Record("Stop ability effect event triggered");
             StopAbilityEffect();
         }
 
         public void HandleAnimationEndEvent()
         {
-            Log.Record("Animation end event triggered");
+            Log.Record("Complete ability execution event triggered");
             CompleteAbilityExecution();
         }
 
         internal void QueueInitiateAbilityExecution()
         {
-            Log.Record();
-
-            // Cache the combo action in a queue, later we can improve the queue with a TimingQueue.
-            m_ActionsQueue.Enqueue(() =>
-            {
-                InitiateAbilityExecution();
-            });
+            var runtime = GetRuntimeAndInitializeIfNeeded();
+            runtime.QueueInitiateAbilityExecution();
         }
 
         internal void EnqueueAbilityExecution()
@@ -239,29 +213,15 @@ namespace NobunAtelier
             OnAbilityExecution();
         }
 
-        private Processor GetProcessorAndInitializeIfNeeded()
+        private AbilityRuntime GetRuntimeAndInitializeIfNeeded()
         {
-            // If default processor not setup yet, init.
-            if (m_AbilityProcessor == null)
+            if (m_Runtime == null)
             {
-                m_AbilityProcessor = new Processor();
-                m_AbilityProcessor.Initialize(this, m_DefaultAbility);
+                m_Runtime = new AbilityRuntime();
             }
 
-            return m_AbilityProcessorOverride != null ? m_AbilityProcessorOverride : m_AbilityProcessor;
-        }
-
-        private void InitiateAbilityExecution()
-        {
-            var activeProcessor = GetProcessorAndInitializeIfNeeded();
-
-            if (!activeProcessor.CanExecute())
-            {
-                return;
-            }
-
-            activeProcessor.Execute();
-            m_CanExecuteNewAction = false;
+            m_Runtime.Initialize(this, m_DefaultAbility);
+            return m_Runtime;
         }
 
         private void OnEnable()
@@ -272,6 +232,21 @@ namespace NobunAtelier
         private void OnDisable()
         {
             ContextualLogManager.Unregister(Log);
+            CleanupRuntime();
+        }
+
+        private void OnDestroy()
+        {
+            CleanupRuntime();
+        }
+
+        private void CleanupRuntime()
+        {
+            if (m_Runtime != null)
+            {
+                m_Runtime.Dispose();
+                m_Runtime = null;
+            }
         }
 
         //public enum AbilityExecutionState
