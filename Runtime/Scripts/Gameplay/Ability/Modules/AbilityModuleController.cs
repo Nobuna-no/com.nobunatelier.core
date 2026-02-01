@@ -2,14 +2,15 @@ using NobunAtelier;
 using System.Collections.Generic;
 
 /// <summary>
-/// Helper class to control ability modules.
+/// Helper class to control ability modules. 
+/// TODO: rename AbilityModuleRegistry.
 /// </summary>
-public class AbilityModuleController
+public class AbilityModuleRegistry
 {
     public Dictionary<AbilityModuleDefinition, IAbilityModuleInstance> m_modulesMap;
     private AbilityController m_controller;
 
-    public AbilityModuleController(AbilityController controller)
+    public AbilityModuleRegistry(AbilityController controller)
     {
         m_modulesMap = new Dictionary<AbilityModuleDefinition, IAbilityModuleInstance>();
         m_controller = controller;
@@ -70,30 +71,20 @@ public class AbilityModuleController
         }
     }
 
-    public void StopModule(AbilityModuleDefinition module, bool includeProcessors)
+    public void StopModule(AbilityModuleDefinition module)
     {
         if (m_modulesMap.TryGetValue(module, out var instance))
         {
-            if (!includeProcessors && instance is IModularAbilityProcessor)
-            {
-                return;
-            }
-
             instance.Stop();
         }
     }
 
-    public void StopModules(IReadOnlyCollection<AbilityModuleDefinition> modules, bool includeProcessors)
+    public void StopModules(IReadOnlyCollection<AbilityModuleDefinition> modules)
     {
         foreach (var module in modules)
         {
             if (m_modulesMap.TryGetValue(module, out var instance))
             {
-                if (!includeProcessors && instance is IModularAbilityProcessor)
-                {
-                    continue;
-                }
-
                 instance.Stop();
             }
         }

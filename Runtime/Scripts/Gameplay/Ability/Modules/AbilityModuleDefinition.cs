@@ -4,12 +4,6 @@ using static AbilityModuleDefinition;
 
 public abstract class AbilityModuleDefinition : DataDefinition
 {
-    /// <summary>
-    /// Not the best way to do it, but we need a way to know if an instance
-    /// is a processor for the ModularAbilityDefinition.AbilityProgram.
-    /// </summary>
-    public virtual bool IsInstanceAbilityProcessor => false;
-
     public abstract IAbilityModuleInstance CreateInstance(AbilityController controller);
 
     public enum EffectTarget

@@ -58,27 +58,6 @@ namespace NobunAtelier
             m_ActionQueue.Enqueue(InitiateAbilityExecution);
         }
 
-        public void PlayAbilityModules()
-        {
-            var activeProcessor = GetProcessorAndInitializeIfNeeded();
-            activeProcessor.PlayAbilityModules();
-        }
-
-        public void StopAbilityModules()
-        {
-            var activeProcessor = GetProcessorAndInitializeIfNeeded();
-            activeProcessor.StopAbilityModules();
-            m_CanExecuteNewAction = true;
-        }
-
-        public void CompleteAbilityExecution()
-        {
-            var activeProcessor = GetProcessorAndInitializeIfNeeded();
-            activeProcessor.Terminate();
-            m_CanExecuteNewAction = true;
-            CloseChainOpportunity();
-        }
-
         public void StopAbility()
         {
             var activeProcessor = GetProcessorAndInitializeIfNeeded();
@@ -86,6 +65,23 @@ namespace NobunAtelier
             if (activeProcessor != null)
             {
                 activeProcessor.Terminate();
+            }
+
+            if (m_AbilityProcessorOverride != null)
+            {
+                m_AbilityProcessorOverride = null;
+            }
+
+            CloseChainOpportunity();
+        }
+
+        public void CancelAbility()
+        {
+            var activeProcessor = GetProcessorAndInitializeIfNeeded();
+
+            if (activeProcessor != null)
+            {
+                activeProcessor.Cancel();
             }
 
             if (m_AbilityProcessorOverride != null)
@@ -219,24 +215,32 @@ namespace NobunAtelier
 
             private void OnAbilityStartCharge()
             {
-                m_controller.OnAbilitySetup();
                 m_controller?.OnAbilityStartCharge?.Invoke();
             }
 
             private void OnAbilitySetup()
             {
-                m_controller.OnAbilitySetup();
                 m_controller.OnAbilityStartExecution?.Invoke();
             }
 
             private void OnAbilityChainOpportunity()
             {
+                if (m_runtime != null)
+                {
+                    m_runtime.m_CanExecuteNewAction = true;
+                }
+
                 m_controller?.OnAbilityChainOpportunity?.Invoke();
                 m_runtime?.OpenChainOpportunity();
             }
 
             private void OnAbilityEnd()
             {
+                if (m_runtime != null)
+                {
+                    m_runtime.m_CanExecuteNewAction = true;
+                }
+
                 m_controller?.OnAbilityCompleteExecution?.Invoke();
                 m_runtime?.CloseChainOpportunity();
             }
@@ -251,24 +255,19 @@ namespace NobunAtelier
                 m_activeAbilityInstance?.InitiateExecution();
             }
 
-            public void PlayAbilityModules()
-            {
-                m_activeAbilityInstance?.ExecuteEffect();
-            }
-
             public void Update(float deltaTime)
             {
                 m_activeAbilityInstance?.UpdateEffect(deltaTime);
             }
 
-            public void StopAbilityModules()
-            {
-                m_activeAbilityInstance?.StopEffect();
-            }
-
             public void Terminate()
             {
                 m_activeAbilityInstance?.TerminateExecution();
+            }
+
+            public void Cancel()
+            {
+                m_activeAbilityInstance?.CancelExecution();
             }
 
             public void StartCharge()

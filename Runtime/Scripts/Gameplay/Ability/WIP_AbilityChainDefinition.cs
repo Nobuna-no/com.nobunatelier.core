@@ -169,6 +169,11 @@ public class WIP_AbilityChainDefinition : AbilityDefinition
             State = IAbilityInstance.ExecutionState.Ready;
         }
 
+        public void CancelExecution()
+        {
+            TerminateExecution();
+        }
+
         public void StartCharge()
         {
 
@@ -203,6 +208,11 @@ public class WIP_AbilityChainDefinition : AbilityDefinition
             {
                 Debug.Log(message, Data);
             }
+        }
+
+        public void StopEffect(bool backgroundExecution = false)
+        {
+            StopEffect();
         }
     }
 }

@@ -1,7 +1,6 @@
 using NobunAtelier;
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using UnityEngine;
 
 public partial class ModularAbilityDefinition
@@ -14,7 +13,7 @@ public partial class ModularAbilityDefinition
         return new Instance(this, controller);
     }
 
-    [System.Flags]
+    [Flags]
     private enum DebugFlags
     {
         Info = 1 << 1,
@@ -29,6 +28,8 @@ public partial class ModularAbilityDefinition
 
         public event Action OnAbilityInitiated;
 
+        internal void InvokeAbilityInitiated() => OnAbilityInitiated?.Invoke();
+
         public event Action OnAbilityChainOpportunity;
 
         public event Action OnAbilityCompleteExecution;
@@ -36,59 +37,26 @@ public partial class ModularAbilityDefinition
         public AbilityDefinition Ability => Data;
         public string LogPartitionName { get; private set; }
 
-        public IAbilityInstance.ExecutionState ExecutionState
-        {
-            get => m_currentState;
-            private set
-            {
-                m_currentState = value;
-            }
-        }
+        public IAbilityInstance.ExecutionState ExecutionState => m_StateMachine.ExecutionState;
 
-        private IAbilityInstance.ExecutionState m_currentState = IAbilityInstance.ExecutionState.Ready;
-
-        // private AbilityController m_controller;
-        private AbilityModuleController m_moduleController = null;
-        private float m_lastChargeDuration = 0;
-        private int m_currentChargeLevel = -1;
-
-        private Dictionary<int, AbilityCommand> m_commandLookupTable;
-        private Queue<AbilityCommand> m_commandQueue;
-        private CommandRunner m_activeCommandRunner;
-        private CommandCategory m_nextCommandCategory = CommandCategory.Default;
-        public bool IsCharging { get; private set; }
-        private ContextualLogManager.LogPartition m_LogSection;
+        internal AbilityModuleRegistry ModuleRegistry { get; private set;}
+        private AbilityCommandQueue m_CommandQueue = null;
+        private AbilityStateMachine m_StateMachine = null;
+        public bool IsCharging => m_StateMachine.IsCharging;
+        internal ContextualLogManager.LogPartition LogSection { get; private set; }
 
         public Instance(ModularAbilityDefinition data, AbilityController controller)
             : base(data)
         {
             LogPartitionName = $"'{Data.name}' Instance";
-            m_LogSection = ContextualLogManager.Register(controller, Data.m_LogSettings, this);
+            LogSection = ContextualLogManager.Register(controller, Data.m_LogSettings, this);
 
-            m_moduleController = new AbilityModuleController(controller);
-            m_activeCommandRunner = null;
-            //m_controller = controller;
-
-            m_commandLookupTable = new Dictionary<int, AbilityCommand>()
-            {
-                { (int)CommandCategory.Default,  new AbilityCommand(Data.m_Default) },
-            };
-
-            if (Data.m_CanBeCharged)
-            {
-                m_commandLookupTable.Add((int)CommandCategory.ChargeStart, new AbilityCommand(Data.m_ChargeStart));
-                m_commandLookupTable.Add((int)CommandCategory.ChargeCancel, new AbilityCommand(Data.m_ChargeCancel));
-
-                int i = 0;
-                foreach (var chargeData in Data.m_ChargedAbilityLevels)
-                {
-                    m_commandLookupTable.Add((int)CommandCategory.ChargeLevelReached + i, new AbilityCommand(chargeData.OnLevelReached));
-                    m_commandLookupTable.Add((int)CommandCategory.ChargeExecution + i, new AbilityCommand(chargeData.OnChargeReleased));
-                    ++i;
-                }
-            }
-
-            m_commandQueue = new Queue<AbilityCommand>();
+            ModuleRegistry = new AbilityModuleRegistry(controller);
+            m_CommandQueue = new AbilityCommandQueue(this, ModuleRegistry, LogSection);
+            m_StateMachine = new AbilityStateMachine(Data, m_CommandQueue, LogSection,
+                () => OnAbilityStartCharge?.Invoke(),
+                () => OnAbilityChainOpportunity?.Invoke(),
+                () => OnAbilityCompleteExecution?.Invoke());
         }
 
         private bool m_IsDisposed;
@@ -100,8 +68,8 @@ public partial class ModularAbilityDefinition
         public string GetStateMessage()
         {
             return $"{typeof(Instance).Name} of <b>{Data.name}</b>:" +
-                $"\nState: {ExecutionState}; IsCharging: {IsCharging}; Command Queue Count: {m_commandQueue.Count};" +
-                $"\nCurrentChargeLevel: {m_currentChargeLevel}; LastChargeDuration: {m_lastChargeDuration}s";
+                $"\nState: {ExecutionState}; IsCharging: {IsCharging}; Command Queue Count: {m_CommandQueue.CommandCount};" +
+                $"\nCurrentChargeLevel: {m_StateMachine.CurrentChargeLevel}; LastChargeDuration: {m_StateMachine.LastChargeDuration}s";
         }
 
         public void Dispose()
@@ -116,94 +84,430 @@ public partial class ModularAbilityDefinition
             {
                 TerminateExecution(false);
             }
-            m_commandQueue.Clear();
-            IsCharging = false;
-            ContextualLogManager.Unregister(m_LogSection);
+            m_CommandQueue.Clear();
+            m_StateMachine.ResetChargeState();
+            ContextualLogManager.Unregister(LogSection);
         }
 
         public bool CanExecute()
         {
-            return ExecutionState == IAbilityInstance.ExecutionState.Ready
-                || ExecutionState == IAbilityInstance.ExecutionState.ChainOpportunity;
+            return m_StateMachine.CanExecute();
         }
 
         public void InitiateExecution()
         {
-            m_commandQueue.Enqueue(m_commandLookupTable[(int)m_nextCommandCategory]);
+            m_StateMachine.InitiateExecution();
         }
 
         public void ExecuteEffect()
+        {
+            m_StateMachine.ExecuteEffect();
+        }
+
+        public void UpdateEffect(float deltaTime)
+        {
+            m_StateMachine.UpdateEffect(deltaTime);
+        }
+
+        /// <summary>
+        /// Stop active command (modules effect) and change the state to Cooldown or ChainOpportunity.
+        /// </summary>
+        /// <param name="backgroundExecution">If set to true, only stop the active command and
+        /// prevents the change of state (Cooldown or ChainOpportunity).</param>
+        public void StopEffect(bool backgroundExecution = false)
+        {
+            m_StateMachine.StopEffect(backgroundExecution);
+        }
+
+        /// <summary>
+        /// Terminate the active command (module effects) and reset the ability instance.
+        /// </summary>
+        /// <param name="raiseEvent">If enabled, raise OnAbilityCompleteExecution event.</param>
+        public void TerminateExecution()
+        {
+            m_StateMachine.TerminateExecution(true);
+        }
+
+        public void CancelExecution()
+        {
+            m_StateMachine.CancelExecution();
+        }
+
+        private void TerminateExecution(bool raiseEvent)
+        {
+            m_StateMachine.TerminateExecution(raiseEvent);
+        }
+
+        public void StartCharge()
+        {
+            m_StateMachine.StartCharge();
+        }
+
+        public void ReleaseCharge()
+        {
+            m_StateMachine.ReleaseCharge();
+        }
+
+        public void CancelCharge()
+        {
+            m_StateMachine.CancelCharge();
+        }
+    }
+
+    internal enum CommandCategory
+    {
+        Default = 0,
+        ChargeStart = 1,
+        ChargeCancel = 2,
+
+        ChargeLevelReached = 1 << 8,
+        ChargeExecution = 1 << 16,
+    }
+
+    internal class ModuleStateMachine
+    {
+        private IReadOnlyDictionary<int, ModuleState> m_states;
+        private ModuleState m_currentState;
+
+        public ModuleStateMachine(IReadOnlyDictionary<int, ModuleState> modularAbilityStates)
+        {
+            m_states = modularAbilityStates;
+        }
+
+        public void Initiate(int state)
+        {
+            if (m_currentState != null)
+            {
+                m_currentState.ExitState();
+            }
+
+            if (m_states.TryGetValue(state, out m_currentState))
+            {
+                m_currentState.ResetState();
+            }
+        }
+
+        public void Execute()
+        {
+            if (m_currentState == null)
+            {
+                return;
+            }
+
+            m_currentState.EnterState();
+        }
+
+        public void Update(float deltaTime)
+        {
+            if (m_currentState == null)
+            {
+                return;
+            }
+
+            m_currentState.UpdateState(deltaTime);
+        }
+
+        public void Stop()
+        {
+            if (m_currentState == null)
+            {
+                return;
+            }
+
+            m_currentState.ExitState();
+        }
+    }
+
+    internal class ModuleState
+    {
+        private IReadOnlyList<AbilityModuleDefinition> m_modules;
+        private AbilityModuleRegistry m_moduleController;
+
+        public ModuleState(IReadOnlyList<AbilityModuleDefinition> modules, AbilityModuleRegistry moduleController)
+        {
+            m_modules = modules;
+            m_moduleController = moduleController;
+            m_moduleController.Add(modules);
+        }
+
+        public void ResetState()
+        {
+            m_moduleController.InitiateModulesExecution(m_modules);
+        }
+
+        public void EnterState()
+        {
+            m_moduleController.ExecuteModules(m_modules);
+        }
+
+        public void UpdateState(float deltaTime)
+        {
+            m_moduleController.UpdateModules(deltaTime, m_modules);
+        }
+
+        public void ExitState()
+        {
+            m_moduleController.StopModules(m_modules);
+        }
+    }
+
+    internal readonly struct AbilityCommand
+    {
+        public readonly ActionModel ActionModel;
+        public readonly AbilityModuleDefinition TimingDriverModule;
+
+        public AbilityCommand(ActionModel actionModel)
+        {
+            ActionModel = actionModel;
+            TimingDriverModule = actionModel.ExecutionDriverModule;
+        }
+    }
+
+    internal sealed class AbilityCommandQueue
+    {
+        private readonly Instance m_owner;
+        private readonly ModularAbilityDefinition m_definition;
+        private readonly AbilityModuleRegistry m_moduleController;
+        private readonly ContextualLogManager.LogPartition m_LogSection;
+        private readonly Dictionary<int, AbilityCommand> m_commandLookupTable;
+        private readonly Queue<AbilityCommand> m_commandQueue;
+        private CommandRunner m_activeCommandRunner;
+
+        public AbilityCommandQueue(Instance owner, AbilityModuleRegistry moduleController, ContextualLogManager.LogPartition logSection)
+        {
+            m_owner = owner;
+            m_definition = owner.Data;
+            m_moduleController = moduleController;
+            m_LogSection = logSection;
+
+            m_commandLookupTable = new Dictionary<int, AbilityCommand>()
+            {
+                { (int)CommandCategory.Default, new AbilityCommand(m_definition.m_Default) },
+            };
+
+            if (m_definition.m_CanBeCharged)
+            {
+                m_commandLookupTable.Add((int)CommandCategory.ChargeStart, new AbilityCommand(m_definition.m_ChargeStart));
+                m_commandLookupTable.Add((int)CommandCategory.ChargeCancel, new AbilityCommand(m_definition.m_ChargeCancel));
+
+                int i = 0;
+                foreach (var chargeData in m_definition.m_ChargedAbilityLevels)
+                {
+                    m_commandLookupTable.Add((int)CommandCategory.ChargeLevelReached + i, new AbilityCommand(chargeData.OnLevelReached));
+                    m_commandLookupTable.Add((int)CommandCategory.ChargeExecution + i, new AbilityCommand(chargeData.OnChargeReleased));
+                    ++i;
+                }
+            }
+
+            m_commandQueue = new Queue<AbilityCommand>();
+        }
+
+        public int CommandCount => m_commandQueue.Count;
+        public bool HasActiveRunner => m_activeCommandRunner != null;
+        public bool HasQueuedCommands => m_commandQueue.Count > 0;
+
+        public AbilityCommand GetCommand(CommandCategory category)
+        {
+            return m_commandLookupTable[(int)category];
+        }
+
+        public void Enqueue(CommandCategory category)
+        {
+            m_commandQueue.Enqueue(GetCommand(category));
+        }
+
+        public bool TryDequeue(out AbilityCommand command)
+        {
+            if (m_commandQueue.Count == 0)
+            {
+                command = default;
+                return false;
+            }
+
+            command = m_commandQueue.Dequeue();
+            return true;
+        }
+
+        public void ActivateCommand(AbilityCommand command)
+        {
+            m_activeCommandRunner = new CommandRunner(m_owner, command);
+            m_activeCommandRunner.Initiate();
+        }
+
+        public void ExecuteActive()
+        {
+            m_activeCommandRunner?.Execute();
+        }
+
+        public void UpdateActive(float deltaTime)
+        {
+            m_activeCommandRunner?.Update(deltaTime);
+        }
+
+        public void StopActive()
         {
             if (m_activeCommandRunner == null)
             {
                 return;
             }
 
+            m_activeCommandRunner.Stop();
+            m_activeCommandRunner = null;
+        }
+
+        public void CancelActive()
+        {
+            if (m_activeCommandRunner == null)
+            {
+                return;
+            }
+
+            m_activeCommandRunner.Cancel();
+            m_activeCommandRunner = null;
+        }
+
+        public void TerminateActive()
+        {
+            if (m_activeCommandRunner == null)
+            {
+                return;
+            }
+
+            m_activeCommandRunner.Terminate();
+            m_activeCommandRunner = null;
+        }
+
+        public void ClearQueuedCommands()
+        {
+            m_commandQueue.Clear();
+        }
+
+        public void Clear()
+        {
+            m_commandQueue.Clear();
+            m_activeCommandRunner = null;
+        }
+    }
+
+    internal sealed class AbilityStateMachine
+    {
+        private readonly ModularAbilityDefinition m_Definition;
+        private readonly AbilityCommandQueue m_CommandQueue;
+        private readonly ContextualLogManager.LogPartition m_LogSection;
+        private readonly Action m_OnAbilityStartCharge;
+        private readonly Action m_OnAbilityChainOpportunity;
+        private readonly Action m_OnAbilityCompleteExecution;
+        private IAbilityInstance.ExecutionState m_CurrentState = IAbilityInstance.ExecutionState.Ready;
+        private float m_LastChargeDuration = 0;
+        private int m_CurrentChargeLevel = -1;
+        private CommandCategory m_nextCommandCategory = CommandCategory.Default;
+
+        public AbilityStateMachine(ModularAbilityDefinition definition, AbilityCommandQueue commandQueue, ContextualLogManager.LogPartition logSection,
+            Action onAbilityStartCharge, Action onAbilityChainOpportunity, Action onAbilityCompleteExecution)
+        {
+            m_Definition = definition;
+            m_CommandQueue = commandQueue;
+            m_LogSection = logSection;
+            m_OnAbilityStartCharge = onAbilityStartCharge;
+            m_OnAbilityChainOpportunity = onAbilityChainOpportunity;
+            m_OnAbilityCompleteExecution = onAbilityCompleteExecution;
+        }
+
+        public IAbilityInstance.ExecutionState ExecutionState => m_CurrentState;
+        public bool IsCharging { get; private set; }
+        public int CurrentChargeLevel => m_CurrentChargeLevel;
+        public float LastChargeDuration => m_LastChargeDuration;
+
+        public void ResetChargeState()
+        {
+            IsCharging = false;
+            m_CurrentChargeLevel = -1;
+            m_LastChargeDuration = 0;
+        }
+
+        public bool CanExecute()
+        {
+            return m_CurrentState == IAbilityInstance.ExecutionState.Ready
+                || m_CurrentState == IAbilityInstance.ExecutionState.ChainOpportunity;
+        }
+
+        public void InitiateExecution()
+        {
+            m_CommandQueue.Enqueue(m_nextCommandCategory);
+        }
+
+        public void ExecuteEffect()
+        {
+            if (!m_CommandQueue.HasActiveRunner)
+            {
+                return;
+            }
+
             m_LogSection.Record();
 
-            m_activeCommandRunner.Execute();
+            m_CommandQueue.ExecuteActive();
             m_nextCommandCategory = CommandCategory.Default;
         }
 
         public void UpdateEffect(float deltaTime)
         {
-            if (ExecutionState != IAbilityInstance.ExecutionState.InProgress &&
-                ExecutionState != IAbilityInstance.ExecutionState.Charging &&
-                (m_activeCommandRunner == null && m_commandQueue.Count == 0))
+            if (m_CurrentState != IAbilityInstance.ExecutionState.InProgress &&
+                m_CurrentState != IAbilityInstance.ExecutionState.Charging &&
+                (!m_CommandQueue.HasActiveRunner && !m_CommandQueue.HasQueuedCommands))
             {
                 return;
             }
 
             m_LogSection.Record(ContextualLogManager.LogTypeFilter.Update);
 
-            switch (ExecutionState)
+            switch (m_CurrentState)
             {
                 case IAbilityInstance.ExecutionState.Ready:
                 case IAbilityInstance.ExecutionState.ChainOpportunity:
-                    ExecuteNewCommand(deltaTime);
+                    ExecuteNewCommand();
                     break;
 
                 // Transitive state before in progress to prevent new command execution.
                 case IAbilityInstance.ExecutionState.Starting:
-                    ExecutionState = IAbilityInstance.ExecutionState.InProgress;
+                    m_CurrentState = IAbilityInstance.ExecutionState.InProgress;
                     break;
 
                 case IAbilityInstance.ExecutionState.InProgress:
                     {
-                        m_activeCommandRunner.Update(deltaTime);
-                        // m_stateMachine.Update(deltaTime);
+                        m_CommandQueue.UpdateActive(deltaTime);
                         break;
                     }
 
                 case IAbilityInstance.ExecutionState.Charging:
                     {
-                        if (m_commandQueue.Count > 0)
+                        if (m_CommandQueue.HasQueuedCommands)
                         {
-                            if (m_activeCommandRunner != null)
+                            if (m_CommandQueue.HasActiveRunner)
                             {
-                                m_activeCommandRunner.Stop(true);
+                                // Terminate current command to start charge command
+                                m_CommandQueue.TerminateActive();
                             }
 
-                            if (m_commandQueue.TryDequeue(out var command))
+                            if (m_CommandQueue.TryDequeue(out var command))
                             {
                                 ActivateCommand(command);
                             }
                         }
-                        else if (m_activeCommandRunner != null)
+                        else if (m_CommandQueue.HasActiveRunner)
                         {
                             // else update existing if any...
-                            m_activeCommandRunner.Update(deltaTime);
+                            m_CommandQueue.UpdateActive(deltaTime);
                         }
 
                         // We need to ensure that the first frame after a charge release,
                         // we don't let the ability continue to charge...
-                        if (m_currentChargeLevel > 0)
+                        if (m_CurrentChargeLevel > 0)
                         {
                             IsCharging = false;
                             return;
                         }
 
-                        m_lastChargeDuration += deltaTime;
+                        m_LastChargeDuration += deltaTime;
                         UpdateAbilityChargeLevel();
                     }
                     break;
@@ -213,56 +517,59 @@ public partial class ModularAbilityDefinition
             }
         }
 
-        /// <summary>
-        /// Stop active command (modules effect) and change the state to Cooldown or ChainOpportunity.
-        /// </summary>
-        /// <param name="backgroundExecution">If set to true, only stop the active command and
-        /// prevents the change of state (Cooldown or ChainOpportunity).</param>
-        public void StopEffect()
+        public void StopEffect(bool backgroundExecution)
         {
-            StopEffect(false);
-        }
-
-        private void StopEffect(bool backgroundExecution)
-        {
-            if (m_activeCommandRunner == null)
+            if (!m_CommandQueue.HasActiveRunner)
             {
                 return;
             }
 
             m_LogSection.Record();
 
-            m_activeCommandRunner.Stop(false);
-            m_activeCommandRunner = null;
+            // Stop effect modules but keep timing driver alive to fire completion events
+            m_CommandQueue.StopActive();
 
             if (backgroundExecution)
             {
                 return;
             }
 
-            if (!Data.m_CanChainOnSelf)
+            if (!m_Definition.m_CanChainOnSelf)
             {
-                ExecutionState = IAbilityInstance.ExecutionState.Cooldown;
+                m_CurrentState = IAbilityInstance.ExecutionState.Cooldown;
                 return;
             }
 
-            ExecutionState = IAbilityInstance.ExecutionState.ChainOpportunity;
-            OnAbilityChainOpportunity?.Invoke();
+            m_CurrentState = IAbilityInstance.ExecutionState.ChainOpportunity;
+            m_OnAbilityChainOpportunity?.Invoke();
         }
 
-        /// <summary>
-        /// Terminate the active command (module effects) and reset the ability instance.
-        /// </summary>
-        /// <param name="raiseEvent">If enabled, raise OnAbilityCompleteExecution event.</param>
-        public void TerminateExecution()
+        public void CancelExecution()
         {
-            TerminateExecution(true);
+            if (m_CurrentState == IAbilityInstance.ExecutionState.Ready
+                && !m_CommandQueue.HasActiveRunner
+                && !m_CommandQueue.HasQueuedCommands)
+            {
+                return;
+            }
+
+            m_LogSection.Record();
+
+            if (m_CommandQueue.HasActiveRunner)
+            {
+                m_CommandQueue.CancelActive();
+            }
+
+            m_CommandQueue.ClearQueuedCommands();
+            ResetChargeState();
+            m_nextCommandCategory = CommandCategory.Default;
+            m_CurrentState = IAbilityInstance.ExecutionState.Ready;
         }
 
-        private void TerminateExecution(bool raiseEvent)
+        public void TerminateExecution(bool raiseEvent)
         {
             // Early exit in case we are not actually running an ability yet.
-            if (ExecutionState == IAbilityInstance.ExecutionState.Ready)
+            if (m_CurrentState == IAbilityInstance.ExecutionState.Ready)
             {
                 m_LogSection.Record("Early exit because no ability is running.", ContextualLogManager.LogTypeFilter.Warning);
                 return;
@@ -270,20 +577,20 @@ public partial class ModularAbilityDefinition
 
             m_LogSection.Record();
 
-            if (m_activeCommandRunner != null)
+            if (m_CommandQueue.HasActiveRunner)
             {
-                m_LogSection.Record("StopEffect");
-                m_activeCommandRunner.Stop(true);
-                m_activeCommandRunner = null;
+                // m_LogSection.Record("TerminateExecution");
+                // Reset timing driver
+                m_CommandQueue.TerminateActive();
             }
 
-            m_currentChargeLevel = -1;
+            ResetChargeState();
             m_nextCommandCategory = CommandCategory.Default;
-            ExecutionState = IAbilityInstance.ExecutionState.Ready;
+            m_CurrentState = IAbilityInstance.ExecutionState.Ready;
 
             if (raiseEvent)
             {
-                OnAbilityCompleteExecution?.Invoke();
+                m_OnAbilityCompleteExecution?.Invoke();
             }
         }
 
@@ -301,14 +608,14 @@ public partial class ModularAbilityDefinition
             // This would be a lot of work, but would allow to achieve MHW like result.
             // Tbf, after a few test it feel solid, just like a fighting game, where if you
             // input too early, nothing happen, but right in time and you can chain smoothly
-            if (Data.m_CanBeCharged && ExecutionState == IAbilityInstance.ExecutionState.InProgress)
+            if (m_Definition.m_CanBeCharged && m_CurrentState == IAbilityInstance.ExecutionState.InProgress)
             {
                 m_LogSection.Record("Aborted because an ability is in progress...");
                 return;
             }
 
-            if (!Data.m_CanBeCharged || (ExecutionState != IAbilityInstance.ExecutionState.Ready
-                    && ExecutionState != IAbilityInstance.ExecutionState.ChainOpportunity))
+            if (!m_Definition.m_CanBeCharged || (m_CurrentState != IAbilityInstance.ExecutionState.Ready
+                    && m_CurrentState != IAbilityInstance.ExecutionState.ChainOpportunity))
             {
                 m_LogSection.Record($"Ability can't be charged. Playing normal ability instead.", ContextualLogManager.LogTypeFilter.Warning);
                 m_nextCommandCategory = CommandCategory.Default;
@@ -316,15 +623,14 @@ public partial class ModularAbilityDefinition
                 return;
             }
 
-
-            m_commandQueue.Enqueue(m_commandLookupTable[(int)CommandCategory.ChargeStart]);
+            m_CommandQueue.Enqueue(CommandCategory.ChargeStart);
 
             IsCharging = true;
-            ExecutionState = IAbilityInstance.ExecutionState.Charging;
-            m_currentChargeLevel = -1;
-            m_lastChargeDuration = 0;
+            m_CurrentState = IAbilityInstance.ExecutionState.Charging;
+            m_CurrentChargeLevel = -1;
+            m_LastChargeDuration = 0;
 
-            OnAbilityStartCharge?.Invoke();
+            m_OnAbilityStartCharge?.Invoke();
         }
 
         public void ReleaseCharge()
@@ -338,24 +644,24 @@ public partial class ModularAbilityDefinition
             m_LogSection.Record();
 
             // If charge started but haven't reached a level yet.
-            if (m_currentChargeLevel < 0)
+            if (m_CurrentChargeLevel < 0)
             {
                 // In case the ability was not charged enough, we can PlayAbility instead.
                 // we don't need to bother about module effect has none has started yet.
 
-                if (Data.m_CancelAbilityChargeOnEarlyChargeRelease)
+                if (m_Definition.m_CancelAbilityChargeOnEarlyChargeRelease)
                 {
                     m_LogSection.Record("[1] - Canceling Ability Charge On Early Charge Release");
                     CancelCharge();
                 }
 
-                if (Data.m_PlayAbilityOnEarlyChargeRelease)
+                if (m_Definition.m_PlayAbilityOnEarlyChargeRelease)
                 {
                     // TODO: This is for ability chain
                     // m_hasAlreadyBeenChainFromStartCharge = State == IAbilityInstance.ExecutionState.ChainOpportunity;
 
                     m_LogSection.Record("[2] - Playing Ability On Early Charge Release");
-                    ExecutionState = IAbilityInstance.ExecutionState.Ready;
+                    m_CurrentState = IAbilityInstance.ExecutionState.Ready;
                     m_nextCommandCategory = CommandCategory.Default;
                     InitiateExecution();
                 }
@@ -364,8 +670,8 @@ public partial class ModularAbilityDefinition
             }
 
             // Otherwise queue new action model.
-            m_nextCommandCategory = (CommandCategory)((int)CommandCategory.ChargeExecution + m_currentChargeLevel);
-            ExecutionState = IAbilityInstance.ExecutionState.Ready;
+            m_nextCommandCategory = (CommandCategory)((int)CommandCategory.ChargeExecution + m_CurrentChargeLevel);
+            m_CurrentState = IAbilityInstance.ExecutionState.Ready;
             InitiateExecution();
             IsCharging = false;
         }
@@ -380,35 +686,33 @@ public partial class ModularAbilityDefinition
 
             m_LogSection.Record();
 
-            m_commandQueue.Enqueue(m_commandLookupTable[(int)CommandCategory.ChargeCancel]);
+            m_CommandQueue.Enqueue(CommandCategory.ChargeCancel);
 
-            m_currentChargeLevel = -1;
-            ExecutionState = IAbilityInstance.ExecutionState.Ready;
+            m_CurrentChargeLevel = -1;
+            m_CurrentState = IAbilityInstance.ExecutionState.Ready;
             IsCharging = false;
         }
 
-        private void ExecuteNewCommand(float deltaTime)
+        private void ExecuteNewCommand()
         {
-            if (m_activeCommandRunner != null)
+            if (m_CommandQueue.HasActiveRunner)
             {
                 // Should not be necessary, but just in case for now as
                 // non processor can't know when to stop...
-                m_activeCommandRunner.Stop(true);
+                m_CommandQueue.TerminateActive();
             }
 
-            if (m_commandQueue.TryDequeue(out var command))
+            if (m_CommandQueue.TryDequeue(out var command))
             {
                 ActivateCommand(command);
-                ExecutionState = IAbilityInstance.ExecutionState.Starting;
+                m_CurrentState = IAbilityInstance.ExecutionState.Starting;
             }
         }
 
         private void ActivateCommand(AbilityCommand command)
         {
-            m_activeCommandRunner = new CommandRunner(this, command);
-            m_activeCommandRunner.Initiate();
+            m_CommandQueue.ActivateCommand(command);
         }
-
 
         private void UpdateAbilityChargeLevel()
         {
@@ -419,13 +723,13 @@ public partial class ModularAbilityDefinition
 
             // Log("<b>UpdateAbilityChargeLevel</b>");
 
-            switch (Data.m_ChargeConstraint)
+            switch (m_Definition.m_ChargeConstraint)
             {
                 case ChargeReleaseConstraint.None:
                     break;
 
                 case ChargeReleaseConstraint.ReleaseOnMaxChargeReached:
-                    if (m_currentChargeLevel >= Data.m_ChargedAbilityLevels.Length - 1)
+                    if (m_CurrentChargeLevel >= m_Definition.m_ChargedAbilityLevels.Length - 1)
                     {
                         m_LogSection.Record($"ReleaseOnMaxChargeReached");
                         ReleaseCharge();
@@ -434,7 +738,7 @@ public partial class ModularAbilityDefinition
                     break;
 
                 case ChargeReleaseConstraint.ReleaseOnTimeout:
-                    if (m_lastChargeDuration >= Data.m_ChargeTimeout)
+                    if (m_LastChargeDuration >= m_Definition.m_ChargeTimeout)
                     {
                         m_LogSection.Record($"ReleaseOnTimeout");
                         ReleaseCharge();
@@ -443,7 +747,7 @@ public partial class ModularAbilityDefinition
                     break;
 
                 case ChargeReleaseConstraint.CancelOnTimeout:
-                    if (m_lastChargeDuration >= Data.m_ChargeTimeout)
+                    if (m_LastChargeDuration >= m_Definition.m_ChargeTimeout)
                     {
                         m_LogSection.Record($"CancelOnTimeout");
                         CancelCharge();
@@ -452,10 +756,10 @@ public partial class ModularAbilityDefinition
                     break;
             }
 
-            int maxLevel = Data.m_ChargedAbilityLevels.Length;
+            int maxLevel = m_Definition.m_ChargedAbilityLevels.Length;
 
             // If we already reached the max level, exit now.
-            if (m_currentChargeLevel >= maxLevel - 1)
+            if (m_CurrentChargeLevel >= maxLevel - 1)
             {
                 return;
             }
@@ -463,288 +767,192 @@ public partial class ModularAbilityDefinition
             float cumulativeDuration = 0;
             for (int i = 0; i < maxLevel; i++)
             {
-                ChargeLevelData level = Data.m_ChargedAbilityLevels[i];
+                ChargeLevelData level = m_Definition.m_ChargedAbilityLevels[i];
                 cumulativeDuration += level.TresholdDuration;
 
                 // Reach level duration treshold.
-                if (m_lastChargeDuration >= cumulativeDuration)
+                if (m_LastChargeDuration >= cumulativeDuration)
                 {
                     // If we already reached this level. The level effect already been activated.
-                    if (m_currentChargeLevel >= i)
+                    if (m_CurrentChargeLevel >= i)
                     {
                         break;
                     }
 
                     // Level reached for the first time.
-                    m_currentChargeLevel = i;
-                    m_commandQueue.Enqueue(m_commandLookupTable[(int)CommandCategory.ChargeLevelReached + i]);
+                    m_CurrentChargeLevel = i;
+                    m_CommandQueue.Enqueue((CommandCategory)((int)CommandCategory.ChargeLevelReached + i));
                     m_LogSection.Record($"<b>On Charge Level '{i}' reached</b>");
                 }
             }
         }
+    }
 
-        //private void Log(string message = "", DebugFlags flags = DebugFlags.Info, [CallerMemberName] string funcName = null)
-        //{
-        //    if ((Data.m_debug & flags) == 0)
-        //    {
-        //        return;
-        //    }
+    private sealed class AbilityExecutionDriverCallbacks : IAbilityExecutionDriverCallbacks
+    {
+        private readonly Instance m_target;
+        private readonly ActionModel m_actionModel;
 
-        //    message = $"[{Time.frameCount}] <b>{Data.name}</b><{funcName}()> {message}" +
-        //        $"\nState: {ExecutionState}; IsCharging: {IsCharging}; Command Queue Count: {m_commandQueue.Count};" +
-        //        $"\nCurrentChargeLevel: {m_currentChargeLevel}; LastChargeDuration: {m_lastChargeDuration}s" + // m_chainIndex: {m_chainIndex}" +
-        //        $"\n";
-
-        //    if ((flags & DebugFlags.Warning) != 0)
-        //    {
-        //        Debug.LogWarning(message, Data);
-        //    }
-        //    else
-        //    {
-        //        Debug.Log(message, Data);
-        //    }
-        //}
-
-        private enum CommandCategory
+        public AbilityExecutionDriverCallbacks(Instance target, ActionModel actionModel)
         {
-            Default = 0,
-            ChargeStart = 1,
-            ChargeCancel = 2,
-
-            ChargeLevelReached = 1 << 8,
-            ChargeExecution = 1 << 16,
+            m_target = target;
+            m_actionModel = actionModel;
         }
 
-        private class ModuleStateMachine
+        public void OnEffectStart()
         {
-            private IReadOnlyDictionary<int, ModuleState> m_states;
-            private ModuleState m_currentState;
-
-            public ModuleStateMachine(IReadOnlyDictionary<int, ModuleState> modularAbilityStates)
-            {
-                m_states = modularAbilityStates;
-            }
-
-            public void Initiate(int state)
-            {
-                if (m_currentState != null)
-                {
-                    m_currentState.ExitState();
-                }
-
-                if (m_states.TryGetValue(state, out m_currentState))
-                {
-                    m_currentState.ResetState();
-                }
-            }
-
-            public void Execute()
-            {
-                if (m_currentState == null)
-                {
-                    return;
-                }
-
-                m_currentState.EnterState();
-            }
-
-            public void Update(float deltaTime)
-            {
-                if (m_currentState == null)
-                {
-                    return;
-                }
-
-                m_currentState.UpdateState(deltaTime);
-            }
-
-            public void Stop()
-            {
-                if (m_currentState == null)
-                {
-                    return;
-                }
-
-                m_currentState.ExitState();
-            }
+            m_target.ExecuteEffect();
         }
 
-        private class ModuleState
+        public void OnEffectStop()
         {
-            private IReadOnlyList<AbilityModuleDefinition> m_modules;
-            private AbilityModuleController m_moduleController;
-
-            public ModuleState(IReadOnlyList<AbilityModuleDefinition> modules, AbilityModuleController moduleController)
-            {
-                m_modules = modules;
-                m_moduleController = moduleController;
-                m_moduleController.Add(modules);
-            }
-
-            public void ResetState()
-            {
-                m_moduleController.InitiateModulesExecution(m_modules);
-            }
-
-            public void EnterState()
-            {
-                m_moduleController.ExecuteModules(m_modules);
-            }
-
-            public void UpdateState(float deltaTime)
-            {
-                m_moduleController.UpdateModules(deltaTime, m_modules);
-            }
-
-            public void ExitState()
-            {
-            m_moduleController.StopModules(m_modules, true);
-            }
+            m_target.StopEffect(m_actionModel.BackgroundExecution);
         }
 
-        private readonly struct AbilityCommand
+        public void OnExecutionComplete()
         {
-            public readonly ActionModel ActionModel;
-
-            public AbilityCommand(ActionModel actionModel)
+            if (!m_actionModel.TerminateExecutionOnCompletion)
             {
-                ActionModel = actionModel;
+                return;
             }
+
+            m_target.TerminateExecution();
         }
+    }
 
-        private class CommandRunner
+    private sealed class CommandRunner
+    {
+        private ActionModel m_abilityAction;
+        private IReadOnlyList<AbilityModuleDefinition> m_modules;
+        private AbilityModuleRegistry m_ModuleRegistry;
+        private Instance m_target;
+        private IAbilityExecutionDriver m_executionDriver;
+        private AbilityExecutionDriverCallbacks m_timingCallbacks;
+        private AwaitableExecutionDriver m_awaitableExecutionDriver;
+
+        public CommandRunner(Instance target, AbilityCommand command)
         {
-            private ActionModel m_abilityAction;
-            private IReadOnlyList<AbilityModuleDefinition> m_modules;
-            private AbilityModuleController m_moduleController;
-            private Instance m_target;
-            private IModularAbilityProcessor m_processor;
-            private CancellationTokenSource m_CancellationTokenSource;
-
-            public CommandRunner(Instance target, AbilityCommand command)
+            m_abilityAction = command.ActionModel;
+            m_target = target;
+            m_ModuleRegistry = target.ModuleRegistry;
+            if (m_modules.Count > 0)
             {
-                m_abilityAction = command.ActionModel;
-                m_modules = m_abilityAction != null ? m_abilityAction.Modules : Array.Empty<AbilityModuleDefinition>();
-                m_target = target;
-                m_moduleController = target.m_moduleController;
-                if (m_modules.Count > 0)
-                {
-                    m_moduleController.Add(m_modules);
-                }
+                m_ModuleRegistry.Add(m_modules);
+            }
 
-                foreach (var module in m_modules)
+            if (command.TimingDriverModule != null)
+            {
+                if (m_ModuleRegistry.m_modulesMap.TryGetValue(command.TimingDriverModule, out var instance))
                 {
-                    if (m_moduleController.m_modulesMap.TryGetValue(module, out var instance))
+                    m_executionDriver = instance as IAbilityExecutionDriver;
+                    if (m_executionDriver == null)
                     {
-                        if (instance is IModularAbilityProcessor)
-                        {
-                            m_processor = instance as IModularAbilityProcessor;
-                            break;
-                        }
+                        m_target.LogSection.Record("Timing driver module instance does not implement IAbilityExecutionDriver. Falling back to Awaitable timing.",
+                            ContextualLogManager.LogTypeFilter.Warning);
                     }
-                }
-            }
-
-            public void Initiate()
-            {
-                if (m_abilityAction == null)
-                {
-                    m_target.m_LogSection.Record("Missing ActionModel for command.", ContextualLogManager.LogTypeFilter.Warning);
-                    return;
-                }
-
-                m_moduleController.InitiateModulesExecution(m_modules);
-
-                if (!m_abilityAction.BackgroundExecution)
-                {
-                    m_target.OnAbilityInitiated?.Invoke();
-                }
-
-                m_target.m_LogSection.Record("Initiate Ability");
-
-                if (m_processor != null)
-                {
-                    m_processor.RequestExecution();
                 }
                 else
                 {
-                    RestartAutoExecute();
+                    m_target.LogSection.Record("Timing driver module instance not found. Falling back to Awaitable timing.",
+                        ContextualLogManager.LogTypeFilter.Warning);
                 }
             }
 
-            public void Execute()
+            if (m_executionDriver == null)
             {
-                if (m_abilityAction == null)
+                m_awaitableExecutionDriver = new AwaitableExecutionDriver();
+                if (m_abilityAction != null)
                 {
-                    return;
+                    m_awaitableExecutionDriver.ConfigureFromActionModel(m_abilityAction);
                 }
 
-                m_moduleController.ExecuteModules(m_modules);
-            }
-
-            public void Update(float deltaTime)
-            {
-                if (m_abilityAction == null)
-                {
-                    return;
-                }
-
-                m_moduleController.UpdateModules(deltaTime, m_modules);
-            }
-
-            public void Stop(bool includeProcessors)
-            {
-                CancelAutoExecute();
-                m_moduleController.StopModules(m_modules, includeProcessors);
-            }
-
-            private void RestartAutoExecute()
-            {
-                CancelAutoExecute();
-                m_CancellationTokenSource = new CancellationTokenSource();
-                AutoExecuteAsync(m_CancellationTokenSource.Token).FireAndForget();
-            }
-
-            private void CancelAutoExecute()
-            {
-                if (m_CancellationTokenSource == null)
-                {
-                    return;
-                }
-
-                m_CancellationTokenSource.Cancel();
-                m_CancellationTokenSource.Dispose();
-                m_CancellationTokenSource = null;
-            }
-
-            private async Awaitable AutoExecuteAsync(CancellationToken cancellationToken)
-            {
-                if (m_abilityAction.ExecutionDelay > 0f)
-                {
-                    await Awaitable.WaitForSecondsAsync(m_abilityAction.ExecutionDelay, cancellationToken);
-                }
-
-                m_target.ExecuteEffect();
-
-                if (m_abilityAction.UpdateDuration > 0f)
-                {
-                    await Awaitable.WaitForSecondsAsync(m_abilityAction.UpdateDuration, cancellationToken);
-                }
-
-                m_target.StopEffect(m_abilityAction.BackgroundExecution);
-
-                if (m_abilityAction.ChainOpportunityDuration > 0f)
-                {
-                    await Awaitable.WaitForSecondsAsync(m_abilityAction.ChainOpportunityDuration, cancellationToken);
-                }
-
-                if (!m_abilityAction.TerminateExecutionOnCompletion)
-                {
-                    return;
-                }
-
-                m_target.TerminateExecution();
+                m_executionDriver = m_awaitableExecutionDriver;
             }
         }
-    }
+
+        public void Initiate()
+        {
+            if (m_abilityAction == null)
+            {
+                m_target.LogSection.Record("Missing ActionModel for command.", ContextualLogManager.LogTypeFilter.Warning);
+                return;
+            }
+
+            if (m_executionDriver == null)
+            {
+                m_target.LogSection.Record("Missing execution driver for command.", ContextualLogManager.LogTypeFilter.Warning);
+                return;
+            }
+
+            EnsureTimingCallbacks();
+            if (m_awaitableExecutionDriver != null)
+            {
+                m_awaitableExecutionDriver.ConfigureFromActionModel(m_abilityAction);
+            }
+
+            m_executionDriver.Initialize(new AbilityExecutionDriverContext(m_timingCallbacks));
+
+            m_ModuleRegistry.InitiateModulesExecution(m_modules);
+
+            if (!m_abilityAction.BackgroundExecution)
+            {
+                m_target.InvokeAbilityInitiated();
+            }
+
+            m_target.LogSection.Record("Initiate Ability");
+
+            m_executionDriver.RequestExecution();
+        }
+
+        public void Execute()
+        {
+            if (m_abilityAction == null)
+            {
+                return;
+            }
+
+            m_ModuleRegistry.ExecuteModules(m_modules);
+        }
+
+        public void Update(float deltaTime)
+        {
+            if (m_abilityAction == null)
+            {
+                return;
+            }
+
+            m_ModuleRegistry.UpdateModules(deltaTime, m_modules);
+        }
+
+        public void Stop()
+        {
+            // Stop effect modules but keep timing driver alive
+            // Timing driver controls the lifecycle and needs to fire completion events
+            m_ModuleRegistry.StopModules(m_modules);
+        }
+
+        public void Cancel()
+        {
+            m_ModuleRegistry.StopModules(m_modules);
+            m_executionDriver?.Cancel();
+        }
+
+        public void Terminate()
+        {
+            // Reset timing driver and stop all modules
+            m_executionDriver?.Reset();
+            // m_moduleController.StopModules(m_modules);
+        }
+
+        private void EnsureTimingCallbacks()
+        {
+            if (m_timingCallbacks != null)
+            {
+                return;
+            }
+
+            m_timingCallbacks = new AbilityExecutionDriverCallbacks(m_target, m_abilityAction);
+        }
+
+    }   
 }

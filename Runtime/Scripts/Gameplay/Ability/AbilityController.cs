@@ -10,10 +10,10 @@ namespace NobunAtelier
         [Header("Ability Controller")]
         [FormerlySerializedAs("m_defaultAbility")]
         [SerializeField] private AbilityDefinition m_DefaultAbility;
-        [SerializeField] internal UnityEvent OnAbilityStartCharge;
-        [SerializeField] internal UnityEvent OnAbilityStartExecution;
-        [SerializeField] internal UnityEvent OnAbilityChainOpportunity;
-        [SerializeField] internal UnityEvent OnAbilityCompleteExecution;
+        [SerializeField] public UnityEvent OnAbilityStartCharge;
+        [SerializeField] public UnityEvent OnAbilityStartExecution;
+        [SerializeField] public UnityEvent OnAbilityChainOpportunity;
+        [SerializeField] public UnityEvent OnAbilityCompleteExecution;
 
         [Header("Input Buffer")]
         [SerializeField] private float m_InputBufferDuration = 0.15f;
@@ -59,9 +59,17 @@ namespace NobunAtelier
         }
 
         /// <summary>
-        /// Break the combo and reset. To use after taking a damage for instance.
+        /// Cancel the current ability execution and reset the ability instance.
         /// </summary>
         public virtual void StopAbility()
+        {
+            CancelAbility();
+        }
+
+        /// <summary>
+        /// Hard cancel the current ability execution (death/parry/cancel).
+        /// </summary>
+        public virtual void CancelAbility()
         {
             if (m_DefaultAbility == null)
             {
@@ -71,10 +79,9 @@ namespace NobunAtelier
             }
 
             var runtime = GetRuntimeAndInitializeIfNeeded();
-            runtime.StopAbility();
+            runtime.CancelAbility();
 
-            Log.Record($"{typeof(AnimComboModule).Name}: StopCombo.");
-
+            Log.Record();
         }
 
         // Play ability but trying to use charge level settings.
@@ -117,100 +124,10 @@ namespace NobunAtelier
         }
 
         /// <summary>
-        /// Called when an ability has been initiated.
-        /// </summary>
-        internal virtual void OnAbilitySetup()
-        {
-        }
-
-        /// <summary>
-        /// Calls to handles the execution of an ability.
-        /// After this function is called, you need to call the following in order:
-        /// 1. StartAbilityEffect(); // Play the ability modules.
-        /// 2. StopAbilityEffect(); // Stop the ability modules. ExecutionState -> ChainOpportunity.
-        /// 3. CompleteAbilityExecution(); // Reset internal state. ExecutionState -> Ready.
-        /// </summary>
-        internal virtual void OnAbilityExecution()
-        {
-        }
-
-        /// <summary>
-        /// Play the ability modules effect.
-        /// </summary>
-        internal void StartAbilityEffect()
-        {
-            if (!isActiveAndEnabled/* || ActiveAbility == null*/)
-            {
-                return;
-            }
-
-            Log.Record();
-
-            var runtime = GetRuntimeAndInitializeIfNeeded();
-            runtime.PlayAbilityModules();
-        }
-
-        /// <summary>
-        /// Stop the ability modules effect and change ExecutionState to ChainOpportunity.
-        /// </summary>
-        internal void StopAbilityEffect()
-        {
-            if (!isActiveAndEnabled)
-            {
-                return;
-            }
-
-            Log.Record();
-
-            var runtime = GetRuntimeAndInitializeIfNeeded();
-            runtime.StopAbilityModules();
-        }
-
-        /// <summary>
-        /// To be called after OnAbilityExecution to complete the ability life cycle.
-        /// Reset execution state to Ready.
-        /// </summary>
-        internal void CompleteAbilityExecution()
-        {
-            if (!isActiveAndEnabled)// || State == AbilityExecutionState.Charging)
-            {
-                Log.Record("Failed AttackEnd", ContextualLogManager.LogTypeFilter.Warning);
-                return;
-            }
-
-            Log.Record();
-
-            var runtime = GetRuntimeAndInitializeIfNeeded();
-            runtime.CompleteAbilityExecution();
-        }
-
-        public void HandleEffectStartEvent()
-        {
-            Log.Record("Start ability effect event triggered");
-            StartAbilityEffect();
-        }
-
-        public void HandleEffectStopEvent()
-        {
-            Log.Record("Stop ability effect event triggered");
-            StopAbilityEffect();
-        }
-
-        public void HandleAnimationEndEvent()
-        {
-            Log.Record("Complete ability execution event triggered");
-            CompleteAbilityExecution();
-        }
-
         internal void QueueInitiateAbilityExecution()
         {
             var runtime = GetRuntimeAndInitializeIfNeeded();
             runtime.QueueInitiateAbilityExecution();
-        }
-
-        internal void EnqueueAbilityExecution()
-        {
-            OnAbilityExecution();
         }
 
         private AbilityRuntime GetRuntimeAndInitializeIfNeeded()
@@ -248,14 +165,5 @@ namespace NobunAtelier
                 m_Runtime = null;
             }
         }
-
-        //public enum AbilityExecutionState
-        //{
-        //    Ready,          // The idle and ready state.
-        //    InProgress,     // Ongoing ability execution.
-        //    ChainOpportunity, // Window for chaining ability.
-        //    Cooldown,       // CoolDown period after an ability when no followUp is available.
-        //    Charging,
-        //}
     }
 }

@@ -2,6 +2,10 @@ using UnityEngine;
 using NaughtyAttributes;
 using System.Collections.Generic;
 using UnityEngine.Serialization;
+using System.Linq;
+using System;
+
+using NobunAtelier;
 
 [CreateAssetMenu]
 public partial class ModularAbilityDefinition : AbilityDefinition
@@ -68,6 +72,36 @@ public partial class ModularAbilityDefinition : AbilityDefinition
     private bool CanChargeCancel => DoesCancelTimeout || (m_CanBeCharged && m_CancelAbilityChargeOnEarlyChargeRelease);
 #endif
 
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        if (m_Default != null)
+        {
+            m_Default.Validate();
+        }
+        if (m_ChargeStart != null)
+        {
+            m_ChargeStart.Validate();
+        }
+        if (m_ChargeCancel != null)
+        {
+            m_ChargeCancel.Validate();
+        }
+        foreach (var chargeLevel in m_ChargedAbilityLevels)
+        {
+            if (chargeLevel.OnLevelReached != null)
+            {
+                chargeLevel.OnLevelReached.Validate();
+            }
+
+            if (chargeLevel.OnChargeReleased != null)
+            {
+                chargeLevel.OnChargeReleased.Validate();
+            }
+        }
+    }
+#endif
+
     public enum ChargeReleaseConstraint
     {
         // Can charge indefinitly.
@@ -102,7 +136,16 @@ public partial class ModularAbilityDefinition : AbilityDefinition
     [System.Serializable]
     public class ActionModel
     {
+        [Tooltip("Module responsible for execution when using a execution driver. If not set, Awaitable execution driver will be used.")]
+        [SerializeReference, AllowNesting, ShowIf("UsesExecutionDriver"), ReadOnly]
+        private AbilityModuleDefinition m_ExecutionDriverModule;
+
+        [Tooltip("Context for Awaitable based execution driver.")]
+        [SerializeField, AllowNesting, HideIf("UsesExecutionDriver")]
+        private AwaitableExecutionContext m_AwaitableExecutionContext;
+
         [SerializeField] private AbilityModuleDefinition[] m_Modules;
+
         [Tooltip("When enabled, the action will happen without affecting the current state of the Ability. " +
             "This means that the ability will not call:" +
             "\n\t- OnAbilityStartExecution" +
@@ -113,59 +156,66 @@ public partial class ModularAbilityDefinition : AbilityDefinition
             "\n\nRecommended for for StartCharge/OnLevelReached.")]
         [SerializeField] private bool m_BackgroundExecution = false;
 
-        [Tooltip("Delay between the ability instance's 'Initiate' and 'Start'")]
-        [SerializeField, AllowNesting, HideIf("HasProcessor"), Min(0)]
-        private float m_ExecutionDelay = 0.0f;
-
-        [Tooltip("Delay between the ability instance's 'Start' and 'Stop'")]
-        [SerializeField, AllowNesting, HideIf("HasProcessor"), Min(0)]
-        private float m_UpdateDuration = 0.5f;
-
-        [Tooltip("Delay between the ability instance's 'Stop' and ability completion.")]
-        [SerializeField, AllowNesting, HideIf("HasProcessor"), Min(0)]
-        private float m_ChainOpportunityDuration = 0.25f;
-
-        [Tooltip("When enabled, TerminateExecution() is called after ChainOpportunity duration." +
-            "Note: Modules effects are stopped before ChainOpportunity." +
-            "\nTerminateExecution:" +
-            "\n\t1. Reset current charge level" +
-            "\n\t2. Set next ability command to Default" +
-            "\n\t3. Raise OnAbilityCompleteExecution")]
-        [SerializeField, AllowNesting, HideIf("HasProcessor")]
-        private bool m_TerminateExecutionOnCompletion = true;
-
         public IReadOnlyList<AbilityModuleDefinition> Modules => m_Modules;
-        public float ExecutionDelay => m_ExecutionDelay;
-        public float UpdateDuration => m_UpdateDuration;
-        public float ChainOpportunityDuration => m_ChainOpportunityDuration;
-        public bool TerminateExecutionOnCompletion => m_TerminateExecutionOnCompletion;
+        public AbilityModuleDefinition ExecutionDriverModule => m_ExecutionDriverModule;
+        public float ExecutionDelay => m_AwaitableExecutionContext.ExecutionDelay;
+        public float UpdateDuration => m_AwaitableExecutionContext.UpdateDuration;
+        public float ChainOpportunityDuration => m_AwaitableExecutionContext.ChainOpportunityDuration;
+        public bool TerminateExecutionOnCompletion => m_AwaitableExecutionContext.TerminateExecutionOnCompletion;
         public bool BackgroundExecution => m_BackgroundExecution;
 
 #if UNITY_EDITOR
-        // Used by ShowIf Attribute.
-        // Kinda dirty, but good enough for now.
-        private bool HasProcessor
+        // Used by ShowIf/HideIf Attribute.
+        private bool UsesExecutionDriver => m_ExecutionDriverModule != null;
+        
+        internal void Validate()
         {
-            get
+            int executionDriverModuleIndexToRemove = -1;
+            m_ExecutionDriverModule = null;
+
+            // Retrieve the first execution driver module from the modules list.
+            for (int i = 0; i < m_Modules.Length; i++)
             {
-                if (m_Modules == null || m_Modules.Length == 0)
+                if (m_Modules[i] != null && m_Modules[i] is IAbilityExecutionDriverModuleDefinition)
                 {
-                    return false;
+                    m_ExecutionDriverModule = m_Modules[i];
+                    continue;
                 }
 
-                foreach (var module in m_Modules)
+                // if another execution driver module is found, throw an error.
+                if (m_ExecutionDriverModule != null && m_Modules[i] is IAbilityExecutionDriverModuleDefinition)
                 {
-                    if (module == null || !module.IsInstanceAbilityProcessor)
-                    {
-                        continue;
-                    }
-
-                    return true;
+                    executionDriverModuleIndexToRemove = i;
+                    break;
                 }
-                return false;
+            }
+
+            if (executionDriverModuleIndexToRemove != -1)
+            {
+                Debug.LogWarning($"Multiple execution driver modules found in the action model. Only one execution driver module is allowed." +
+                    $"Removing additional driver: {m_Modules[executionDriverModuleIndexToRemove].name}.");
+                m_Modules[executionDriverModuleIndexToRemove] = null;
             }
         }
 #endif
+
+        [System.Serializable]
+        private class AwaitableExecutionContext
+        {
+            [Tooltip("Delay between the ability instance's 'Start' and 'Stop'")]
+            [Min(0)] public float ExecutionDelay = 0f;
+            [Tooltip("Delay between the ability instance's 'Update' and 'Stop'")]
+            [Min(0)] public float UpdateDuration = 0.5f;
+            [Tooltip("Delay between the ability instance's 'Stop' and ability completion.")]
+            [Min(0)] public float ChainOpportunityDuration = 0.25f;
+            [Tooltip("When enabled, TerminateExecution() is called after ChainOpportunity duration." +
+                "\nNote: Modules effects are stopped before ChainOpportunity." +
+                "\n\nTerminateExecution() will:" +
+                "\n\t1. Reset current charge level" +
+                "\n\t2. Set next ability command to Default" +
+                "\n\t3. Raise OnAbilityCompleteExecution")]
+            public bool TerminateExecutionOnCompletion = true;
+        }
     }
 }
 

@@ -38,12 +38,17 @@ public interface IAbilityInstance
     /// <summary>
     /// Stop effect of the ability.
     /// </summary>
-    void StopEffect();
+    void StopEffect(bool backgroundExecution = false);
 
     /// <summary>
     /// Complete the execution of the ability and reset internal state.
     /// </summary>
     void TerminateExecution();
+
+    /// <summary>
+    /// Cancel execution immediately and reset internal state without chain opportunity.
+    /// </summary>
+    void CancelExecution();
 
     void StartCharge();
 
