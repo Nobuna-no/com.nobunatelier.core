@@ -176,14 +176,16 @@ public partial class ModularAbilityDefinition : AbilityDefinition
             // Retrieve the first execution driver module from the modules list.
             for (int i = 0; i < m_Modules.Length; i++)
             {
-                if (m_Modules[i] != null && m_Modules[i] is IAbilityExecutionDriverModuleDefinition)
+                if (m_ExecutionDriverModule == null)
                 {
-                    m_ExecutionDriverModule = m_Modules[i];
-                    continue;
+                    if (m_Modules[i] != null && m_Modules[i] is IAbilityExecutionDriverModuleDefinition)
+                    {
+                        m_ExecutionDriverModule = m_Modules[i];
+                        continue;
+                    }
                 }
-
                 // if another execution driver module is found, throw an error.
-                if (m_ExecutionDriverModule != null && m_Modules[i] is IAbilityExecutionDriverModuleDefinition)
+                else if (m_Modules[i] is IAbilityExecutionDriverModuleDefinition)
                 {
                     executionDriverModuleIndexToRemove = i;
                     break;
