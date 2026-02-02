@@ -6,7 +6,7 @@ using static System.Collections.Specialized.BitVector32;
 
 namespace NobunAtelier
 {
-    public class ContextualLogManager : SingletonMonoBehaviour<ContextualLogManager>
+    public class ContextualLogManager : MonoBehaviourService<ContextualLogManager>
     {
         [Header("Contextual Log")]
         [SerializeField] private bool m_ResetPartitionOnApplicationQuit = true;

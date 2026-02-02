@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Physarida
 {
-    public sealed class TimedRequestBufferManager : SingletonMonoBehaviour<TimedRequestBufferManager>
+    public sealed class TimedRequestBufferManager : MonoBehaviourService<TimedRequestBufferManager>
     {
         private readonly List<TimedRequestBuffer> m_Buffers = new List<TimedRequestBuffer>();
 

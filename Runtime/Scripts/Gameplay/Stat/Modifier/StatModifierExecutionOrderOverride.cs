@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace NobunAtelier.Gameplay
 {
-    public class StatModifierExecutionOrderOverride : SingletonMonoBehaviour<StatModifierExecutionOrderOverride>
+    public class StatModifierExecutionOrderOverride : MonoBehaviourService<StatModifierExecutionOrderOverride>
     {
         [Tooltip("The order of the modifiers. The first modifier will be executed first, the last modifier will be executed last.")]
         [SerializeField] private StatModifierDefinition[] m_ModifierExecutionOrder;

@@ -8,7 +8,7 @@ using UnityEngine.InputSystem;
 namespace NobunAtelier
 {
     [RequireComponent(typeof(PlayerInputManager))]
-    public class PlayerManager : SingletonMonoBehaviour<PlayerManager>
+    public class PlayerManager : MonoBehaviourService<PlayerManager>
     {
         [Header("Player Manager")]
         [SerializeField, InfoBox("Maximum number of player + bot combined.")]

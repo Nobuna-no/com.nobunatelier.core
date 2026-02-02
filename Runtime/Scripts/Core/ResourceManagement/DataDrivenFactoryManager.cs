@@ -11,7 +11,7 @@ namespace NobunAtelier
     /// There is also no need to specialized the manager for the spawning method.
     /// This is a dynamic pool but is not yet optimized.
     /// </summary>
-    public sealed class DataDrivenFactoryManager : SingletonMonoBehaviour<DataDrivenFactoryManager>
+    public sealed class DataDrivenFactoryManager : MonoBehaviourService<DataDrivenFactoryManager>
     {
         [System.Flags]
         public enum PoolBehaviour

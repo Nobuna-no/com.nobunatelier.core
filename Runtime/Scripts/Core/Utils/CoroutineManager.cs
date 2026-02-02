@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using NobunAtelier;
 
-public class CoroutineManager : SingletonMonoBehaviour<CoroutineManager>
+public class CoroutineManager : MonoBehaviourService<CoroutineManager>
 {
     public static void Start(IEnumerator routine)
     {

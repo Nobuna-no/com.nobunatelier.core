@@ -4,7 +4,7 @@ using UnityEngine.UIElements;
 
 namespace NobunAtelier.Tests
 {
-    public class PlayModeTestLogger : SingletonMonoBehaviour<PlayModeTestLogger>
+    public class PlayModeTestLogger : MonoBehaviourService<PlayModeTestLogger>
     {
         [Header("PlayModeTest Logger")]
         [SerializeField, TextArea()]

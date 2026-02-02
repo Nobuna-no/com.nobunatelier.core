@@ -3,12 +3,32 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
+    public abstract class MonoBehaviorService : MonoBehaviourManager
+    {
+#if UNITY_EDITOR
+        /// <summary>
+        /// Mandatory for quick enter playmode.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void SubsystemRegistrationInstanceReset()
+        {
+            var services = GameObject.FindObjectsByType<MonoBehaviorService>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (var service in services) 
+            {
+                service.ServiceRegistration();
+            }
+        }
+
+        protected abstract void ServiceRegistration();
+#endif
+    }
+
     /// <summary>
     /// Improved version of the Singleton pattern for Unity.
     /// </summary>
     [DefaultExecutionOrder(-100)]
-    public abstract class SingletonMonoBehaviour<T> : MonoBehaviourManager
-        where T : MonoBehaviourManager
+    public abstract class MonoBehaviourService<T> : MonoBehaviorService
+        where T : MonoBehaviorService
     {
         [Header("Singleton")]
         [SerializeField] private bool m_dontDestroyOnLoad = false;
@@ -61,31 +81,24 @@ namespace NobunAtelier
             OnSingletonTermination();
         }
 
-        protected virtual IEnumerator SingletonInitialization()
-        {
-            yield break;
-        }
-
-        protected virtual void OnSingletonTermination()
-        { }
-
-        protected virtual void OnSingletonAwake()
-        { }
-
-        protected virtual void OnSingletonApplicationQuit()
-        { }
-
-#if UNITY_EDITOR
-        /// <summary>
-        /// Mandatory for quick enter playmode.
-        /// </summary>
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void SubsystemRegistrationInstanceReset()
+        protected override sealed void ServiceRegistration()
         {
             Instance = null;
         }
 
-#endif
+        protected virtual IEnumerator SingletonInitialization()
+        {
+            yield break;
+        }
+        
+        protected virtual void OnSingletonAwake()
+        { }
+
+        protected virtual void OnSingletonTermination()
+        { }
+
+        protected virtual void OnSingletonApplicationQuit()
+        { }
 
         protected override sealed void Awake()
         {
@@ -103,11 +116,11 @@ namespace NobunAtelier
         }
 
         // Inspiration: Iain McManus - Unity Design Patterns: Singleton Deep Dive
-        private bool TryInitializeInstance(SingletonMonoBehaviour<T> newInstance)
+        private bool TryInitializeInstance(MonoBehaviourService<T> newInstance)
         {
             if (Instance != this && Instance != null)
             {
-                Debug.LogWarning($"Singleton of type <{this.GetType().Name}> already exist. Destroying {this}...");
+                Debug.LogWarning($"Service of type <{this.GetType().Name}> already exist. Destroying {this}...");
                 Destroy(m_onlyDestroyDuplicatedComponent ? this : gameObject);
                 return false;
             }

@@ -4,7 +4,7 @@ using UnityEngine.Events;
 
 namespace NobunAtelier
 {
-    public class GameActionConsole : SingletonMonoBehaviour<GameActionConsole>
+    public class GameActionConsole : MonoBehaviourService<GameActionConsole>
     {
         [System.Serializable]
         public struct ActionDefinition
