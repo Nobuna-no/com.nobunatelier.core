@@ -1,11 +1,9 @@
-using NobunAtelier;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace NobunAtelier
 {
-
     public partial class ModularAbilityDefinition
     {
         [Header("Log")]
@@ -158,93 +156,6 @@ namespace NobunAtelier
             ChargeExecution = 1 << 16,
         }
 
-        internal class ModuleStateMachine
-        {
-            private IReadOnlyDictionary<int, ModuleState> m_states;
-            private ModuleState m_currentState;
-
-            public ModuleStateMachine(IReadOnlyDictionary<int, ModuleState> modularAbilityStates)
-            {
-                m_states = modularAbilityStates;
-            }
-
-            public void Initiate(int state)
-            {
-                if (m_currentState != null)
-                {
-                    m_currentState.ExitState();
-                }
-
-                if (m_states.TryGetValue(state, out m_currentState))
-                {
-                    m_currentState.ResetState();
-                }
-            }
-
-            public void Execute()
-            {
-                if (m_currentState == null)
-                {
-                    return;
-                }
-
-                m_currentState.EnterState();
-            }
-
-            public void Update(float deltaTime)
-            {
-                if (m_currentState == null)
-                {
-                    return;
-                }
-
-                m_currentState.UpdateState(deltaTime);
-            }
-
-            public void Stop()
-            {
-                if (m_currentState == null)
-                {
-                    return;
-                }
-
-                m_currentState.ExitState();
-            }
-        }
-
-        internal class ModuleState
-        {
-            private IReadOnlyList<AbilityModuleDefinition> m_modules;
-            private AbilityModuleRegistry m_moduleController;
-
-            public ModuleState(IReadOnlyList<AbilityModuleDefinition> modules, AbilityModuleRegistry moduleController)
-            {
-                m_modules = modules;
-                m_moduleController = moduleController;
-                m_moduleController.Add(modules);
-            }
-
-            public void ResetState()
-            {
-                m_moduleController.InitiateModulesExecution(m_modules);
-            }
-
-            public void EnterState()
-            {
-                m_moduleController.ExecuteModules(m_modules);
-            }
-
-            public void UpdateState(float deltaTime)
-            {
-                m_moduleController.UpdateModules(deltaTime, m_modules);
-            }
-
-            public void ExitState()
-            {
-                m_moduleController.StopModules(m_modules);
-            }
-        }
-
         internal readonly struct AbilityCommand
         {
             public readonly ActionModel ActionModel;
@@ -259,127 +170,258 @@ namespace NobunAtelier
 
         internal sealed class AbilityCommandQueue
         {
-            private readonly Instance m_owner;
-            private readonly ModularAbilityDefinition m_definition;
-            private readonly AbilityModuleRegistry m_moduleController;
-            private readonly ContextualLogManager.LogPartition m_LogSection;
-            private readonly Dictionary<int, AbilityCommand> m_commandLookupTable;
-            private readonly Queue<AbilityCommand> m_commandQueue;
-            private CommandRunner m_activeCommandRunner;
+            private readonly Instance m_Owner;
+            private readonly ModularAbilityDefinition m_Definition;
+            private readonly Dictionary<int, AbilityCommand> m_CommandLookupTable;
+            private readonly Queue<AbilityCommand> m_CommandQueue;
+            private CommandRunner m_ActiveCommandRunner;
 
             public AbilityCommandQueue(Instance owner, AbilityModuleRegistry moduleController, ContextualLogManager.LogPartition logSection)
             {
-                m_owner = owner;
-                m_definition = owner.Data;
-                m_moduleController = moduleController;
-                m_LogSection = logSection;
-
-                m_commandLookupTable = new Dictionary<int, AbilityCommand>()
-            {
-                { (int)CommandCategory.Default, new AbilityCommand(m_definition.m_Default) },
-            };
-
-                if (m_definition.m_CanBeCharged)
+                m_Owner = owner;
+                m_Definition = owner.Data;
+                m_CommandLookupTable = new Dictionary<int, AbilityCommand>()
                 {
-                    m_commandLookupTable.Add((int)CommandCategory.ChargeStart, new AbilityCommand(m_definition.m_ChargeStart));
-                    m_commandLookupTable.Add((int)CommandCategory.ChargeCancel, new AbilityCommand(m_definition.m_ChargeCancel));
+                    { (int)CommandCategory.Default, new AbilityCommand(m_Definition.m_Default) },
+                };
+            
+                if (m_Definition.m_CanBeCharged)
+                {
+                    m_CommandLookupTable.Add((int)CommandCategory.ChargeStart, new AbilityCommand(m_Definition.m_ChargeStart));
+                    m_CommandLookupTable.Add((int)CommandCategory.ChargeCancel, new AbilityCommand(m_Definition.m_ChargeCancel));
 
                     int i = 0;
-                    foreach (var chargeData in m_definition.m_ChargedAbilityLevels)
+                    foreach (var chargeData in m_Definition.m_ChargedAbilityLevels)
                     {
-                        m_commandLookupTable.Add((int)CommandCategory.ChargeLevelReached + i, new AbilityCommand(chargeData.OnLevelReached));
-                        m_commandLookupTable.Add((int)CommandCategory.ChargeExecution + i, new AbilityCommand(chargeData.OnChargeReleased));
+                        m_CommandLookupTable.Add((int)CommandCategory.ChargeLevelReached + i, new AbilityCommand(chargeData.OnLevelReached));
+                        m_CommandLookupTable.Add((int)CommandCategory.ChargeExecution + i, new AbilityCommand(chargeData.OnChargeReleased));
                         ++i;
                     }
                 }
 
-                m_commandQueue = new Queue<AbilityCommand>();
+                m_CommandQueue = new Queue<AbilityCommand>();
             }
 
-            public int CommandCount => m_commandQueue.Count;
-            public bool HasActiveRunner => m_activeCommandRunner != null;
-            public bool HasQueuedCommands => m_commandQueue.Count > 0;
+            public int CommandCount => m_CommandQueue.Count;
+            public bool HasActiveRunner => m_ActiveCommandRunner != null;
+            public bool HasQueuedCommands => m_CommandQueue.Count > 0;
 
             public AbilityCommand GetCommand(CommandCategory category)
             {
-                return m_commandLookupTable[(int)category];
+                return m_CommandLookupTable[(int)category];
             }
 
             public void Enqueue(CommandCategory category)
             {
-                m_commandQueue.Enqueue(GetCommand(category));
+                m_CommandQueue.Enqueue(GetCommand(category));
             }
 
             public bool TryDequeue(out AbilityCommand command)
             {
-                if (m_commandQueue.Count == 0)
+                if (m_CommandQueue.Count == 0)
                 {
                     command = default;
                     return false;
                 }
 
-                command = m_commandQueue.Dequeue();
+                command = m_CommandQueue.Dequeue();
                 return true;
             }
 
             public void ActivateCommand(AbilityCommand command)
             {
-                m_activeCommandRunner = new CommandRunner(m_owner, command);
-                m_activeCommandRunner.Initiate();
+                m_ActiveCommandRunner = new CommandRunner(m_Owner, command);
+                m_ActiveCommandRunner.Initiate();
             }
 
             public void ExecuteActive()
             {
-                m_activeCommandRunner?.Execute();
+                m_ActiveCommandRunner?.Execute();
             }
 
             public void UpdateActive(float deltaTime)
             {
-                m_activeCommandRunner?.Update(deltaTime);
+                m_ActiveCommandRunner?.Update(deltaTime);
             }
 
             public void StopActive()
             {
-                if (m_activeCommandRunner == null)
+                if (m_ActiveCommandRunner == null)
                 {
                     return;
                 }
 
-                m_activeCommandRunner.Stop();
-                m_activeCommandRunner = null;
+                m_ActiveCommandRunner.Stop();
+                m_ActiveCommandRunner = null;
             }
 
             public void CancelActive()
             {
-                if (m_activeCommandRunner == null)
+                if (m_ActiveCommandRunner == null)
                 {
                     return;
                 }
 
-                m_activeCommandRunner.Cancel();
-                m_activeCommandRunner = null;
+                m_ActiveCommandRunner.Cancel();
+                m_ActiveCommandRunner = null;
             }
 
             public void TerminateActive()
             {
-                if (m_activeCommandRunner == null)
+                if (m_ActiveCommandRunner == null)
                 {
                     return;
                 }
 
-                m_activeCommandRunner.Terminate();
-                m_activeCommandRunner = null;
+                m_ActiveCommandRunner.Terminate();
+                m_ActiveCommandRunner = null;
             }
 
             public void ClearQueuedCommands()
             {
-                m_commandQueue.Clear();
+                m_CommandQueue.Clear();
             }
 
             public void Clear()
             {
-                m_commandQueue.Clear();
-                m_activeCommandRunner = null;
+                m_CommandQueue.Clear();
+                m_ActiveCommandRunner = null;
+            }
+
+            private sealed class CommandRunner
+            {
+                private ActionModel m_AbilityAction;
+                private IReadOnlyList<AbilityModuleDefinition> m_Modules;
+                private AbilityModuleRegistry m_ModuleRegistry;
+                private Instance m_AbilityInstanceTarget;
+                private IAbilityExecutionDriver m_ExecutionDriver;
+                private AbilityExecutionDriverCallbacks m_TimingCallbacks;
+                private AwaitableExecutionDriver m_AwaitableExecutionDriver;
+
+                public CommandRunner(Instance target, AbilityCommand command)
+                {
+                    m_AbilityAction = command.ActionModel;
+                    m_AbilityInstanceTarget = target;
+                    m_ModuleRegistry = target.ModuleRegistry;
+                    m_Modules = command.ActionModel.Modules;
+                    if (m_Modules.Count > 0)
+                    {
+                        m_ModuleRegistry.Add(m_Modules);
+                    }
+
+                    if (command.TimingDriverModule != null)
+                    {
+                        if (m_ModuleRegistry.m_ModulesMap.TryGetValue(command.TimingDriverModule, out var instance))
+                        {
+                            m_ExecutionDriver = instance as IAbilityExecutionDriver;
+                            if (m_ExecutionDriver == null)
+                            {
+                                m_AbilityInstanceTarget.LogSection.Record("Timing driver module instance does not implement IAbilityExecutionDriver. Falling back to Awaitable timing.",
+                                    ContextualLogManager.LogTypeFilter.Warning);
+                            }
+                        }
+                        else
+                        {
+                            m_AbilityInstanceTarget.LogSection.Record("Timing driver module instance not found. Falling back to Awaitable timing.",
+                                ContextualLogManager.LogTypeFilter.Warning);
+                        }
+                    }
+
+                    if (m_ExecutionDriver == null)
+                    {
+                        m_AwaitableExecutionDriver = new AwaitableExecutionDriver();
+                        if (m_AbilityAction != null)
+                        {
+                            m_AwaitableExecutionDriver.ConfigureFromActionModel(m_AbilityAction);
+                        }
+
+                        m_ExecutionDriver = m_AwaitableExecutionDriver;
+                    }
+                }
+
+                public void Initiate()
+                {
+                    if (m_AbilityAction == null)
+                    {
+                        m_AbilityInstanceTarget.LogSection.Record("Missing ActionModel for command.", ContextualLogManager.LogTypeFilter.Warning);
+                        return;
+                    }
+
+                    if (m_ExecutionDriver == null)
+                    {
+                        m_AbilityInstanceTarget.LogSection.Record("Missing execution driver for command.", ContextualLogManager.LogTypeFilter.Warning);
+                        return;
+                    }
+
+                    EnsureTimingCallbacks();
+                    if (m_AwaitableExecutionDriver != null)
+                    {
+                        m_AwaitableExecutionDriver.ConfigureFromActionModel(m_AbilityAction);
+                    }
+
+                    m_ExecutionDriver.Initialize(new AbilityExecutionDriverContext(m_TimingCallbacks));
+
+                    m_ModuleRegistry.InitiateModulesExecution(m_Modules);
+
+                    if (!m_AbilityAction.BackgroundExecution)
+                    {
+                        m_AbilityInstanceTarget.InvokeAbilityInitiated();
+                    }
+
+                    m_AbilityInstanceTarget.LogSection.Record("Initiate Ability");
+
+                    m_ExecutionDriver.RequestExecution();
+                }
+
+                public void Execute()
+                {
+                    if (m_AbilityAction == null)
+                    {
+                        return;
+                    }
+
+                    m_ModuleRegistry.ExecuteModules(m_Modules);
+                }
+
+                public void Update(float deltaTime)
+                {
+                    if (m_AbilityAction == null)
+                    {
+                        return;
+                    }
+
+                    m_ModuleRegistry.UpdateModules(deltaTime, m_Modules);
+                }
+
+                public void Stop()
+                {
+                    // Stop effect modules but keep timing driver alive
+                    // Timing driver controls the lifecycle and needs to fire completion events
+                    m_ModuleRegistry.StopModules(m_Modules);
+                }
+
+                public void Cancel()
+                {
+                    m_ModuleRegistry.StopModules(m_Modules);
+                    m_ExecutionDriver?.Cancel();
+                }
+
+                public void Terminate()
+                {
+                    // Reset timing driver and stop all modules
+                    m_ExecutionDriver?.Reset();
+                    // m_moduleController.StopModules(m_modules);
+                }
+
+                private void EnsureTimingCallbacks()
+                {
+                    if (m_TimingCallbacks != null)
+                    {
+                        return;
+                    }
+
+                    m_TimingCallbacks = new AbilityExecutionDriverCallbacks(m_AbilityInstanceTarget, m_AbilityAction);
+                }
             }
         }
 
@@ -394,7 +436,7 @@ namespace NobunAtelier
             private IAbilityInstance.ExecutionState m_CurrentState = IAbilityInstance.ExecutionState.Ready;
             private float m_LastChargeDuration = 0;
             private int m_CurrentChargeLevel = -1;
-            private CommandCategory m_nextCommandCategory = CommandCategory.Default;
+            private CommandCategory m_NextCommandCategory = CommandCategory.Default;
 
             public AbilityStateMachine(ModularAbilityDefinition definition, AbilityCommandQueue commandQueue, ContextualLogManager.LogPartition logSection,
                 Action onAbilityStartCharge, Action onAbilityChainOpportunity, Action onAbilityCompleteExecution)
@@ -427,7 +469,7 @@ namespace NobunAtelier
 
             public void InitiateExecution()
             {
-                m_CommandQueue.Enqueue(m_nextCommandCategory);
+                m_CommandQueue.Enqueue(m_NextCommandCategory);
             }
 
             public void ExecuteEffect()
@@ -440,7 +482,7 @@ namespace NobunAtelier
                 m_LogSection.Record();
 
                 m_CommandQueue.ExecuteActive();
-                m_nextCommandCategory = CommandCategory.Default;
+                m_NextCommandCategory = CommandCategory.Default;
             }
 
             public void UpdateEffect(float deltaTime)
@@ -556,7 +598,7 @@ namespace NobunAtelier
 
                 m_CommandQueue.ClearQueuedCommands();
                 ResetChargeState();
-                m_nextCommandCategory = CommandCategory.Default;
+                m_NextCommandCategory = CommandCategory.Default;
                 m_CurrentState = IAbilityInstance.ExecutionState.Ready;
             }
 
@@ -579,7 +621,7 @@ namespace NobunAtelier
                 }
 
                 ResetChargeState();
-                m_nextCommandCategory = CommandCategory.Default;
+                m_NextCommandCategory = CommandCategory.Default;
                 m_CurrentState = IAbilityInstance.ExecutionState.Ready;
 
                 if (raiseEvent)
@@ -612,7 +654,7 @@ namespace NobunAtelier
                         && m_CurrentState != IAbilityInstance.ExecutionState.ChainOpportunity))
                 {
                     m_LogSection.Record($"Ability can't be charged. Playing normal ability instead.", ContextualLogManager.LogTypeFilter.Warning);
-                    m_nextCommandCategory = CommandCategory.Default;
+                    m_NextCommandCategory = CommandCategory.Default;
                     InitiateExecution();
                     return;
                 }
@@ -656,7 +698,7 @@ namespace NobunAtelier
 
                         m_LogSection.Record("[2] - Playing Ability On Early Charge Release");
                         m_CurrentState = IAbilityInstance.ExecutionState.Ready;
-                        m_nextCommandCategory = CommandCategory.Default;
+                        m_NextCommandCategory = CommandCategory.Default;
                         InitiateExecution();
                     }
 
@@ -664,7 +706,7 @@ namespace NobunAtelier
                 }
 
                 // Otherwise queue new action model.
-                m_nextCommandCategory = (CommandCategory)((int)CommandCategory.ChargeExecution + m_CurrentChargeLevel);
+                m_NextCommandCategory = (CommandCategory)((int)CommandCategory.ChargeExecution + m_CurrentChargeLevel);
                 m_CurrentState = IAbilityInstance.ExecutionState.Ready;
                 InitiateExecution();
                 IsCharging = false;
@@ -784,171 +826,34 @@ namespace NobunAtelier
 
         private sealed class AbilityExecutionDriverCallbacks : IAbilityExecutionDriverCallbacks
         {
-            private readonly Instance m_target;
-            private readonly ActionModel m_actionModel;
+            private readonly Instance m_Target;
+            private readonly ActionModel m_ActionModel;
 
             public AbilityExecutionDriverCallbacks(Instance target, ActionModel actionModel)
             {
-                m_target = target;
-                m_actionModel = actionModel;
+                m_Target = target;
+                m_ActionModel = actionModel;
             }
 
             public void OnEffectStart()
             {
-                m_target.ExecuteEffect();
+                m_Target.ExecuteEffect();
             }
 
             public void OnEffectStop()
             {
-                m_target.StopEffect(m_actionModel.BackgroundExecution);
+                m_Target.StopEffect(m_ActionModel.BackgroundExecution);
             }
 
             public void OnExecutionComplete()
             {
-                if (!m_actionModel.TerminateExecutionOnCompletion)
+                if (!m_ActionModel.TerminateExecutionOnCompletion)
                 {
                     return;
                 }
 
-                m_target.TerminateExecution();
+                m_Target.TerminateExecution();
             }
-        }
-
-        private sealed class CommandRunner
-        {
-            private ActionModel m_abilityAction;
-            private IReadOnlyList<AbilityModuleDefinition> m_modules;
-            private AbilityModuleRegistry m_ModuleRegistry;
-            private Instance m_target;
-            private IAbilityExecutionDriver m_executionDriver;
-            private AbilityExecutionDriverCallbacks m_timingCallbacks;
-            private AwaitableExecutionDriver m_awaitableExecutionDriver;
-
-            public CommandRunner(Instance target, AbilityCommand command)
-            {
-                m_abilityAction = command.ActionModel;
-                m_target = target;
-                m_ModuleRegistry = target.ModuleRegistry;
-                m_modules = command.ActionModel.Modules;
-                if (m_modules.Count > 0)
-                {
-                    m_ModuleRegistry.Add(m_modules);
-                }
-
-                if (command.TimingDriverModule != null)
-                {
-                    if (m_ModuleRegistry.m_modulesMap.TryGetValue(command.TimingDriverModule, out var instance))
-                    {
-                        m_executionDriver = instance as IAbilityExecutionDriver;
-                        if (m_executionDriver == null)
-                        {
-                            m_target.LogSection.Record("Timing driver module instance does not implement IAbilityExecutionDriver. Falling back to Awaitable timing.",
-                                ContextualLogManager.LogTypeFilter.Warning);
-                        }
-                    }
-                    else
-                    {
-                        m_target.LogSection.Record("Timing driver module instance not found. Falling back to Awaitable timing.",
-                            ContextualLogManager.LogTypeFilter.Warning);
-                    }
-                }
-
-                if (m_executionDriver == null)
-                {
-                    m_awaitableExecutionDriver = new AwaitableExecutionDriver();
-                    if (m_abilityAction != null)
-                    {
-                        m_awaitableExecutionDriver.ConfigureFromActionModel(m_abilityAction);
-                    }
-
-                    m_executionDriver = m_awaitableExecutionDriver;
-                }
-            }
-
-            public void Initiate()
-            {
-                if (m_abilityAction == null)
-                {
-                    m_target.LogSection.Record("Missing ActionModel for command.", ContextualLogManager.LogTypeFilter.Warning);
-                    return;
-                }
-
-                if (m_executionDriver == null)
-                {
-                    m_target.LogSection.Record("Missing execution driver for command.", ContextualLogManager.LogTypeFilter.Warning);
-                    return;
-                }
-
-                EnsureTimingCallbacks();
-                if (m_awaitableExecutionDriver != null)
-                {
-                    m_awaitableExecutionDriver.ConfigureFromActionModel(m_abilityAction);
-                }
-
-                m_executionDriver.Initialize(new AbilityExecutionDriverContext(m_timingCallbacks));
-
-                m_ModuleRegistry.InitiateModulesExecution(m_modules);
-
-                if (!m_abilityAction.BackgroundExecution)
-                {
-                    m_target.InvokeAbilityInitiated();
-                }
-
-                m_target.LogSection.Record("Initiate Ability");
-
-                m_executionDriver.RequestExecution();
-            }
-
-            public void Execute()
-            {
-                if (m_abilityAction == null)
-                {
-                    return;
-                }
-
-                m_ModuleRegistry.ExecuteModules(m_modules);
-            }
-
-            public void Update(float deltaTime)
-            {
-                if (m_abilityAction == null)
-                {
-                    return;
-                }
-
-                m_ModuleRegistry.UpdateModules(deltaTime, m_modules);
-            }
-
-            public void Stop()
-            {
-                // Stop effect modules but keep timing driver alive
-                // Timing driver controls the lifecycle and needs to fire completion events
-                m_ModuleRegistry.StopModules(m_modules);
-            }
-
-            public void Cancel()
-            {
-                m_ModuleRegistry.StopModules(m_modules);
-                m_executionDriver?.Cancel();
-            }
-
-            public void Terminate()
-            {
-                // Reset timing driver and stop all modules
-                m_executionDriver?.Reset();
-                // m_moduleController.StopModules(m_modules);
-            }
-
-            private void EnsureTimingCallbacks()
-            {
-                if (m_timingCallbacks != null)
-                {
-                    return;
-                }
-
-                m_timingCallbacks = new AbilityExecutionDriverCallbacks(m_target, m_abilityAction);
-            }
-
         }
     }
 }

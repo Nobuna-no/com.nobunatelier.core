@@ -1,4 +1,3 @@
-using NobunAtelier;
 using UnityEngine;
 
 namespace NobunAtelier

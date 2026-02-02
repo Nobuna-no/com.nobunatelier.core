@@ -1,46 +1,48 @@
-using NobunAtelier;
 using UnityEngine;
-using static AbilityModuleDefinition;
+using static NobunAtelier.AbilityModuleDefinition;
 
-public abstract class AbilityModuleDefinition : DataDefinition
+namespace NobunAtelier
 {
-    public abstract IAbilityModuleInstance CreateInstance(AbilityController controller);
-
-    public enum EffectTarget
+    public abstract class AbilityModuleDefinition : DataDefinition
     {
-        Self,
-        Target
-    }
-}
+        public abstract IAbilityModuleInstance CreateInstance(AbilityController controller);
 
-// If it grows, move to its own script.
-public static class AbilityModuleHelper
-{
-    public static bool TryGetTarget(AbilityController controller, EffectTarget targetMode, out Transform m_target)
-    {
-        m_target = null;
-        switch (targetMode)
+        public enum EffectTarget
         {
-            case EffectTarget.Self:
-                m_target = controller.ModuleOwner.Transform;
-                break;
-
-            case EffectTarget.Target:
-                if (controller.Target == null)
-                {
-                    Debug.LogWarning($"Trying to position attack hit over target, but {controller.name} target has not been assigned...", controller);
-                    m_target = controller.ModuleOwner.Transform;
-                }
-                else
-                {
-                    m_target = controller.Target;
-                }
-                break;
-
-            default:
-                break;
+            Self,
+            Target
         }
+    }
 
-        return m_target != null;
+    // If it grows, move to its own script.
+    public static class AbilityModuleUtility
+    {
+        public static bool TryGetTarget(AbilityController controller, EffectTarget targetMode, out Transform m_target)
+        {
+            m_target = null;
+            switch (targetMode)
+            {
+                case EffectTarget.Self:
+                    m_target = controller.ModuleOwner.Transform;
+                    break;
+
+                case EffectTarget.Target:
+                    if (controller.Target == null)
+                    {
+                        Debug.LogWarning($"Trying to position attack hit over target, but {controller.name} target has not been assigned...", controller);
+                        m_target = controller.ModuleOwner.Transform;
+                    }
+                    else
+                    {
+                        m_target = controller.Target;
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+
+            return m_target != null;
+        }
     }
 }

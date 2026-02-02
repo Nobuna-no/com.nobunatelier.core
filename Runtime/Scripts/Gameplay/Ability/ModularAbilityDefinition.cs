@@ -68,9 +68,7 @@ namespace NobunAtelier
         private bool DoesCancelTimeout => m_CanBeCharged
             && m_ChargeConstraint == ChargeReleaseConstraint.CancelOnTimeout;
         private bool CanChargeCancel => DoesCancelTimeout || (m_CanBeCharged && m_CancelAbilityChargeOnEarlyChargeRelease);
-#endif
 
-#if UNITY_EDITOR
         private void OnValidate()
         {
             if (m_Default != null)

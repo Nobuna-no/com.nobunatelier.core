@@ -12,7 +12,7 @@ namespace NobunAtelier
         private Processor m_AbilityProcessor;
         private Processor m_AbilityProcessorOverride;
         private bool m_CanExecuteNewAction = true;
-        private IAbilityChainPolicy m_ChainPolicy;
+        private IAbilityChainPolicy m_ChainPolicy; // Chain ability for combo.
 
         public bool CanQueueNewAction => m_CanExecuteNewAction;
 
@@ -187,123 +187,124 @@ namespace NobunAtelier
 
         private class Processor
         {
-            private AbilityRuntime m_runtime;
-            private AbilityController m_controller;
-            private IAbilityInstance m_activeAbilityInstance;
+            private AbilityRuntime m_Runtime;
+            private AbilityController m_Controller;
+            private IAbilityInstance m_ActiveAbilityInstance;
 
             public Processor(AbilityRuntime runtime)
             {
-                m_runtime = runtime;
+                m_Runtime = runtime;
             }
 
             public void Initialize(AbilityController controller, AbilityDefinition activeAbility)
             {
-                m_controller = controller;
+                m_Controller = controller;
 
-                if (activeAbility == null || (m_activeAbilityInstance != null && m_activeAbilityInstance.Ability == activeAbility))
+                if (activeAbility == null || (m_ActiveAbilityInstance != null && m_ActiveAbilityInstance.Ability == activeAbility))
                 {
                     return;
                 }
 
-                m_activeAbilityInstance = activeAbility.CreateAbilityInstance(controller);
+                m_ActiveAbilityInstance = activeAbility.CreateAbilityInstance(controller);
 
-                m_activeAbilityInstance.OnAbilityStartCharge += OnAbilityStartCharge;
-                m_activeAbilityInstance.OnAbilityInitiated += OnAbilitySetup;
-                m_activeAbilityInstance.OnAbilityChainOpportunity += OnAbilityChainOpportunity;
-                m_activeAbilityInstance.OnAbilityCompleteExecution += OnAbilityEnd;
+                // Bridge between data layer to scene-component layer.
+                m_ActiveAbilityInstance.OnAbilityStartCharge += OnAbilityStartCharge;
+                m_ActiveAbilityInstance.OnAbilityInitiated += OnAbilitySetup;
+                m_ActiveAbilityInstance.OnAbilityChainOpportunity += OnAbilityChainOpportunity;
+                m_ActiveAbilityInstance.OnAbilityCompleteExecution += OnAbilityEnd;
             }
 
             private void OnAbilityStartCharge()
             {
-                m_controller?.OnAbilityStartCharge?.Invoke();
+                m_Controller?.OnAbilityStartCharge?.Invoke();
             }
 
             private void OnAbilitySetup()
             {
-                m_controller.OnAbilityStartExecution?.Invoke();
+                m_Controller.OnAbilityStartExecution?.Invoke();
             }
 
             private void OnAbilityChainOpportunity()
             {
-                if (m_runtime != null)
+                if (m_Runtime != null)
                 {
-                    m_runtime.m_CanExecuteNewAction = true;
+                    m_Runtime.m_CanExecuteNewAction = true;
                 }
 
-                m_controller?.OnAbilityChainOpportunity?.Invoke();
-                m_runtime?.OpenChainOpportunity();
+                m_Controller?.OnAbilityChainOpportunity?.Invoke();
+                m_Runtime?.OpenChainOpportunity();
             }
 
             private void OnAbilityEnd()
             {
-                if (m_runtime != null)
+                if (m_Runtime != null)
                 {
-                    m_runtime.m_CanExecuteNewAction = true;
+                    m_Runtime.m_CanExecuteNewAction = true;
                 }
 
-                m_controller?.OnAbilityCompleteExecution?.Invoke();
-                m_runtime?.CloseChainOpportunity();
+                m_Controller?.OnAbilityCompleteExecution?.Invoke();
+                m_Runtime?.CloseChainOpportunity();
             }
 
             public bool CanExecute()
             {
-                return m_activeAbilityInstance != null && m_activeAbilityInstance.CanExecute();
+                return m_ActiveAbilityInstance != null && m_ActiveAbilityInstance.CanExecute();
             }
 
             public void Execute()
             {
-                m_activeAbilityInstance?.InitiateExecution();
+                m_ActiveAbilityInstance?.InitiateExecution();
             }
 
             public void Update(float deltaTime)
             {
-                m_activeAbilityInstance?.UpdateEffect(deltaTime);
+                m_ActiveAbilityInstance?.UpdateEffect(deltaTime);
             }
 
             public void Terminate()
             {
-                m_activeAbilityInstance?.TerminateExecution();
+                m_ActiveAbilityInstance?.TerminateExecution();
             }
 
             public void Cancel()
             {
-                m_activeAbilityInstance?.CancelExecution();
+                m_ActiveAbilityInstance?.CancelExecution();
             }
 
             public void StartCharge()
             {
-                m_activeAbilityInstance?.StartCharge();
+                m_ActiveAbilityInstance?.StartCharge();
             }
 
             public void ReleaseCharge()
             {
-                m_activeAbilityInstance?.ReleaseCharge();
+                m_ActiveAbilityInstance?.ReleaseCharge();
             }
 
             public void CancelCharge()
             {
-                m_activeAbilityInstance?.CancelCharge();
+                m_ActiveAbilityInstance?.CancelCharge();
             }
 
             public void Dispose()
             {
-                if (m_activeAbilityInstance != null)
+                if (m_ActiveAbilityInstance != null)
                 {
-                    m_activeAbilityInstance.OnAbilityStartCharge -= OnAbilityStartCharge;
-                    m_activeAbilityInstance.OnAbilityInitiated -= OnAbilitySetup;
-                    m_activeAbilityInstance.OnAbilityChainOpportunity -= OnAbilityChainOpportunity;
-                    m_activeAbilityInstance.OnAbilityCompleteExecution -= OnAbilityEnd;
+                    m_ActiveAbilityInstance.OnAbilityStartCharge -= OnAbilityStartCharge;
+                    m_ActiveAbilityInstance.OnAbilityInitiated -= OnAbilitySetup;
+                    m_ActiveAbilityInstance.OnAbilityChainOpportunity -= OnAbilityChainOpportunity;
+                    m_ActiveAbilityInstance.OnAbilityCompleteExecution -= OnAbilityEnd;
 
-                    if (m_activeAbilityInstance is IDisposable disposable)
+                    if (m_ActiveAbilityInstance is IDisposable disposable)
                     {
                         disposable.Dispose();
                     }
 
-                    m_activeAbilityInstance = null;
+                    m_ActiveAbilityInstance = null;
                 }
 
-                m_runtime = null;
-                m_controller = null;
+                m_Runtime = null;
+                m_Controller = null;
             }
         }
 

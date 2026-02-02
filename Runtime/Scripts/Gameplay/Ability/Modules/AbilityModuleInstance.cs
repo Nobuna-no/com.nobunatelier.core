@@ -1,4 +1,3 @@
-using NobunAtelier;
 
 namespace NobunAtelier
 {

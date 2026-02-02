@@ -1,8 +1,7 @@
-using NobunAtelier;
-using System.Collections.Generic;
-using System;
-
-public abstract class AbilityDefinition : DataDefinition
+namespace NobunAtelier
 {
-    public abstract IAbilityInstance CreateAbilityInstance(AbilityController controller);
+    public abstract class AbilityDefinition : DataDefinition
+    {
+        public abstract IAbilityInstance CreateAbilityInstance(AbilityController controller);
+    }
 }
