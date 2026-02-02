@@ -835,6 +835,7 @@ public partial class ModularAbilityDefinition
             m_abilityAction = command.ActionModel;
             m_target = target;
             m_ModuleRegistry = target.ModuleRegistry;
+            m_modules = command.ActionModel.Modules;
             if (m_modules.Count > 0)
             {
                 m_ModuleRegistry.Add(m_modules);
