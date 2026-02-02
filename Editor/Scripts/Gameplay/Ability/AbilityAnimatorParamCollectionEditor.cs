@@ -1,8 +1,10 @@
 using UnityEditor;
-using NobunAtelier.Editor;
 
-[CustomEditor(typeof(AbilityAnimatorTriggerCollection))]
-public class AbilityAnimatorTriggerCollectionEditor : DataCollectionEditor
+namespace NobunAtelier.Editor
 {
+    [CustomEditor(typeof(AbilityAnimatorTriggerCollection))]
+    public class AbilityAnimatorTriggerCollectionEditor : DataCollectionEditor
+    {
 
+    }
 }
