@@ -10,135 +10,108 @@ namespace NobunAtelier
         [Header("Ability Controller")]
         [FormerlySerializedAs("m_defaultAbility")]
         [SerializeField] private AbilityDefinition m_DefaultAbility;
-        [SerializeField] public UnityEvent OnAbilityStartCharge;
-        [SerializeField] public UnityEvent OnAbilityStartExecution;
-        [SerializeField] public UnityEvent OnAbilityChainOpportunity;
-        [SerializeField] public UnityEvent OnAbilityCompleteExecution;
 
-        [Header("Input Buffer")]
-        [SerializeField] private float m_InputBufferDuration = 0.15f;
-        [SerializeField] private bool m_InputBufferUseUnscaledTime = false;
+        [Header("Events")]
+        [FormerlySerializedAs("OnAbilityStartExecution")]
+        [SerializeField] public UnityEvent OnAbilityStarted;
+        [SerializeField] public UnityEvent OnAbilityStartCharge;
+        [FormerlySerializedAs("OnAbilityChainOpportunity")]
+        [SerializeField] public UnityEvent OnRecoveryWindowOpen;
+        [FormerlySerializedAs("OnAbilityCompleteExecution")]
+        [SerializeField] public UnityEvent OnAbilityCompleted;
+        [SerializeField] public UnityEvent OnAbilityCancelled;
 
         [Header("Log")]
         [SerializeField] private ContextualLogManager.LogSettings m_LogSettings;
 
         public TeamModule Team => m_TeamModule;
         public ContextualLogManager.LogPartition Log { get; private set; }
-        internal float InputBufferDuration => m_InputBufferDuration;
-        internal bool InputBufferUseUnscaledTime => m_InputBufferUseUnscaledTime;
+
+        public AbilityDefinition CurrentAbility => m_Instance?.CurrentAbility;
+        public ExecutionState CurrentState => m_Instance?.State ?? ExecutionState.Ready;
+        public bool IsCharging => m_Instance?.IsCharging ?? false;
+        public bool IsInRecovery => m_Instance?.IsInRecovery ?? false;
+        public AbilityExecutionContext ExecutionContext => m_Instance?.ExecutionContext ?? default;
 
         private TeamModule m_TeamModule;
-        private AbilityRuntime m_Runtime;
+        private AbilityInstance m_Instance;
 
         public override void ModuleInit(Character character)
         {
             base.ModuleInit(character);
-            // m_chainIndex = 0;
             ModuleOwner.TryGetAbilityModule(out m_TeamModule);
-            Debug.Assert(m_TeamModule, $"{this.name}: Owner need to be part of a team!", this);
+            Debug.Assert(m_TeamModule, $"{name}: Owner needs to be part of a team!", this);
+        }
+
+        public bool TryExecute(AbilityDefinition ability, AbilityExecutionContext? context = null)
+        {
+            if (!isActiveAndEnabled || ability == null)
+            {
+                return false;
+            }
+
+            EnsureInstance();
+            return m_Instance.TryExecute(ability, context);
         }
 
         [Button]
-        public virtual void PlayAbility()
-        {
-            if (!isActiveAndEnabled)
-            {
-                return;
-            }
-
-            if (m_DefaultAbility == null)
-            {
-                Debug.LogWarning($"{this.name}: Trying to PlayAbility, but no active {typeof(AbilityDefinition).Name} set." +
-                    $"Call 'SetActiveAbility' or 'PlayAbility({typeof(AbilityDefinition).Name} ability)' instead.", this);
-                return;
-            }
-
-            // ensure we have a default processor setup.
-            var runtime = GetRuntimeAndInitializeIfNeeded();
-            runtime.QueueInitiateAbilityExecution();
-        }
-
-        /// <summary>
-        /// Cancel the current ability execution and reset the ability instance.
-        /// </summary>
-        public virtual void StopAbility()
-        {
-            CancelAbility();
-        }
-
-        /// <summary>
-        /// Hard cancel the current ability execution (death/parry/cancel).
-        /// </summary>
-        public virtual void CancelAbility()
+        public void PlayDefaultAbility()
         {
             if (m_DefaultAbility == null)
             {
-                Debug.LogWarning($"{this.name}: Trying to StopAbility, but no active {typeof(AbilityDefinition).Name} set." +
-                    $"Call 'SetActiveAbility' or 'StopAbility({typeof(AbilityDefinition).Name} ability)' instead.", this);
+                Debug.LogWarning($"{name}: No default AbilityDefinition set.", this);
                 return;
             }
 
-            var runtime = GetRuntimeAndInitializeIfNeeded();
-            runtime.CancelAbility();
-
-            Log.Record();
+            TryExecute(m_DefaultAbility);
         }
 
-        // Play ability but trying to use charge level settings.
-        // If no charge level available, PlayAbility is called instead.
-        public virtual void StartAbilityCharge()
+        public void Cancel()
         {
-            var runtime = GetRuntimeAndInitializeIfNeeded();
-            runtime.StartCharge();
+            m_Instance?.Cancel();
+            Log?.Record();
         }
 
-        public virtual void ReleaseAbilityCharge()
+        public bool StartCharge(AbilityDefinition ability)
         {
-            var runtime = GetRuntimeAndInitializeIfNeeded();
-            runtime.ReleaseCharge();
+            if (!isActiveAndEnabled || ability == null)
+            {
+                return false;
+            }
+
+            EnsureInstance();
+            return m_Instance.StartCharge(ability);
         }
 
-        /// <summary>
-        /// In case a hit stun or player action cancel a charge:
-        /// - Stop active abilityModuleEffect
-        /// - Play any cancellation effect (useful for feedback?).
-        /// </summary>
-        public virtual void CancelAbilityCharge()
+        public void ReleaseCharge()
         {
-            var runtime = GetRuntimeAndInitializeIfNeeded();
-            runtime.CancelCharge();
+            m_Instance?.ReleaseCharge();
         }
 
-        public virtual void SetAbility(AbilityDefinition ability)
+        public void CancelCharge()
         {
-            m_DefaultAbility = ability;
-            m_Runtime?.SetAbility(ability);
+            m_Instance?.CancelCharge();
         }
 
         protected override void OnAbilityUpdate(float deltaTime)
         {
             base.OnAbilityUpdate(deltaTime);
-
-            var runtime = GetRuntimeAndInitializeIfNeeded();
-            runtime.Update(deltaTime);
+            m_Instance?.Update(deltaTime);
         }
 
-        /// <summary>
-        internal void QueueInitiateAbilityExecution()
+        private void EnsureInstance()
         {
-            var runtime = GetRuntimeAndInitializeIfNeeded();
-            runtime.QueueInitiateAbilityExecution();
-        }
-
-        private AbilityRuntime GetRuntimeAndInitializeIfNeeded()
-        {
-            if (m_Runtime == null)
+            if (m_Instance != null)
             {
-                m_Runtime = new AbilityRuntime();
+                return;
             }
 
-            m_Runtime.Initialize(this, m_DefaultAbility);
-            return m_Runtime;
+            m_Instance = new AbilityInstance(this);
+            m_Instance.OnAbilityStarted += () => OnAbilityStarted?.Invoke();
+            m_Instance.OnAbilityStartCharge += () => OnAbilityStartCharge?.Invoke();
+            m_Instance.OnRecoveryWindowOpen += () => OnRecoveryWindowOpen?.Invoke();
+            m_Instance.OnAbilityCompleted += () => OnAbilityCompleted?.Invoke();
+            m_Instance.OnAbilityCancelled += () => OnAbilityCancelled?.Invoke();
         }
 
         private void OnEnable()
@@ -149,20 +122,20 @@ namespace NobunAtelier
         private void OnDisable()
         {
             ContextualLogManager.Unregister(Log);
-            CleanupRuntime();
+            CleanupInstance();
         }
 
         private void OnDestroy()
         {
-            CleanupRuntime();
+            CleanupInstance();
         }
 
-        private void CleanupRuntime()
+        private void CleanupInstance()
         {
-            if (m_Runtime != null)
+            if (m_Instance != null)
             {
-                m_Runtime.Dispose();
-                m_Runtime = null;
+                m_Instance.Dispose();
+                m_Instance = null;
             }
         }
     }
