@@ -1,3 +1,4 @@
+using System.Threading;
 using NobunAtelier;
 using UnityEngine;
 
@@ -16,6 +17,7 @@ public abstract class AbilityExecutionDriverModuleDefinition<T> : AbilityModuleD
     public abstract class ExecutionDriverInstance : AbilityModuleInstance<T>, IAbilityExecutionDriver
     {
         private IAbilityExecutionDriverCallbacks m_TimingCallbacks;
+        private CancellationToken m_CancellationToken;
 
         protected ExecutionDriverInstance(AbilityController controller, T data)
             : base(controller, data)
@@ -25,6 +27,7 @@ public abstract class AbilityExecutionDriverModuleDefinition<T> : AbilityModuleD
         void IAbilityExecutionDriver.Initialize(in AbilityExecutionDriverContext context)
         {
             m_TimingCallbacks = context.Callbacks;
+            m_CancellationToken = context.Token;
             OnTimingDriverInitialized();
         }
 
@@ -44,6 +47,12 @@ public abstract class AbilityExecutionDriverModuleDefinition<T> : AbilityModuleD
             OnTimingDriverCanceled();
             m_TimingCallbacks = null;
         }
+
+        /// <summary>
+        /// CancellationToken provided by the ability instance for this execution.
+        /// Derived drivers can use this to cancel async operations.
+        /// </summary>
+        protected CancellationToken CancellationToken => m_CancellationToken;
 
         /// <summary>
         /// Called when timing driver is initialized. Override to perform setup.
@@ -68,25 +77,16 @@ public abstract class AbilityExecutionDriverModuleDefinition<T> : AbilityModuleD
             OnTimingDriverReset();
         }
 
-        /// <summary>
-        /// Fires the effect start event, triggering ExecuteEffect on all ability modules.
-        /// </summary>
         protected void FireEffectStart()
         {
             m_TimingCallbacks?.OnEffectStart();
         }
 
-        /// <summary>
-        /// Fires the effect stop event, triggering StopEffect on the ability.
-        /// </summary>
         protected void FireEffectStop()
         {
             m_TimingCallbacks?.OnEffectStop();
         }
 
-        /// <summary>
-        /// Fires the execution complete event, triggering ability termination.
-        /// </summary>
         protected void FireExecutionComplete()
         {
             m_TimingCallbacks?.OnExecutionComplete();

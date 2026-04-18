@@ -9,27 +9,21 @@ namespace NobunAtelier
         private IAbilityExecutionDriverCallbacks m_Callbacks;
         private float m_ExecutionDelay;
         private float m_UpdateDuration;
-        private float m_ChainOpportunityDuration;
+        private float m_RecoveryDuration;
         private CancellationTokenSource m_CancellationTokenSource;
+        private CancellationToken m_ExternalToken;
 
-        public void ConfigureFromActionModel(ModularAbilityDefinition.ActionModel actionModel)
+        public void Configure(float executionDelay, float updateDuration, float recoveryDuration)
         {
-            if (actionModel == null)
-            {
-                m_ExecutionDelay = 0f;
-                m_UpdateDuration = 0f;
-                m_ChainOpportunityDuration = 0f;
-                return;
-            }
-
-            m_ExecutionDelay = actionModel.ExecutionDelay;
-            m_UpdateDuration = actionModel.UpdateDuration;
-            m_ChainOpportunityDuration = actionModel.ChainOpportunityDuration;
+            m_ExecutionDelay = executionDelay;
+            m_UpdateDuration = updateDuration;
+            m_RecoveryDuration = recoveryDuration;
         }
 
         public void Initialize(in AbilityExecutionDriverContext context)
         {
             m_Callbacks = context.Callbacks;
+            m_ExternalToken = context.Token;
         }
 
         public void RequestExecution()
@@ -52,7 +46,9 @@ namespace NobunAtelier
         private void RestartExecution()
         {
             CancelInternal();
-            m_CancellationTokenSource = new CancellationTokenSource();
+            m_CancellationTokenSource = m_ExternalToken.CanBeCanceled
+                ? CancellationTokenSource.CreateLinkedTokenSource(m_ExternalToken)
+                : new CancellationTokenSource();
             ExecuteAsync(m_CancellationTokenSource.Token).FireAndForget();
         }
 
@@ -86,9 +82,9 @@ namespace NobunAtelier
 
                 m_Callbacks?.OnEffectStop();
 
-                if (m_ChainOpportunityDuration > 0f)
+                if (m_RecoveryDuration > 0f)
                 {
-                    await Awaitable.WaitForSecondsAsync(m_ChainOpportunityDuration, cancellationToken);
+                    await Awaitable.WaitForSecondsAsync(m_RecoveryDuration, cancellationToken);
                 }
 
                 m_Callbacks?.OnExecutionComplete();

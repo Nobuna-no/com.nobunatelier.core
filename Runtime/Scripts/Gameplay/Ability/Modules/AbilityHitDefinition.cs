@@ -33,6 +33,8 @@ namespace NobunAtelier
                 m_sfxFactory = new AbilityLoadableSFXFactory(Data.m_impactSFX);
                 m_vfxFactory = new AbilityLoadableVFXFactory(Data.m_impactVFX);
                 m_hitboxFactory = new AbilityLoadableHitboxFactory(Data.m_hitbox);
+                // Hitboxes stay checked out until Stop; default async release would return them to pool after HitBegin while Update still runs.
+                m_hitboxFactory.AsyncReleaseOnPlay = false;
                 m_isRegistered = false;
             }
 
@@ -45,8 +47,8 @@ namespace NobunAtelier
                 m_vfxFactory.RegisterResources();
                 m_hitboxFactory.RegisterResources();
 
-                m_hitboxFactory.AddListenerOnHit(OnHit);
                 m_hitboxFactory.SetupHitboxes(m_target, Data.m_hitTarget, Controller.Team, Data.m_hitDefinition);
+                m_hitboxFactory.AddListenerOnHit(OnHit);
                 // m_hitbox.OnHit.AddListener(OnHit);
                 // SetupHitbox(m_target, controller.Team);
                 m_isRegistered = true;
@@ -58,6 +60,8 @@ namespace NobunAtelier
                 {
                     InitiateExecution();
                 }
+
+                Controller.Log.Record($"{Data.name}: Execute effect");
                 m_hitboxFactory.PlayAll(m_target);
             }
 
@@ -67,6 +71,8 @@ namespace NobunAtelier
                 {
                     return;
                 }
+
+                Controller.Log.Record($"{Data.name}: Update");
                 m_hitboxFactory.UpdateHitbox(m_target);
             }
 
@@ -74,6 +80,7 @@ namespace NobunAtelier
             {
                 m_sfxFactory.UnregisterResources();
                 m_vfxFactory.UnregisterResources();
+                m_hitboxFactory.ReleaseCachedHitboxes();
                 m_hitboxFactory.UnregisterResources();
                 m_isRegistered = false;
             }
@@ -85,6 +92,7 @@ namespace NobunAtelier
                     return;
                 }
 
+                Controller.Log.Record($"{Data.name}: OnHit");
                 // TODO: Add a way to inject position?
                 // m_FX.transform.position = hitInfo.ImpactLocation;
                 m_vfxFactory.PlayAll(m_target);
