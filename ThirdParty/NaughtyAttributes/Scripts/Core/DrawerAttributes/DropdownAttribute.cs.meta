@@ -13,6 +13,6 @@ AssetOrigin:
   serializedVersion: 1
   productId: 129996
   packageName: NaughtyAttributes
-  packageVersion: 2.1.4
-  assetPath: Assets/Code/Scripts/NaughtyAttributes/Scripts/Core/DrawerAttributes/DropdownAttribute.cs
-  uploadId: 480834
+  packageVersion: 2.1.5
+  assetPath: Packages/com.nobunatelier.core/ThirdParty/NaughtyAttributes/Scripts/Core/DrawerAttributes/DropdownAttribute.cs
+  uploadId: 897264

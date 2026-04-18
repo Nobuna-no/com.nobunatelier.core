@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Reflection;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -130,62 +129,44 @@ namespace NaughtyAttributes.Editor
         {
             object target = PropertyUtility.GetTargetObjectWithProperty(property);
 
-            FieldInfo animatorFieldInfo = ReflectionUtility.GetField(target, animatorName);
-            if (animatorFieldInfo != null &&
-                animatorFieldInfo.FieldType == typeof(Animator))
+            static Animator ResolveAnimator(object obj, string memberName)
             {
-                Animator animator = animatorFieldInfo.GetValue(target) as Animator;
-                if (animator != null)
+                var field = ReflectionUtility.GetField(obj, memberName);
+                if (field != null && field.FieldType == typeof(Animator))
                 {
-                    AnimatorController animatorController = animator.runtimeAnimatorController as AnimatorController;
-                    if (animatorController != null)
-                    {
-                        return animatorController;
-                    }
-
-                    AnimatorOverrideController animatorControllerOverride = animator.runtimeAnimatorController as AnimatorOverrideController;
-                    animatorController = animatorControllerOverride.runtimeAnimatorController as AnimatorController;
-                    return animatorController;
+                    return field.GetValue(obj) as Animator;
                 }
+
+                var prop = ReflectionUtility.GetProperty(obj, memberName);
+                if (prop != null && prop.PropertyType == typeof(Animator))
+                {
+                    return prop.GetValue(obj) as Animator;
+                }
+
+                var getter = ReflectionUtility.GetMethod(obj, memberName);
+                if (getter != null && getter.ReturnType == typeof(Animator) && getter.GetParameters().Length == 0)
+                {
+                    return getter.Invoke(obj, null) as Animator;
+                }
+
+                return null;
             }
 
-            PropertyInfo animatorPropertyInfo = ReflectionUtility.GetProperty(target, animatorName);
-            if (animatorPropertyInfo != null &&
-                animatorPropertyInfo.PropertyType == typeof(Animator))
-            {
-                Animator animator = animatorPropertyInfo.GetValue(target) as Animator;
-                if (animator != null)
-                {
-                    AnimatorController animatorController = animator.runtimeAnimatorController as AnimatorController;
-                    if (animatorController != null)
-                    {
-                        return animatorController;
-                    }
+            var animator = ResolveAnimator(target, animatorName);
+            if (animator == null) return null;
 
-                    AnimatorOverrideController animatorControllerOverride = animator.runtimeAnimatorController as AnimatorOverrideController;
-                    animatorController = animatorControllerOverride.runtimeAnimatorController as AnimatorController;
-                    return animatorController;
-                }
+            var runtimeAnimatorController = animator.runtimeAnimatorController;
+            // Handle both regular controllers and override controllers
+            if (runtimeAnimatorController is AnimatorController animatorController)
+            {
+                return animatorController;
             }
 
-            MethodInfo animatorGetterMethodInfo = ReflectionUtility.GetMethod(target, animatorName);
-            if (animatorGetterMethodInfo != null &&
-                animatorGetterMethodInfo.ReturnType == typeof(Animator) &&
-                animatorGetterMethodInfo.GetParameters().Length == 0)
+            if (runtimeAnimatorController is AnimatorOverrideController animatorOverrideController)
             {
-                Animator animator = animatorGetterMethodInfo.Invoke(target, null) as Animator;
-                if (animator != null)
-                {
-                    AnimatorController animatorController = animator.runtimeAnimatorController as AnimatorController;
-                    if (animatorController != null)
-                    {
-                        return animatorController;
-                    }
-
-                    AnimatorOverrideController animatorControllerOverride = animator.runtimeAnimatorController as AnimatorOverrideController;
-                    animatorController = animatorControllerOverride.runtimeAnimatorController as AnimatorController;
-                    return animatorController;
-                }
+                // The base controller holds the parameters
+                var baseCtrl = animatorOverrideController.runtimeAnimatorController as AnimatorController;
+                return baseCtrl;
             }
 
             return null;
