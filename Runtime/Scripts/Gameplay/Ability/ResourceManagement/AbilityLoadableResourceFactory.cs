@@ -666,6 +666,13 @@ namespace NobunAtelier
         : AbilityLoadableTransformFactory<Hitbox, LoadableHitbox, AbilityLoadableHitbox>
     {
         /// <summary>
+        /// Checked-out hitboxes for the current ability execution. <see cref="GetProduct"/> always
+        /// allocates from the pool; without caching, <see cref="UpdateHitbox"/> would fetch a new
+        /// instance every frame and listeners/setup would apply to different instances.
+        /// </summary>
+        private Hitbox[] m_ActiveHitboxes;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="AbilityLoadableHitboxFactory"/> class.
         /// </summary>
         public AbilityLoadableHitboxFactory()
@@ -714,16 +721,82 @@ namespace NobunAtelier
         /// <param name="product">The hitbox to activate.</param>
         protected override void PlayProduct(AbilityLoadableHitbox resource, Hitbox product) => product.HitBegin();
 
+        private Hitbox GetCachedOrAcquire(int index)
+        {
+            if (TargetResources == null || index < 0 || index >= TargetResources.Count)
+            {
+                return null;
+            }
+
+            if (m_ActiveHitboxes == null || m_ActiveHitboxes.Length != TargetResources.Count)
+            {
+                m_ActiveHitboxes = new Hitbox[TargetResources.Count];
+            }
+
+            if (m_ActiveHitboxes[index] != null)
+            {
+                return m_ActiveHitboxes[index];
+            }
+
+            var item = TargetResources[index];
+            if (item == null)
+            {
+                return null;
+            }
+
+            m_ActiveHitboxes[index] = GetProduct(item);
+            return m_ActiveHitboxes[index];
+        }
+
+        /// <summary>
+        /// Returns pooled hitboxes for this execution and clears the cache. Call from module <see cref="AbilityModuleInstance{T}.Stop"/>
+        /// before <see cref="AbilityLoadableResourceFactory{T, LoadableT, ResourceT}.UnregisterResources"/>.
+        /// </summary>
+        public void ReleaseCachedHitboxes()
+        {
+            if (m_ActiveHitboxes == null || TargetResources == null)
+            {
+                m_ActiveHitboxes = null;
+                return;
+            }
+
+            for (int i = 0; i < m_ActiveHitboxes.Length; i++)
+            {
+                var product = m_ActiveHitboxes[i];
+                if (product == null)
+                {
+                    continue;
+                }
+
+                product.OnHit.RemoveAllListeners();
+
+                if (i < TargetResources.Count && TargetResources[i] != null)
+                {
+                    ReleaseResource(TargetResources[i], product);
+                }
+            }
+
+            m_ActiveHitboxes = null;
+        }
+
         /// <summary>
         /// Adds a listener to all hitboxes' OnHit events.
         /// </summary>
         /// <param name="listener">The callback to invoke when any hitbox hits something.</param>
         public void AddListenerOnHit(UnityEngine.Events.UnityAction<HitInfo> listener)
         {
-            foreach (var resources in TargetResources)
+            if (TargetResources == null)
             {
-                var hitbox = GetProduct(resources);
-                hitbox.OnHit.AddListener(listener);
+                return;
+            }
+
+            for (int i = 0; i < TargetResources.Count; i++)
+            {
+                var hitbox = GetCachedOrAcquire(i);
+                if (hitbox != null)
+                {
+                    hitbox.OnHit.AddListener(listener);
+                }
             }
         }
 
@@ -736,9 +809,20 @@ namespace NobunAtelier
         /// <param name="hitDefinition">The hit definition containing damage and hit behavior data.</param>
         public void SetupHitboxes(Transform origin, TeamDefinition.Target target, TeamModule teamModule, HitDefinition hitDefinition)
         {
-            foreach (var item in TargetResources)
+            if (TargetResources == null)
             {
-                Hitbox hitbox = GetProduct(item);
+                return;
+            }
+
+            for (int i = 0; i < TargetResources.Count; i++)
+            {
+                var item = TargetResources[i];
+                Hitbox hitbox = GetCachedOrAcquire(i);
+                if (hitbox == null)
+                {
+                    continue;
+                }
+
                 hitbox.SetHitDefinition(hitDefinition);
                 hitbox.SetTargetDefinition(target);
                 hitbox.SetOwner(teamModule);
@@ -756,11 +840,128 @@ namespace NobunAtelier
         /// <param name="origin">The origin transform for positioning and rotation.</param>
         public void UpdateHitbox(Transform origin)
         {
-            foreach (var item in TargetResources)
+            if (TargetResources == null || m_ActiveHitboxes == null)
             {
-                Hitbox hitbox = GetProduct(item);
+                return;
+            }
+
+            for (int i = 0; i < TargetResources.Count; i++)
+            {
+                var item = TargetResources[i];
+                if (item == null || i >= m_ActiveHitboxes.Length)
+                {
+                    continue;
+                }
+
+                Hitbox hitbox = m_ActiveHitboxes[i];
+                if (hitbox == null)
+                {
+                    continue;
+                }
+
                 hitbox.transform.localPosition = origin.position + origin.TransformDirection(item.PositionOffset);
                 hitbox.transform.localRotation = origin.rotation * Quaternion.Euler(item.RotationOffset);
+            }
+        }
+
+        /// <summary>
+        /// Plays cached hitboxes (same instances as <see cref="SetupHitboxes"/>). Default <see cref="AbilityLoadableResourceFactory{T, LoadableT, ResourceT}.PlayAll"/>
+        /// would call <see cref="AbilityLoadableResourceFactory{T, LoadableT, ResourceT}.GetProduct"/> again and orphan configured hitboxes.
+        /// </summary>
+        public new void PlayAll(Transform target)
+        {
+            if (TargetResources == null || m_ActiveHitboxes == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < TargetResources.Count; i++)
+            {
+                var resource = TargetResources[i];
+                if (resource == null)
+                {
+                    continue;
+                }
+
+                if (i >= m_ActiveHitboxes.Length)
+                {
+                    continue;
+                }
+
+                Hitbox product = m_ActiveHitboxes[i];
+                if (product == null)
+                {
+                    continue;
+                }
+
+                if (ResourceState == ResourceState.Unregistered)
+                {
+                    RegisterResources();
+                    Debug.LogWarning(
+                        $"Playing unregistered resources of type {typeof(Hitbox).Name}, lazy registration will be performed. "
+                        + "Fix this by registering the resources before playing them.");
+                }
+
+                if (resource.StartDelay > 0)
+                {
+                    PlayHitboxDelayedAsync(resource, target, i, CancellationTokenSource.Token).FireAndForget();
+                }
+                else
+                {
+                    SetupBeforePlay(resource, product, target);
+                    PlayProduct(resource, product);
+#if UNITY_EDITOR
+                    DebugInfo.PlayingCount++;
+                    DebugInfo.TotalPlayCount++;
+#endif
+                    if (AsyncReleaseOnPlay)
+                    {
+                        ReleaseProductAsync(resource, product, CancellationTokenSource.Token).FireAndForget();
+                    }
+                }
+            }
+        }
+
+        private async Awaitable PlayHitboxDelayedAsync(AbilityLoadableHitbox resource, Transform target, int resourceIndex,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await Awaitable.WaitForSecondsAsync(resource.StartDelay, cancellationToken);
+
+                if (resource == null || TargetResources == null || m_ActiveHitboxes == null)
+                {
+                    return;
+                }
+
+                if (resourceIndex < 0 || resourceIndex >= m_ActiveHitboxes.Length)
+                {
+                    return;
+                }
+
+                Hitbox product = m_ActiveHitboxes[resourceIndex];
+                if (product == null)
+                {
+                    return;
+                }
+
+                SetupBeforePlay(resource, product, target);
+                PlayProduct(resource, product);
+#if UNITY_EDITOR
+                DebugInfo.PlayingCount++;
+                DebugInfo.TotalPlayCount++;
+#endif
+                if (AsyncReleaseOnPlay)
+                {
+                    await ReleaseProductAsync(resource, product, cancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
             }
         }
     }
