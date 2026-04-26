@@ -8,7 +8,7 @@ using NobunAtelier;
 
 namespace NobunAtelier.Editor
 {
-    [CustomEditor(typeof(DataCollection))]
+    [CustomEditor(typeof(DataCollection), true)]
     [CanEditMultipleObjects]
     public class DataCollectionEditor : UnityEditor.Editor
     {

@@ -14,7 +14,10 @@ namespace NobunAtelier.Editor
         private readonly string EditorNamespacesString = "using UnityEditor;\nusing NobunAtelier;\nusing NobunAtelier.Editor;\n\n";
         private readonly string DefinitionTemplateString = "public class {0}Definition : {1}\n";
         private readonly string CollectionTemplateString = "[CreateAssetMenu(fileName =\"[{0}]\", menuName = \"{1}/Collection/{0}\")]\npublic class {0}Collection : DataCollection<{0}Definition>\n";
-        private readonly string CollectionEditorTemplateString = "[CustomEditor(typeof({0}Collection))]\npublic class {0}CollectionEditor : DataCollectionEditor\n";
+        // NOTE: CollectionEditor boilerplate no longer generated.
+        // DataCollectionEditor uses [CustomEditor(typeof(DataCollection), editorForChildClasses: true)]
+        // which automatically handles all DataCollection subclasses.
+        // Only create a custom CollectionEditor if you need to override behavior (see SplitScreenRatioCollectionEditor).
         private readonly string DefinitionPropertyDrawerTemplateString = "[CustomPropertyDrawer(typeof({0}Definition))]\npublic class  {0}DefinitionPropertyDrawer : StateDefinitionPropertyDrawer<{0}Definition, {0}Collection>\n";
         private readonly string NamespaceStartTemplate = "namespace {0}\n{{\n";
         private readonly string NamespaceEndTemplate = "\n}\n";
@@ -60,8 +63,6 @@ namespace NobunAtelier.Editor
         private string m_collectionScriptPath;
         private string m_propertyDrawerScriptContent;
         private string m_propertyDrawerScriptPath;
-        private string m_collectionEditorScriptContent;
-        private string m_collectionEditorScriptPath;
         private string m_editorFolderPath;
         private bool m_isPreviewReady;
 
@@ -455,9 +456,6 @@ namespace NobunAtelier.Editor
                 // Collection Script
                 AddPreviewSection(m_collectionScriptPath, m_collectionScriptContent);
                 
-                // Collection Editor Script
-                AddPreviewSection(m_collectionEditorScriptPath, m_collectionEditorScriptContent);
-                
                 // State Definition related scripts
                 if (m_isStateDefinitionChild)
                 {
@@ -498,8 +496,6 @@ namespace NobunAtelier.Editor
                     m_definitionScriptContent = evt.newValue;
                 else if (path == m_collectionScriptPath)
                     m_collectionScriptContent = evt.newValue;
-                else if (path == m_collectionEditorScriptPath)
-                    m_collectionEditorScriptContent = evt.newValue;
                 else if (path == m_propertyDrawerScriptPath)
                     m_propertyDrawerScriptContent = evt.newValue;
                 else if (path == m_stateScriptPath)
@@ -548,7 +544,6 @@ namespace NobunAtelier.Editor
             {
                 WriteScript(m_definitionScriptPath, m_definitionScriptContent);
                 WriteScript(m_collectionScriptPath, m_collectionScriptContent);
-                WriteScript(m_collectionEditorScriptPath, m_collectionEditorScriptContent);
                 if (m_isStateDefinitionChild)
                 {
                     WriteScript(m_propertyDrawerScriptPath, m_propertyDrawerScriptContent);
@@ -618,9 +613,6 @@ namespace NobunAtelier.Editor
             string collectionCode = string.Format(CollectionTemplateString, m_className, m_menuName) + EmptyMethodString;
             m_collectionScriptContent = NamespacesString + namespacePrefix + collectionCode + namespaceSuffix;
             
-            string collectionEditorCode = string.Format(CollectionEditorTemplateString, m_className) + EmptyMethodString;
-            m_collectionEditorScriptContent = EditorNamespacesString + namespacePrefix + collectionEditorCode + namespaceSuffix;
-            
             // Setup paths for regular scripts
             m_definitionScriptPath = Path.Combine(m_savePath, m_className + "Definition.cs").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             m_collectionScriptPath = Path.Combine(m_savePath, m_className + "Collection.cs").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
@@ -635,8 +627,6 @@ namespace NobunAtelier.Editor
                 m_editorFolderPath = Path.Combine(m_savePath, "Editor").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             }
             
-            m_collectionEditorScriptPath = Path.Combine(m_editorFolderPath, m_className + "CollectionEditor.cs").Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-
             // Adding property drawer script if the parent type is a state definition for the state machine.
             if (m_isStateDefinitionChild)
             {
