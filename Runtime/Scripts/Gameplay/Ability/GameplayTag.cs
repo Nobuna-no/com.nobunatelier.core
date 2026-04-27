@@ -1,0 +1,12 @@
+using UnityEngine;
+
+namespace NobunAtelier
+{
+    /// <summary>
+    /// Lightweight identity token for runtime state flags (e.g., SuperArmor, IFrame, Stagger).
+    /// Used by SkillDefinition to declare tags granted/revoked at state transitions.
+    /// Tag management system is future work; this establishes the data slot.
+    /// </summary>
+    [CreateAssetMenu(menuName = "NobunAtelier/Ability/Gameplay Tag")]
+    public class GameplayTag : DataDefinition { }
+}
