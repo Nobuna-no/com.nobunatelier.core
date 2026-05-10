@@ -16,6 +16,12 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.kybernetik.animancer",
+            "expression": "",
+            "define": "ANIMANCER"
+        }
+    ],
     "noEngineReferences": false
 }
