@@ -12,7 +12,7 @@ namespace NobunAtelier
     public class AbilityAction : ScriptableObject
     {
         [Tooltip("Timing driver that fires GameplayEvents during execution.")]
-        [SerializeReference]
+        [SerializeReference, SubclassSelector]
         private IAbilityActionDriver m_Driver;
 
         [Tooltip("Event-to-effect bindings. Multiple bindings can map to the same event.")]

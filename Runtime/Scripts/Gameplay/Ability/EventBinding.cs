@@ -59,7 +59,7 @@ namespace NobunAtelier
 
         [Tooltip("Inline effect definition. Used when UseSharedEffect is false.")]
         [AllowNesting, HideIf("m_UseSharedEffect")]
-        [SerializeReference] private AbilityEffect m_InlineEffect;
+        [SerializeReference, SubclassSelector] private AbilityEffect m_InlineEffect;
 
         public GameplayEventDefinition Event => m_Event;
         public BindingAction Action => m_Action;

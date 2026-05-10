@@ -10,7 +10,7 @@ namespace NobunAtelier
     [CreateAssetMenu(menuName = "NobunAtelier/Ability/Effect Asset")]
     public class AbilityEffectAsset : ScriptableObject
     {
-        [SerializeReference]
+        [SerializeReference, SubclassSelector]
         private AbilityEffect m_Definition;
 
         public AbilityEffect Definition => m_Definition;
