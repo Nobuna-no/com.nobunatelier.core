@@ -26,7 +26,7 @@ namespace NobunAtelier
             public float TimeOffset => m_TimeOffset;
         }
 
-        [SerializeField] private List<TimedEvent> m_Events;
+        [SerializeField] private TimedEvent[] m_Events;
 
         private IAbilityActionDriverCallbacks m_Callbacks;
         private CancellationTokenSource m_Cts;
@@ -34,11 +34,11 @@ namespace NobunAtelier
 
         public GameplayEventDefinition[] GetAvailableEvents()
         {
-            if (m_Events == null || m_Events.Count == 0)
+            if (m_Events == null || m_Events.Length == 0)
                 return Array.Empty<GameplayEventDefinition>();
 
-            var events = new GameplayEventDefinition[m_Events.Count];
-            for (int i = 0; i < m_Events.Count; i++)
+            var events = new GameplayEventDefinition[m_Events.Length];
+            for (int i = 0; i < m_Events.Length; i++)
             {
                 events[i] = m_Events[i].Event;
             }
@@ -86,7 +86,7 @@ namespace NobunAtelier
         {
             try
             {
-                if (m_Events == null || m_Events.Count == 0)
+                if (m_Events == null || m_Events.Length == 0)
                     return;
 
                 // Sort by time offset (working copy to avoid mutating serialized data)
