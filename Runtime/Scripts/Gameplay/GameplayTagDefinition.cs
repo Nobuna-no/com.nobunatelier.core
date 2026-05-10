@@ -13,8 +13,4 @@ namespace NobunAtelier
         [SerializeField] private string m_Description;
 #endif
     }
-
-    [CreateAssetMenu(fileName = "[GameplayTag]", menuName = "NobunAtelier/Ability/Gameplay Tags")]
-    public class GameplayTagCollection : DataCollection<GameplayTagDefinition> { }
-
 }

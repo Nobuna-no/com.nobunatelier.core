@@ -13,7 +13,4 @@ namespace NobunAtelier
         [SerializeField] private string m_Description;
 #endif
     }
-
-    [CreateAssetMenu(fileName = "[GameplayEvent]", menuName = "NobunAtelier/Ability/Gameplay Events")]
-    public class GameplayEventCollection : DataCollection<GameplayEventDefinition> { }
 }
