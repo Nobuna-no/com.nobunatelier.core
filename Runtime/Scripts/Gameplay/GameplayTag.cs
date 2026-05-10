@@ -7,6 +7,14 @@ namespace NobunAtelier
     /// Used by SkillDefinition to declare tags granted/revoked at state transitions.
     /// Tag management system is future work; this establishes the data slot.
     /// </summary>
-    [CreateAssetMenu(menuName = "NobunAtelier/Ability/Gameplay Tag")]
-    public class GameplayTag : DataDefinition { }
+    public class GameplayTagDefinition : DataDefinition
+    {
+#if UNITY_EDITOR
+        [SerializeField] private string m_Description;
+#endif
+    }
+
+    [CreateAssetMenu(fileName = "[GameplayTag]", menuName = "NobunAtelier/Ability/Gameplay Tags")]
+    public class GameplayTagCollection : DataCollection<GameplayTagDefinition> { }
+
 }

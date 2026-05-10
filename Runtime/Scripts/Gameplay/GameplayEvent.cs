@@ -1,0 +1,19 @@
+using UnityEngine;
+
+namespace NobunAtelier
+{
+    /// <summary>
+    /// Lightweight identity token for gameplay events.
+    /// Replaces Animancer's StringAsset as event identity within the ability system,
+    /// decoupling event dispatch from any specific animation framework.
+    /// </summary>
+    public class GameplayEventDefinition : DataDefinition
+    {
+#if UNITY_EDITOR
+        [SerializeField] private string m_Description;
+#endif
+    }
+
+    [CreateAssetMenu(fileName = "[GameplayEvent]", menuName = "NobunAtelier/Ability/Gameplay Events")]
+    public class GameplayEventCollection : DataCollection<GameplayEventDefinition> { }
+}
