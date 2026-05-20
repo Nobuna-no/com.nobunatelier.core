@@ -3,7 +3,7 @@ using System;
 namespace NobunAtelier
 {
     /// <summary>
-    /// Abstract base for inline serializable effects. Used via [SerializeReference] on <see cref="EventBinding"/>.
+    /// Abstract base for inline serializable effects. Used via [SerializeReference] on <see cref="EffectEntry"/>.
     /// Concrete implementations (FeedbackEffect, DamageAreaEffect) come in Phase 4.
     /// </summary>
     [Serializable]
