@@ -4,31 +4,22 @@ using UnityEngine;
 namespace NobunAtelier
 {
     /// <summary>
-    /// Composition unit: an <see cref="IAbilityActionDriver"/> (timing source) +
-    /// <see cref="EventBinding"/>s (effect subscriptions).
-    /// Replaces V7's ActionModel as a standalone, reusable SO.
+    /// ScriptableObject wrapper for <see cref="AbilityActionData"/>.
+    /// Use as a shared asset when the same action is referenced by multiple skills.
+    /// For one-off actions, inline <see cref="AbilityActionData"/> directly on SkillDefinition.
     /// </summary>
     [CreateAssetMenu(menuName = "NobunAtelier/Ability/Action")]
-    public class AbilityAction : ScriptableObject
+    public class AbilityAction : ScriptableObject, ISerializationCallbackReceiver
     {
-        [Tooltip("Timing driver that fires GameplayEvents during execution.")]
-        [SerializeReference, SubclassSelector]
-        private IAbilityActionDriver m_Driver;
+        [SerializeField] private AbilityActionData m_Data;
 
-        [Tooltip("Event-to-effect bindings. Multiple bindings can map to the same event.")]
-        [SerializeField]
-        private List<EventBinding> m_Bindings;
+        public AbilityActionData Data => m_Data;
 
-        public IAbilityActionDriver Driver => m_Driver;
-        public IReadOnlyList<EventBinding> Bindings => m_Bindings;
+        public void OnBeforeSerialize() { }
 
-        /// <summary>
-        /// Returns all GameplayEvents the driver can fire.
-        /// Useful for editor validation of binding configuration.
-        /// </summary>
-        public GameplayEventDefinition[] GetAvailableEvents()
+        public void OnAfterDeserialize()
         {
-            return m_Driver?.GetAvailableEvents();
+            m_Data?.DeduplicateInlineEffects(new HashSet<AbilityEffect>());
         }
     }
 }

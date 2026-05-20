@@ -3,26 +3,40 @@ using System.Threading;
 namespace NobunAtelier
 {
     /// <summary>
-    /// Timing source that fires <see cref="GameplayEventDefinition"/>s during ability execution.
-    /// Implementations: AnimDrivenAbilityAction (animation), AwaitableDrivenAbilityAction (timer).
+    /// Phases of ability execution. Drivers signal phase transitions via
+    /// <see cref="IAbilityActionDriverCallbacks.OnPhaseTransition"/>.
+    /// AbilityInstance owns the state machine and transitions accordingly.
+    /// </summary>
+    public enum AbilityPhase
+    {
+        /// <summary>Startup complete, effects begin. Starting -> InProgress.</summary>
+        Active,
+
+        /// <summary>Active phase done, recovery window opens. InProgress -> Recovery.</summary>
+        Recovery,
+
+        /// <summary>Execution fully complete, cleanup. Recovery -> Ready.</summary>
+        Complete
+    }
+
+    /// <summary>
+    /// Timing source that fires <see cref="GameplayEventDefinition"/>s and signals
+    /// <see cref="AbilityPhase"/> transitions during ability execution.
     /// </summary>
     public interface IAbilityActionDriver
     {
         /// <summary>
-        /// Returns all GameplayEvents this driver can fire.
-        /// Used by AbilityAction for editor validation and binding setup.
+        /// Returns all content GameplayEvents this driver can fire.
         /// </summary>
         GameplayEventDefinition[] GetAvailableEvents();
 
         /// <summary>
         /// Initialize the driver with context (callbacks, cancellation, controller reference).
-        /// Called once per action activation before <see cref="RequestExecution"/>.
         /// </summary>
         void Initialize(in AbilityActionDriverContext context);
 
         /// <summary>
         /// Start the driver's execution sequence.
-        /// The driver fires events via <see cref="IAbilityActionDriverCallbacks.FireEvent"/> as its timing source dictates.
         /// </summary>
         void RequestExecution();
 
@@ -38,17 +52,21 @@ namespace NobunAtelier
     }
 
     /// <summary>
-    /// Callback interface for drivers to fire events to the action execution layer.
-    /// Single event channel replaces V7's three fixed callbacks (OnEffectStart/Stop/Complete).
+    /// Callback interface for drivers to fire content events and signal phase transitions.
     /// </summary>
     public interface IAbilityActionDriverCallbacks
     {
         /// <summary>
-        /// Fire a <see cref="GameplayEventDefinition"/>. ActionExecution dispatches this to matching <see cref="EventBinding"/>s.
-        /// Both structural events (EffectStart, EffectStop, ExecutionComplete) and
-        /// content events (Hit1, TrailStart, etc.) flow through this single channel.
+        /// Fire a content <see cref="GameplayEventDefinition"/> (Hit1, TrailStart, etc.).
+        /// Dispatches to matching <see cref="GameplayEventGroup"/> entries.
         /// </summary>
         void FireEvent(GameplayEventDefinition gameplayEvent);
+
+        /// <summary>
+        /// Signal an ability phase transition. AbilityInstance handles state machine
+        /// transitions and fires phase-bound effects from AbilityAction.
+        /// </summary>
+        void OnPhaseTransition(AbilityPhase phase);
     }
 
     /// <summary>
