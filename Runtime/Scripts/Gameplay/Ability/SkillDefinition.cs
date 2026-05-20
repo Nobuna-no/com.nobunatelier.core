@@ -7,13 +7,13 @@ namespace NobunAtelier
     /// <summary>
     /// Top-level combat action definition.
     /// Configures value, movement, mode (OneShot/Hold), gameplay tags per state,
-    /// and references <see cref="AbilityAction"/>s for execution.
+    /// and references <see cref="AbilityActionData"/> for execution (inline or via <see cref="AbilityAction"/> asset).
     /// </summary>
     [CreateAssetMenu(menuName = "NobunAtelier/Ability/Skill Definition")]
     public class SkillDefinition : DataDefinition
     {
         [Header("Skill")]
-        [Tooltip("Base value for this skill (damage, heal amount, etc.). Multiplied by EventBinding.ValueMultiplier.")]
+        [Tooltip("Base value for this skill (damage, heal amount, etc.). Multiplied by EffectEntry.ValueMultiplier.")]
         [SerializeField] private float m_Value;
 
         [Tooltip("How movement is handled during this skill.")]
@@ -27,8 +27,7 @@ namespace NobunAtelier
         [SerializeField] private SkillMode m_Mode = SkillMode.OneShot;
 
         [Header("Default Action")]
-        [Tooltip("The AbilityAction executed on tap (OneShot) or early release (Hold).")]
-        [SerializeField] private AbilityAction m_DefaultAction;
+        [SerializeField] private AbilityActionReference m_DefaultAction;
 
         [Header("Gameplay Tags")]
         [Tooltip("Tags granted when ability enters Starting state, revoked on state exit.")]
@@ -49,7 +48,7 @@ namespace NobunAtelier
         public MovementMode Movement => m_Movement;
         public AnimationCurve MovementCurve => m_MovementCurve;
         public SkillMode Mode => m_Mode;
-        public AbilityAction DefaultAction => m_DefaultAction;
+        public AbilityActionData DefaultAction => m_DefaultAction?.Resolve();
         public GameplayTagDefinition[] OnStartTags => m_OnStartTags;
         public GameplayTagDefinition[] OnActiveTags => m_OnActiveTags;
         public GameplayTagDefinition[] OnRecoveryTags => m_OnRecoveryTags;
@@ -82,13 +81,13 @@ namespace NobunAtelier
         public class HoldConfig
         {
             [Tooltip("Action played during hold (e.g., charge loop animation).")]
-            [SerializeField] private AbilityAction m_HoldStartAction;
+            [SerializeField] private AbilityActionReference m_HoldStartAction;
 
             [Tooltip("Charge levels with thresholds and release actions.")]
             [SerializeField] private HoldLevelData[] m_HoldLevels;
 
             [Tooltip("Action played when hold is cancelled.")]
-            [SerializeField] private AbilityAction m_HoldCancelAction;
+            [SerializeField] private AbilityActionReference m_HoldCancelAction;
 
             [Tooltip("Constraint on charge release behavior.")]
             [SerializeField] private HoldConstraint m_Constraint = HoldConstraint.None;
@@ -97,9 +96,9 @@ namespace NobunAtelier
             [AllowNesting, ShowIf("HasTimeout")]
             [SerializeField] private float m_Timeout = 3f;
 
-            public AbilityAction HoldStartAction => m_HoldStartAction;
+            public AbilityActionData HoldStartAction => m_HoldStartAction?.Resolve();
             public HoldLevelData[] HoldLevels => m_HoldLevels;
-            public AbilityAction HoldCancelAction => m_HoldCancelAction;
+            public AbilityActionData HoldCancelAction => m_HoldCancelAction?.Resolve();
             public HoldConstraint Constraint => m_Constraint;
             public float Timeout => m_Timeout;
 
@@ -116,14 +115,14 @@ namespace NobunAtelier
             [SerializeField] private float m_ThresholdDuration;
 
             [Tooltip("Action played when this charge level is reached (e.g., charge flash).")]
-            [SerializeField] private AbilityAction m_OnLevelReached;
+            [SerializeField] private AbilityActionReference m_OnLevelReached;
 
             [Tooltip("Action played when charge is released at this level.")]
-            [SerializeField] private AbilityAction m_OnReleased;
+            [SerializeField] private AbilityActionReference m_OnReleased;
 
             public float ThresholdDuration => m_ThresholdDuration;
-            public AbilityAction OnLevelReached => m_OnLevelReached;
-            public AbilityAction OnReleased => m_OnReleased;
+            public AbilityActionData OnLevelReached => m_OnLevelReached?.Resolve();
+            public AbilityActionData OnReleased => m_OnReleased?.Resolve();
         }
 
         public enum HoldConstraint

@@ -6,7 +6,7 @@ namespace NobunAtelier
     {
         public int PathIndex;
         public int StepIndex;
-        public AbilityDefinition Ability;
+        public SkillDefinition Ability;
         public bool IsChargeInput;
     }
 

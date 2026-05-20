@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace NobunAtelier
@@ -13,23 +14,24 @@ namespace NobunAtelier
     }
 
     /// <summary>
-    /// Single-authority runtime for one ability execution. Merges V5's Instance, AbilityStateMachine,
-    /// and AbilityCommandQueue into one class. Reusable across definition switches.
+    /// Single-authority runtime for one ability execution.
+    /// Owns the state machine. Drivers signal phase transitions, AbilityInstance decides what to do.
     /// </summary>
-    internal class AbilityInstance : IAbilityExecutionDriverCallbacks
+    internal class AbilityInstance
     {
         private ExecutionState m_State = ExecutionState.Ready;
-        private AbilityDefinition m_CurrentDefinition;
-        private CommandExecution m_ActiveCommand;
-        private AbilityModuleRegistry m_ModuleRegistry;
+        private SkillDefinition m_CurrentSkill;
+        private ActionExecution m_ActiveAction;
         private AbilityExecutionContext m_ExecutionContext;
         private CancellationTokenSource m_ExecutionCts;
         private CancellationToken m_ControllerToken;
+        private AbilityController m_Controller;
         private ContextualLogManager.LogPartition m_Log;
 
+        // Charge state
         private bool m_IsCharging;
         private int m_CurrentChargeLevel = -1;
-        private float m_LastChargeDuration;
+        private float m_ChargeDuration;
 
         public event Action OnAbilityStarted;
         public event Action OnAbilityStartCharge;
@@ -37,7 +39,7 @@ namespace NobunAtelier
         public event Action OnAbilityCompleted;
         public event Action OnAbilityCancelled;
 
-        public AbilityDefinition CurrentAbility => m_CurrentDefinition;
+        public SkillDefinition CurrentSkill => m_CurrentSkill;
         public ExecutionState State => m_State;
         public bool IsCharging => m_IsCharging;
         public bool IsInRecovery => m_State == ExecutionState.Recovery;
@@ -45,80 +47,58 @@ namespace NobunAtelier
 
         public AbilityInstance(AbilityController controller)
         {
-            m_ModuleRegistry = new AbilityModuleRegistry(controller);
+            m_Controller = controller;
             m_ControllerToken = controller.destroyCancellationToken;
             m_Log = controller.Log;
         }
 
-        public bool TryExecute(AbilityDefinition definition, AbilityExecutionContext? context = null)
+        public bool TryExecute(SkillDefinition skill, AbilityExecutionContext? context = null)
         {
             if (m_State != ExecutionState.Ready && m_State != ExecutionState.Recovery)
-            {
                 return false;
-            }
 
-            m_Log?.Record($"TryExecute: {definition.name}");
+            m_Log?.Record($"TryExecute: {skill.name}");
 
-            TeardownActiveCommand();
-            m_CurrentDefinition = definition;
+            m_CurrentSkill = skill;
             m_ExecutionContext = context ?? default;
-            m_IsCharging = false;
-
-            ActivateActionModel(definition.Default);
-            return true;
-        }
-
-        public void Cancel()
-        {
-            if (m_State == ExecutionState.Ready && m_ActiveCommand == null)
-            {
-                return;
-            }
-
-            m_Log?.Record("Cancel");
-
-            m_ActiveCommand?.Cancel();
-            m_ActiveCommand = null;
-
-            CancelExecutionToken();
             ResetChargeState();
-            m_State = ExecutionState.Ready;
-            OnAbilityCancelled?.Invoke();
+
+            return ActivateAbilityAction(skill.DefaultAction);
         }
 
-        public bool StartCharge(AbilityDefinition definition)
+        public bool StartCharge(SkillDefinition skill)
         {
-            m_Log?.Record($"StartCharge: {definition.name}");
+            m_Log?.Record($"StartCharge: {skill.name}");
 
             if (m_State == ExecutionState.InProgress)
             {
-                m_Log?.Record("Aborted - ability is in progress.", ContextualLogManager.LogTypeFilter.Warning);
+                m_Log?.Record("StartCharge aborted — ability in progress.",
+                    ContextualLogManager.LogTypeFilter.Warning);
                 return false;
             }
 
-            if (!definition.CanBeCharged)
+            if (skill.Mode != SkillDefinition.SkillMode.Hold)
             {
-                m_Log?.Record("Ability cannot be charged. Playing default.", ContextualLogManager.LogTypeFilter.Warning);
-                return TryExecute(definition);
+                m_Log?.Record("Skill is not Hold mode. Playing default.",
+                    ContextualLogManager.LogTypeFilter.Warning);
+                return TryExecute(skill);
             }
 
             if (m_State != ExecutionState.Ready && m_State != ExecutionState.Recovery)
-            {
                 return false;
-            }
 
-            TeardownActiveCommand();
-            m_CurrentDefinition = definition;
+            TeardownActiveAction();
+            m_CurrentSkill = skill;
             m_ExecutionContext = default;
 
             m_IsCharging = true;
             m_CurrentChargeLevel = -1;
-            m_LastChargeDuration = 0f;
+            m_ChargeDuration = 0f;
             m_State = ExecutionState.Charging;
 
-            if (definition.ChargeStart != null)
+            if (skill.Hold?.HoldStartAction != null)
             {
-                ActivateOverlayCommand(definition.ChargeStart);
+                ActivateOverlayAction(skill.Hold.HoldStartAction);
             }
 
             OnAbilityStartCharge?.Invoke();
@@ -129,42 +109,45 @@ namespace NobunAtelier
         {
             if (!m_IsCharging)
             {
-                m_Log?.Record("ReleaseCharge ignored - not charging.");
+                m_Log?.Record("ReleaseCharge ignored — not charging.");
                 return;
             }
 
-            m_Log?.Record("ReleaseCharge");
+            m_Log?.Record($"ReleaseCharge (level={m_CurrentChargeLevel})");
 
             if (m_CurrentChargeLevel < 0)
             {
-                if (m_CurrentDefinition.CancelAbilityChargeOnEarlyChargeRelease)
-                {
-                    m_Log?.Record("Cancel charge on early release.");
-                    CancelChargeInternal();
-                }
-
-                if (m_CurrentDefinition.PlayAbilityOnEarlyChargeRelease)
-                {
-                    m_Log?.Record("Play default on early release.");
-                    m_IsCharging = false;
-                    m_State = ExecutionState.Ready;
-                    ActivateActionModel(m_CurrentDefinition.Default);
-                }
-
+                m_Log?.Record("Early release -> DefaultAction");
+                m_IsCharging = false;
+                m_State = ExecutionState.Ready;
+                ActivateAbilityAction(m_CurrentSkill.DefaultAction);
                 return;
             }
 
-            var releaseModel = m_CurrentDefinition.GetChargeLevel(m_CurrentChargeLevel).OnChargeReleased;
-            m_IsCharging = false;
-            m_State = ExecutionState.Ready;
-            ActivateActionModel(releaseModel);
+            var levels = m_CurrentSkill.Hold?.HoldLevels;
+            if (levels != null && m_CurrentChargeLevel < levels.Length)
+            {
+                var releaseAction = levels[m_CurrentChargeLevel].OnReleased;
+                m_IsCharging = false;
+                m_State = ExecutionState.Ready;
+
+                if (releaseAction != null)
+                {
+                    ActivateAbilityAction(releaseAction);
+                }
+                else
+                {
+                    m_Log?.Record("No OnReleased action for charge level. Playing default.");
+                    ActivateAbilityAction(m_CurrentSkill.DefaultAction);
+                }
+            }
         }
 
         public void CancelCharge()
         {
             if (!m_IsCharging)
             {
-                m_Log?.Record("CancelCharge failed - not charging.");
+                m_Log?.Record("CancelCharge ignored — not charging.");
                 return;
             }
 
@@ -172,20 +155,36 @@ namespace NobunAtelier
             CancelChargeInternal();
         }
 
+        public void Cancel()
+        {
+            if (m_State == ExecutionState.Ready && m_ActiveAction == null)
+                return;
+
+            m_Log?.Record("Cancel");
+
+            m_ActiveAction?.Cancel();
+            m_ActiveAction = null;
+
+            CancelExecutionToken();
+            ResetChargeState();
+            m_State = ExecutionState.Ready;
+            OnAbilityCancelled?.Invoke();
+        }
+
         public void Update(float deltaTime)
         {
-            if (m_State == ExecutionState.Charging)
+            switch (m_State)
             {
-                m_ActiveCommand?.Update(deltaTime);
-                UpdateChargeLevel(deltaTime);
-                return;
-            }
+                case ExecutionState.Charging:
+                    m_ActiveAction?.Update(deltaTime);
+                    UpdateChargeLevel(deltaTime);
+                    break;
 
-            if (m_State == ExecutionState.Starting ||
-                m_State == ExecutionState.InProgress ||
-                m_State == ExecutionState.Recovery)
-            {
-                m_ActiveCommand?.Update(deltaTime);
+                case ExecutionState.Starting:
+                case ExecutionState.InProgress:
+                case ExecutionState.Recovery:
+                    m_ActiveAction?.Update(deltaTime);
+                    break;
             }
         }
 
@@ -193,8 +192,8 @@ namespace NobunAtelier
         {
             if (m_State != ExecutionState.Ready)
             {
-                m_ActiveCommand?.Cancel();
-                m_ActiveCommand = null;
+                m_ActiveAction?.Cancel();
+                m_ActiveAction = null;
                 ResetChargeState();
                 m_State = ExecutionState.Ready;
             }
@@ -202,81 +201,174 @@ namespace NobunAtelier
             CancelExecutionToken();
         }
 
-        #region IAbilityExecutionDriverCallbacks
+        #region Phase Transitions (called by ActionExecution)
 
-        void IAbilityExecutionDriverCallbacks.OnEffectStart()
+        internal void HandlePhaseTransition(AbilityPhase phase)
         {
-            if (m_State != ExecutionState.Starting)
+            switch (phase)
             {
-                return;
+                case AbilityPhase.Active:
+                    if (m_State != ExecutionState.Starting)
+                        return;
+                    m_Log?.Record("Phase -> Active: Starting -> InProgress");
+                    m_State = ExecutionState.InProgress;
+                    break;
+
+                case AbilityPhase.Recovery:
+                    if (m_State != ExecutionState.InProgress)
+                        return;
+                    m_Log?.Record("Phase -> Recovery: InProgress -> Recovery");
+                    m_State = ExecutionState.Recovery;
+                    OnRecoveryWindowOpen?.Invoke();
+                    break;
+
+                case AbilityPhase.Complete:
+                    if (m_State != ExecutionState.Recovery)
+                        return;
+                    m_Log?.Record("Phase -> Complete: Recovery -> Ready");
+                    m_ActiveAction?.Teardown();
+                    m_ActiveAction = null;
+                    CancelExecutionToken();
+                    m_State = ExecutionState.Ready;
+                    OnAbilityCompleted?.Invoke();
+                    break;
             }
-
-            m_Log?.Record("Driver → OnEffectStart: Starting → InProgress");
-            m_State = ExecutionState.InProgress;
-            m_ActiveCommand?.ExecuteDrivenModules();
-        }
-
-        void IAbilityExecutionDriverCallbacks.OnEffectStop()
-        {
-            if (m_State != ExecutionState.InProgress)
-            {
-                return;
-            }
-
-            m_Log?.Record("Driver → OnEffectStop: InProgress → Recovery");
-            m_State = ExecutionState.Recovery;
-            m_ActiveCommand?.StopDrivenModules();
-            OnRecoveryWindowOpen?.Invoke();
-        }
-
-        void IAbilityExecutionDriverCallbacks.OnExecutionComplete()
-        {
-            if (m_State != ExecutionState.Recovery)
-            {
-                return;
-            }
-
-            m_Log?.Record("Driver → OnExecutionComplete: Recovery → Ready");
-            m_ActiveCommand?.StopOverlayModules();
-            m_ActiveCommand = null;
-            CancelExecutionToken();
-            m_State = ExecutionState.Ready;
-            OnAbilityCompleted?.Invoke();
         }
 
         #endregion
 
-        private void ActivateActionModel(AbilityDefinition.ActionModel actionModel)
+        #region Charge Internals
+
+        private void UpdateChargeLevel(float deltaTime)
         {
-            TeardownActiveCommand();
+            if (!m_IsCharging || m_CurrentSkill?.Hold == null)
+                return;
+
+            var hold = m_CurrentSkill.Hold;
+
+            switch (hold.Constraint)
+            {
+                case SkillDefinition.HoldConstraint.ReleaseOnMaxChargeReached:
+                    if (hold.HoldLevels != null && m_CurrentChargeLevel >= hold.HoldLevels.Length - 1)
+                    {
+                        m_Log?.Record("ReleaseOnMaxChargeReached");
+                        ReleaseCharge();
+                        return;
+                    }
+                    break;
+
+                case SkillDefinition.HoldConstraint.ReleaseOnTimeout:
+                    if (m_ChargeDuration >= hold.Timeout)
+                    {
+                        m_Log?.Record("ReleaseOnTimeout");
+                        ReleaseCharge();
+                        return;
+                    }
+                    break;
+
+                case SkillDefinition.HoldConstraint.CancelOnTimeout:
+                    if (m_ChargeDuration >= hold.Timeout)
+                    {
+                        m_Log?.Record("CancelOnTimeout");
+                        CancelCharge();
+                        return;
+                    }
+                    break;
+            }
+
+            m_ChargeDuration += deltaTime;
+
+            var levels = hold.HoldLevels;
+            if (levels == null || m_CurrentChargeLevel >= levels.Length - 1)
+                return;
+
+            float cumulativeDuration = 0f;
+            for (int i = 0; i < levels.Length; i++)
+            {
+                cumulativeDuration += levels[i].ThresholdDuration;
+
+                if (m_ChargeDuration >= cumulativeDuration && m_CurrentChargeLevel < i)
+                {
+                    m_CurrentChargeLevel = i;
+                    m_Log?.Record($"Charge level {i} reached");
+
+                    if (levels[i].OnLevelReached != null)
+                    {
+                        ActivateOverlayAction(levels[i].OnLevelReached);
+                    }
+                }
+            }
+        }
+
+        private void CancelChargeInternal()
+        {
+            TeardownActiveAction();
+
+            if (m_CurrentSkill?.Hold?.HoldCancelAction != null)
+            {
+                ActivateOverlayAction(m_CurrentSkill.Hold.HoldCancelAction);
+            }
+
+            ResetChargeState();
+            m_State = ExecutionState.Ready;
+            OnAbilityCancelled?.Invoke();
+        }
+
+        private void ResetChargeState()
+        {
+            m_IsCharging = false;
+            m_CurrentChargeLevel = -1;
+            m_ChargeDuration = 0f;
+        }
+
+        #endregion
+
+        private bool ActivateAbilityAction(AbilityActionData action)
+        {
+            TeardownActiveAction();
             CancelExecutionToken();
+
             m_ExecutionCts = m_ControllerToken.CanBeCanceled
                 ? CancellationTokenSource.CreateLinkedTokenSource(m_ControllerToken)
                 : new CancellationTokenSource();
 
-            m_ActiveCommand = new CommandExecution();
-            bool hasDriver = m_ActiveCommand.Activate(actionModel, m_ModuleRegistry, this, m_ExecutionCts.Token, m_Log);
+            m_ActiveAction = new ActionExecution();
+            bool hasDriver = m_ActiveAction.Activate(
+                action, m_Controller, m_CurrentSkill, m_ExecutionCts.Token, this,
+                isOverlay: false);
 
             if (hasDriver)
             {
                 m_State = ExecutionState.Starting;
+                m_ActiveAction.FireStartEffects(m_CurrentSkill, m_Controller);
                 OnAbilityStarted?.Invoke();
+                return true;
             }
+
+            m_ActiveAction = null;
+            return false;
         }
 
-        private void ActivateOverlayCommand(AbilityDefinition.ActionModel actionModel)
+        /// <summary>
+        /// Overlay action — driver plays but phase transitions are ignored.
+        /// Used for charge start, charge cancel, and level-reached animations.
+        /// </summary>
+        private void ActivateOverlayAction(AbilityActionData action)
         {
-            TeardownActiveCommand();
-            m_ActiveCommand = new CommandExecution();
-            m_ActiveCommand.ActivateOverlayOnly(actionModel, m_ModuleRegistry);
+            TeardownActiveAction();
+
+            m_ActiveAction = new ActionExecution();
+            m_ActiveAction.Activate(
+                action, m_Controller, m_CurrentSkill, default, this,
+                isOverlay: true);
         }
 
-        private void TeardownActiveCommand()
+        private void TeardownActiveAction()
         {
-            if (m_ActiveCommand != null)
+            if (m_ActiveAction != null)
             {
-                m_ActiveCommand.Teardown();
-                m_ActiveCommand = null;
+                m_ActiveAction.Teardown();
+                m_ActiveAction = null;
             }
         }
 
@@ -290,260 +382,269 @@ namespace NobunAtelier
             }
         }
 
-        private void ResetChargeState()
-        {
-            m_IsCharging = false;
-            m_CurrentChargeLevel = -1;
-            m_LastChargeDuration = 0f;
-        }
-
-        private void CancelChargeInternal()
-        {
-            TeardownActiveCommand();
-
-            if (m_CurrentDefinition.ChargeCancel != null)
-            {
-                ActivateOverlayCommand(m_CurrentDefinition.ChargeCancel);
-            }
-
-            m_CurrentChargeLevel = -1;
-            m_State = ExecutionState.Ready;
-            m_IsCharging = false;
-        }
-
-        private void UpdateChargeLevel(float deltaTime)
-        {
-            if (!m_IsCharging || m_CurrentDefinition == null)
-            {
-                return;
-            }
-
-            switch (m_CurrentDefinition.ChargeConstraint)
-            {
-                case AbilityDefinition.ChargeReleaseConstraint.ReleaseOnMaxChargeReached:
-                    if (m_CurrentChargeLevel >= m_CurrentDefinition.ChargeLevelCount - 1)
-                    {
-                        m_Log?.Record("ReleaseOnMaxChargeReached");
-                        ReleaseCharge();
-                        return;
-                    }
-                    break;
-
-                case AbilityDefinition.ChargeReleaseConstraint.ReleaseOnTimeout:
-                    if (m_LastChargeDuration >= m_CurrentDefinition.ChargeTimeout)
-                    {
-                        m_Log?.Record("ReleaseOnTimeout");
-                        ReleaseCharge();
-                        return;
-                    }
-                    break;
-
-                case AbilityDefinition.ChargeReleaseConstraint.CancelOnTimeout:
-                    if (m_LastChargeDuration >= m_CurrentDefinition.ChargeTimeout)
-                    {
-                        m_Log?.Record("CancelOnTimeout");
-                        CancelCharge();
-                        return;
-                    }
-                    break;
-            }
-
-            m_LastChargeDuration += deltaTime;
-
-            int maxLevel = m_CurrentDefinition.ChargeLevelCount;
-            if (m_CurrentChargeLevel >= maxLevel - 1)
-            {
-                return;
-            }
-
-            float cumulativeDuration = 0f;
-            for (int i = 0; i < maxLevel; i++)
-            {
-                var level = m_CurrentDefinition.GetChargeLevel(i);
-                cumulativeDuration += level.TresholdDuration;
-
-                if (m_LastChargeDuration >= cumulativeDuration)
-                {
-                    if (m_CurrentChargeLevel >= i)
-                    {
-                        break;
-                    }
-
-                    m_CurrentChargeLevel = i;
-                    m_Log?.Record($"Charge level {i} reached");
-
-                    if (level.OnLevelReached != null)
-                    {
-                        ActivateOverlayCommand(level.OnLevelReached);
-                    }
-                }
-            }
-        }
-
         /// <summary>
-        /// Manages driven + overlay modules for one ActionModel activation.
+        /// Manages one AbilityAction's runtime: driver + phase effects + content event dispatch.
         /// </summary>
-        private class CommandExecution
+        private class ActionExecution : IAbilityActionDriverCallbacks
         {
-            private IAbilityExecutionDriver m_Driver;
-            private AbilityModuleDefinition[] m_DrivenModules;
-            private AbilityModuleDefinition[] m_OverlayModules;
-            private AbilityModuleRegistry m_Registry;
+            private IAbilityActionDriver m_Driver;
+            private AbilityActionData m_Action;
+            private AbilityInstance m_Owner;
+            private AbilityController m_Controller;
+            private float m_SkillValue;
+            private bool m_IsOverlay;
+            private ContextualLogManager.LogPartition m_Log;
 
-            public bool Activate(AbilityDefinition.ActionModel actionModel, AbilityModuleRegistry registry,
-                IAbilityExecutionDriverCallbacks callbacks, CancellationToken token,
-                ContextualLogManager.LogPartition log)
+            // Content event -> bound effect entries
+            private Dictionary<GameplayEventDefinition, List<(EffectEntry entry, IAbilityEffectInstance instance)>> m_EventMap;
+
+            // Phase -> effect instances (created on Activate, fired on phase transition)
+            private Dictionary<AbilityPhase, List<(EffectEntry entry, IAbilityEffectInstance instance)>> m_PhaseMap;
+
+            // Start effects — fired immediately when ability starts (not a driver phase)
+            private List<(EffectEntry entry, IAbilityEffectInstance instance)> m_StartEffects;
+
+            private List<IAbilityEffectInstance> m_UpdatingInstances;
+
+            public bool Activate(AbilityActionData action, AbilityController controller,
+                SkillDefinition skill, CancellationToken token, AbilityInstance owner,
+                bool isOverlay)
             {
-                m_Registry = registry;
-                m_DrivenModules = actionModel.GetDrivenModulesArray();
-                m_OverlayModules = actionModel.GetOverlayModulesArray();
+                m_Action = action;
+                m_Owner = owner;
+                m_Controller = controller;
+                m_SkillValue = skill?.Value ?? 0f;
+                m_Log = controller.Log;
+                m_IsOverlay = isOverlay;
 
-                RegisterModules(m_DrivenModules);
-                RegisterModules(m_OverlayModules);
+                m_EventMap = new Dictionary<GameplayEventDefinition, List<(EffectEntry, IAbilityEffectInstance)>>();
+                m_PhaseMap = new Dictionary<AbilityPhase, List<(EffectEntry, IAbilityEffectInstance)>>();
+                m_StartEffects = new List<(EffectEntry, IAbilityEffectInstance)>();
+                m_UpdatingInstances = new List<IAbilityEffectInstance>();
 
-                InitiateAndExecuteModules(m_OverlayModules);
-
-                bool hasDriven = m_DrivenModules != null && m_DrivenModules.Length > 0;
-
-                if (actionModel.ExecutionDriverModule != null)
+                // Build phase + start effect maps
+                if (!isOverlay)
                 {
-                    if (registry.m_ModulesMap.TryGetValue(actionModel.ExecutionDriverModule, out var instance))
+                    BuildEffectList(action?.OnStartEffects, m_StartEffects, controller);
+                    BuildPhaseEntries(AbilityPhase.Active, action?.OnActiveEffects, controller);
+                    BuildPhaseEntries(AbilityPhase.Recovery, action?.OnRecoveryEffects, controller);
+                }
+
+                // Build content event map
+                if (action?.GameplayEvents != null)
+                {
+                    foreach (var group in action.GameplayEvents)
                     {
-                        m_Driver = instance as IAbilityExecutionDriver;
-                        if (m_Driver == null)
+                        if (group.Event == null || group.Effects == null)
+                            continue;
+
+                        foreach (var entry in group.Effects)
                         {
-                            log?.Record("Driver module does not implement IAbilityExecutionDriver.",
-                                ContextualLogManager.LogTypeFilter.Warning);
+                            var effect = entry.Resolved;
+                            if (effect == null && entry.Action != BindingAction.Stop)
+                                continue;
+
+                            IAbilityEffectInstance instance = null;
+                            if (effect != null)
+                                instance = effect.CreateInstance(controller);
+
+                            if (!m_EventMap.TryGetValue(group.Event, out var list))
+                            {
+                                list = new List<(EffectEntry, IAbilityEffectInstance)>();
+                                m_EventMap[group.Event] = list;
+                            }
+                            list.Add((entry, instance));
                         }
                     }
-                    else
+                }
+
+                // Initialize and start driver
+                m_Driver = action?.Driver;
+                if (m_Driver == null)
+                {
+                    if (!isOverlay)
                     {
-                        log?.Record("Driver module instance not found in registry.",
+                        m_Log?.Record("ActionExecution: No driver on AbilityAction.",
                             ContextualLogManager.LogTypeFilter.Warning);
                     }
+                    return false;
                 }
 
-                if (m_Driver == null && hasDriven)
-                {
-                    var fallback = new AwaitableExecutionDriver();
-                    fallback.Configure(actionModel.ExecutionDelay, actionModel.UpdateDuration, actionModel.RecoveryDuration);
-                    m_Driver = fallback;
-                }
-
-                if (m_Driver != null)
-                {
-                    InitiateModules(m_DrivenModules);
-                    m_Driver.Initialize(new AbilityExecutionDriverContext(callbacks, token));
-                    m_Driver.RequestExecution();
-                    return true;
-                }
-
-                return false;
+                var context = new AbilityActionDriverContext(this, token, controller);
+                m_Driver.Initialize(in context);
+                m_Driver.RequestExecution();
+                return true;
             }
 
-            public void ActivateOverlayOnly(AbilityDefinition.ActionModel actionModel, AbilityModuleRegistry registry)
+            /// <summary>
+            /// Fire start effects — called immediately when ability enters Starting state.
+            /// </summary>
+            public void FireStartEffects(SkillDefinition skill, AbilityController controller)
             {
-                m_Registry = registry;
-                m_OverlayModules = actionModel.GetOverlayModulesArray();
-                m_DrivenModules = null;
-
-                RegisterModules(m_OverlayModules);
-                InitiateAndExecuteModules(m_OverlayModules);
+                ExecuteEffectList(m_StartEffects, controller);
             }
 
-            public void ExecuteDrivenModules()
+            /// <summary>
+            /// Fire phase-bound effects for the given phase.
+            /// Called by ActionExecution.OnPhaseTransition before state transition.
+            /// </summary>
+            private void FirePhaseEffects(AbilityPhase phase, AbilityController controller)
             {
-                if (m_DrivenModules != null && m_Registry != null)
+                if (!m_PhaseMap.TryGetValue(phase, out var entries))
+                    return;
+
+                ExecuteEffectList(entries, controller);
+            }
+
+            private void ExecuteEffectList(List<(EffectEntry entry, IAbilityEffectInstance instance)> entries,
+                AbilityController controller)
+            {
+                if (entries == null)
+                    return;
+
+                foreach (var (entry, instance) in entries)
                 {
-                    m_Registry.ExecuteModules(m_DrivenModules);
+                    if (instance == null)
+                        continue;
+
+                    var ctx = new AbilityEffectContext(
+                        m_SkillValue * entry.ValueMultiplier,
+                        entry.Target,
+                        controller);
+
+                    instance.Execute(ctx);
+
+                    if (entry.Action == BindingAction.Start && instance.NeedsUpdate)
+                        m_UpdatingInstances.Add(instance);
                 }
             }
 
-            public void StopDrivenModules()
+            // IAbilityActionDriverCallbacks — content events only
+            public void FireEvent(GameplayEventDefinition gameplayEvent)
             {
-                if (m_DrivenModules != null && m_Registry != null)
+                m_Log?.Record($"ActionExecution.FireEvent: {gameplayEvent?.name ?? "null"}");
+
+                if (!m_EventMap.TryGetValue(gameplayEvent, out var entries))
+                    return;
+
+                foreach (var (entry, instance) in entries)
                 {
-                    m_Registry.StopModules(m_DrivenModules);
+                    if (entry.Action == BindingAction.Execute || entry.Action == BindingAction.Start)
+                    {
+                        if (instance == null)
+                            continue;
+
+                        var ctx = new AbilityEffectContext(
+                            m_SkillValue * entry.ValueMultiplier,
+                            entry.Target,
+                            m_Controller);
+
+                        instance.Execute(ctx);
+
+                        if (entry.Action == BindingAction.Start && instance.NeedsUpdate)
+                            m_UpdatingInstances.Add(instance);
+                    }
                 }
             }
 
-            public void StopOverlayModules()
+            // IAbilityActionDriverCallbacks — phase transitions
+            public void OnPhaseTransition(AbilityPhase phase)
             {
-                if (m_OverlayModules != null && m_Registry != null)
-                {
-                    m_Registry.StopModules(m_OverlayModules);
-                }
+                if (m_IsOverlay)
+                    return; // Overlay actions don't transition phases
+
+                m_Log?.Record($"ActionExecution.OnPhaseTransition: {phase}");
+
+                // Fire phase effects before state transition
+                FirePhaseEffects(phase, m_Controller);
+
+                // Tell AbilityInstance to transition state
+                m_Owner.HandlePhaseTransition(phase);
             }
 
             public void Update(float deltaTime)
             {
-                if (m_DrivenModules != null && m_DrivenModules.Length > 0 && m_Registry != null)
+                for (int i = m_UpdatingInstances.Count - 1; i >= 0; i--)
                 {
-                    m_Registry.UpdateModules(deltaTime, m_DrivenModules);
-                }
-
-                if (m_OverlayModules != null && m_OverlayModules.Length > 0 && m_Registry != null)
-                {
-                    m_Registry.UpdateModules(deltaTime, m_OverlayModules);
+                    m_UpdatingInstances[i].Update(deltaTime);
                 }
             }
 
             public void Teardown()
             {
-                StopOverlayModules();
+                StopAllInstances();
                 m_Driver?.Reset();
                 m_Driver = null;
             }
 
             public void Cancel()
             {
+                StopAllInstances();
                 m_Driver?.Cancel();
                 m_Driver = null;
-                StopDrivenModules();
-                StopOverlayModules();
             }
 
-            private void RegisterModules(AbilityModuleDefinition[] modules)
+            private void BuildPhaseEntries(AbilityPhase phase, IReadOnlyList<EffectEntry> entries,
+                AbilityController controller)
             {
-                if (modules == null || m_Registry == null)
-                {
+                if (entries == null)
                     return;
+
+                if (!m_PhaseMap.TryGetValue(phase, out var list))
+                {
+                    list = new List<(EffectEntry, IAbilityEffectInstance)>();
+                    m_PhaseMap[phase] = list;
                 }
 
-                m_Registry.Add(modules);
+                BuildEffectList(entries, list, controller);
             }
 
-            private void InitiateModules(AbilityModuleDefinition[] modules)
+            private static void BuildEffectList(IReadOnlyList<EffectEntry> entries,
+                List<(EffectEntry, IAbilityEffectInstance)> target, AbilityController controller)
             {
-                if (modules == null || m_Registry == null)
-                {
+                if (entries == null)
                     return;
-                }
 
-                foreach (var mod in modules)
+                foreach (var entry in entries)
                 {
-                    if (mod != null && m_Registry.m_ModulesMap.TryGetValue(mod, out var instance))
-                    {
-                        instance.InitiateExecution();
-                    }
+                    var effect = entry.Resolved;
+                    if (effect == null)
+                        continue;
+
+                    var instance = effect.CreateInstance(controller);
+                    target.Add((entry, instance));
                 }
             }
 
-            private void InitiateAndExecuteModules(AbilityModuleDefinition[] modules)
+            private void StopAllInstances()
             {
-                if (modules == null || m_Registry == null)
+                StopList(m_StartEffects);
+                m_StartEffects?.Clear();
+
+                if (m_EventMap != null)
                 {
-                    return;
+                    foreach (var list in m_EventMap.Values)
+                        StopList(list);
+                    m_EventMap.Clear();
                 }
 
-                foreach (var mod in modules)
+                if (m_PhaseMap != null)
                 {
-                    if (mod != null && m_Registry.m_ModulesMap.TryGetValue(mod, out var instance))
-                    {
-                        instance.InitiateExecution();
-                        instance.ExecuteEffect();
-                    }
+                    foreach (var list in m_PhaseMap.Values)
+                        StopList(list);
+                    m_PhaseMap.Clear();
                 }
+
+                m_UpdatingInstances?.Clear();
+            }
+
+            private static void StopList(List<(EffectEntry entry, IAbilityEffectInstance instance)> list)
+            {
+                if (list == null)
+                    return;
+
+                foreach (var (_, instance) in list)
+                    instance?.Stop();
             }
         }
     }

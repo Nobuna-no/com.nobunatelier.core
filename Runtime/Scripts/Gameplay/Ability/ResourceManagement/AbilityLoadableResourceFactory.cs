@@ -833,6 +833,18 @@ namespace NobunAtelier
             }
         }
 
+        public void SetDamageMultiplier(float multiplier)
+        {
+            if (m_ActiveHitboxes == null)
+                return;
+
+            foreach (var hitbox in m_ActiveHitboxes)
+            {
+                if (hitbox != null)
+                    hitbox.SetDamageMultiplier(multiplier);
+            }
+        }
+
         /// <summary>
         /// Updates the position and rotation of all hitboxes relative to the origin transform.
         /// Useful for hitboxes that need to follow a moving character.

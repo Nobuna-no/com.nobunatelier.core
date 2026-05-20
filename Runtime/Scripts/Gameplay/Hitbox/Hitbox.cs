@@ -52,6 +52,11 @@ namespace NobunAtelier.Gameplay
             m_hitDefinition = hit;
         }
 
+        public void SetDamageMultiplier(float multiplier)
+        {
+            m_damageMultiplier = multiplier;
+        }
+
         public virtual void HitBegin()
         {
             m_collider.enabled = true;

@@ -51,11 +51,11 @@ namespace NobunAtelier
                         Debug.LogWarning($"MovesetDefinition '{name}': Path {i} Step {s} has null Ability.", this);
                     }
 
-                    if (step.IsChargeInput && step.Ability != null && !step.Ability.CanBeCharged)
+                    if (step.IsChargeInput && step.Ability != null && step.Ability.Mode != SkillDefinition.SkillMode.Hold)
                     {
                         Debug.LogError(
-                            $"MovesetDefinition '{name}': Path {i} Step {s} has IsChargeInput but ability " +
-                            $"'{step.Ability.name}' has CanBeCharged == false.", this);
+                            $"MovesetDefinition '{name}': Path {i} Step {s} has IsChargeInput but skill " +
+                            $"'{step.Ability.name}' is not Hold mode.", this);
                     }
                 }
             }
@@ -118,11 +118,11 @@ namespace NobunAtelier
     public class MovesetStep
     {
         [SerializeField] private InputSlot m_InputSlot;
-        [SerializeField] private AbilityDefinition m_Ability;
+        [SerializeField] private SkillDefinition m_Ability;
         [SerializeField] private bool m_IsChargeInput;
 
         public InputSlot InputSlot => m_InputSlot;
-        public AbilityDefinition Ability => m_Ability;
+        public SkillDefinition Ability => m_Ability;
         public bool IsChargeInput => m_IsChargeInput;
     }
 }

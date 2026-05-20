@@ -1,23 +1,18 @@
 using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 
 namespace NobunAtelier
 {
     public partial class AbilityController : CharacterAbilityModuleBase
     {
         [Header("Ability Controller")]
-        [FormerlySerializedAs("m_defaultAbility")]
-        [SerializeField] private AbilityDefinition m_DefaultAbility;
+        [SerializeField] private SkillDefinition m_DefaultSkill;
 
         [Header("Events")]
-        [FormerlySerializedAs("OnAbilityStartExecution")]
         [SerializeField] public UnityEvent OnAbilityStarted;
         [SerializeField] public UnityEvent OnAbilityStartCharge;
-        [FormerlySerializedAs("OnAbilityChainOpportunity")]
         [SerializeField] public UnityEvent OnRecoveryWindowOpen;
-        [FormerlySerializedAs("OnAbilityCompleteExecution")]
         [SerializeField] public UnityEvent OnAbilityCompleted;
         [SerializeField] public UnityEvent OnAbilityCancelled;
 
@@ -27,7 +22,7 @@ namespace NobunAtelier
         public TeamModule Team => m_TeamModule;
         public ContextualLogManager.LogPartition Log { get; private set; }
 
-        public AbilityDefinition CurrentAbility => m_Instance?.CurrentAbility;
+        public SkillDefinition CurrentSkill => m_Instance?.CurrentSkill;
         public ExecutionState CurrentState => m_Instance?.State ?? ExecutionState.Ready;
         public bool IsCharging => m_Instance?.IsCharging ?? false;
         public bool IsInRecovery => m_Instance?.IsInRecovery ?? false;
@@ -43,27 +38,25 @@ namespace NobunAtelier
             Debug.Assert(m_TeamModule, $"{name}: Owner needs to be part of a team!", this);
         }
 
-        public bool TryExecute(AbilityDefinition ability, AbilityExecutionContext? context = null)
+        public bool TryExecute(SkillDefinition skill, AbilityExecutionContext? context = null)
         {
-            if (!isActiveAndEnabled || ability == null)
-            {
+            if (!isActiveAndEnabled || skill == null)
                 return false;
-            }
 
             EnsureInstance();
-            return m_Instance.TryExecute(ability, context);
+            return m_Instance.TryExecute(skill, context);
         }
 
         [Button]
         public void PlayDefaultAbility()
         {
-            if (m_DefaultAbility == null)
+            if (m_DefaultSkill == null)
             {
-                Debug.LogWarning($"{name}: No default AbilityDefinition set.", this);
+                Debug.LogWarning($"{name}: No default SkillDefinition set.", this);
                 return;
             }
 
-            TryExecute(m_DefaultAbility);
+            TryExecute(m_DefaultSkill);
         }
 
         public void Cancel()
@@ -72,15 +65,13 @@ namespace NobunAtelier
             Log?.Record();
         }
 
-        public bool StartCharge(AbilityDefinition ability)
+        public bool StartCharge(SkillDefinition skill)
         {
-            if (!isActiveAndEnabled || ability == null)
-            {
+            if (!isActiveAndEnabled || skill == null)
                 return false;
-            }
 
             EnsureInstance();
-            return m_Instance.StartCharge(ability);
+            return m_Instance.StartCharge(skill);
         }
 
         public void ReleaseCharge()
@@ -102,9 +93,7 @@ namespace NobunAtelier
         private void EnsureInstance()
         {
             if (m_Instance != null)
-            {
                 return;
-            }
 
             m_Instance = new AbilityInstance(this);
             m_Instance.OnAbilityStarted += () => OnAbilityStarted?.Invoke();
