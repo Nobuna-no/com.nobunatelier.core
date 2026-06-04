@@ -254,6 +254,13 @@ namespace NobunAtelier
                     }
                 }
 
+                // Past last step or looped back to start — combo is complete, any path can chain
+                if (nextStep == 0 || nextStep >= activePath.Definition.Steps.Length)
+                {
+                    return ResolveFromIdle(inputSlot);
+                }
+
+                // Mid-combo — only higher priority can cross-path
                 return ResolveCrossPath(inputSlot, activePath.Definition.Priority);
             }
 
