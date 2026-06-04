@@ -333,19 +333,24 @@ namespace NobunAtelier
                 : new CancellationTokenSource();
 
             m_ActiveAction = new ActionExecution();
+
+            // State must be Starting before Activate — if StartupDuration is 0,
+            // the driver fires Active synchronously during Activate.
+            m_State = ExecutionState.Starting;
+
             bool hasDriver = m_ActiveAction.Activate(
                 action, m_Controller, m_CurrentSkill, m_ExecutionCts.Token, this,
                 isOverlay: false);
 
             if (hasDriver)
             {
-                m_State = ExecutionState.Starting;
                 m_ActiveAction.FireStartEffects(m_CurrentSkill, m_Controller);
                 OnAbilityStarted?.Invoke();
                 return true;
             }
 
             m_ActiveAction = null;
+            m_State = ExecutionState.Ready;
             return false;
         }
 
@@ -423,12 +428,9 @@ namespace NobunAtelier
                 m_UpdatingInstances = new List<IAbilityEffectInstance>();
 
                 // Build phase + start effect maps
-                if (!isOverlay)
-                {
-                    BuildEffectList(action?.OnStartEffects, m_StartEffects, controller);
-                    BuildPhaseEntries(AbilityPhase.Active, action?.OnActiveEffects, controller);
-                    BuildPhaseEntries(AbilityPhase.Recovery, action?.OnRecoveryEffects, controller);
-                }
+                BuildEffectList(action?.OnStartEffects, m_StartEffects, controller);
+                BuildPhaseEntries(AbilityPhase.Active, action?.OnActiveEffects, controller);
+                BuildPhaseEntries(AbilityPhase.Recovery, action?.OnRecoveryEffects, controller);
 
                 // Build content event map
                 if (action?.GameplayEvents != null)
@@ -550,16 +552,16 @@ namespace NobunAtelier
             // IAbilityActionDriverCallbacks — phase transitions
             public void OnPhaseTransition(AbilityPhase phase)
             {
-                if (m_IsOverlay)
-                    return; // Overlay actions don't transition phases
-
                 m_Log?.Record($"ActionExecution.OnPhaseTransition: {phase}");
 
-                // Fire phase effects before state transition
+                // Fire phase effects regardless of overlay status
                 FirePhaseEffects(phase, m_Controller);
 
-                // Tell AbilityInstance to transition state
-                m_Owner.HandlePhaseTransition(phase);
+                // Only primary actions transition the state machine
+                if (!m_IsOverlay)
+                {
+                    m_Owner.HandlePhaseTransition(phase);
+                }
             }
 
             public void Update(float deltaTime)
