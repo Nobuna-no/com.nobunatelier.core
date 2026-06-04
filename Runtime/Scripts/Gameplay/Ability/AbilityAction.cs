@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 
 namespace NobunAtelier
@@ -13,6 +14,13 @@ namespace NobunAtelier
     {
         [SerializeField] private AbilityActionData m_Data;
 
+#if UNITY_EDITOR
+        [HideInInspector]
+        [SerializeField] private string m_ValidationMessages;
+
+        internal string ValidationMessages => m_ValidationMessages;
+#endif
+
         public AbilityActionData Data => m_Data;
 
         public void OnBeforeSerialize() { }
@@ -21,5 +29,17 @@ namespace NobunAtelier
         {
             m_Data?.DeduplicateInlineEffects(new HashSet<AbilityEffect>());
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            m_Data?.AutoFillDescriptions();
+            m_Data?.DeduplicateInlineEffects(new HashSet<AbilityEffect>());
+
+            var sb = new StringBuilder();
+            AbilityActionData.Validate(m_Data, "Action", sb);
+            m_ValidationMessages = sb.ToString();
+        }
+#endif
     }
 }

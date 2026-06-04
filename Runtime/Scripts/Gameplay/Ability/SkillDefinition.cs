@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Text;
 using NaughtyAttributes;
 using UnityEngine;
 
@@ -10,7 +12,7 @@ namespace NobunAtelier
     /// and references <see cref="AbilityActionData"/> for execution (inline or via <see cref="AbilityAction"/> asset).
     /// </summary>
     [CreateAssetMenu(menuName = "NobunAtelier/Ability/Skill Definition")]
-    public class SkillDefinition : DataDefinition
+    public class SkillDefinition : DataDefinition, ISerializationCallbackReceiver
     {
         [Header("Skill")]
         [Tooltip("Base value for this skill (damage, heal amount, etc.). Multiplied by EffectEntry.ValueMultiplier.")]
@@ -55,8 +57,54 @@ namespace NobunAtelier
         public HoldConfig Hold => m_HoldConfig;
 
 #if UNITY_EDITOR
+        [HideInInspector]
+        [SerializeField] private string m_ValidationMessages;
+
+        internal string ValidationMessages => m_ValidationMessages;
+
         private bool IsHold => m_Mode == SkillMode.Hold;
         private bool IsCurveOffset => m_Movement == MovementMode.CurveOffset;
+
+        private void OnValidate()
+        {
+            var sb = new StringBuilder();
+            ValidateActionRef(m_DefaultAction, "DefaultAction", sb);
+
+            if (m_Mode == SkillMode.Hold && m_HoldConfig != null)
+            {
+                ValidateActionRef(m_HoldConfig.HoldStartActionRef, "HoldStartAction", sb);
+                ValidateActionRef(m_HoldConfig.HoldCancelActionRef, "HoldCancelAction", sb);
+
+                if (m_HoldConfig.HoldLevels != null)
+                {
+                    for (int i = 0; i < m_HoldConfig.HoldLevels.Length; i++)
+                    {
+                        var level = m_HoldConfig.HoldLevels[i];
+                        ValidateActionRef(level.OnLevelReachedRef, $"HoldLevel[{i}]/OnLevelReached", sb);
+                        ValidateActionRef(level.OnReleasedRef, $"HoldLevel[{i}]/OnReleased", sb);
+                    }
+                }
+            }
+
+            m_ValidationMessages = sb.ToString();
+        }
+
+        private static void ValidateActionRef(AbilityActionReference actionRef, string context, StringBuilder sb)
+        {
+            if (actionRef == null)
+                return;
+
+            // Only validate inline data — asset refs have their own OnValidate
+            if (actionRef.UseAsset)
+                return;
+
+            var data = actionRef.Resolve();
+            if (data == null)
+                return;
+
+            AbilityActionData.Validate(data, context, sb);
+            data.AutoFillDescriptions();
+        }
 #endif
 
         // --- Enums ---
@@ -103,6 +151,9 @@ namespace NobunAtelier
             public float Timeout => m_Timeout;
 
 #if UNITY_EDITOR
+            internal AbilityActionReference HoldStartActionRef => m_HoldStartAction;
+            internal AbilityActionReference HoldCancelActionRef => m_HoldCancelAction;
+
             private bool HasTimeout => m_Constraint == HoldConstraint.ReleaseOnTimeout
                 || m_Constraint == HoldConstraint.CancelOnTimeout;
 #endif
@@ -123,6 +174,11 @@ namespace NobunAtelier
             public float ThresholdDuration => m_ThresholdDuration;
             public AbilityActionData OnLevelReached => m_OnLevelReached?.Resolve();
             public AbilityActionData OnReleased => m_OnReleased?.Resolve();
+
+#if UNITY_EDITOR
+            internal AbilityActionReference OnLevelReachedRef => m_OnLevelReached;
+            internal AbilityActionReference OnReleasedRef => m_OnReleased;
+#endif
         }
 
         public enum HoldConstraint
@@ -131,6 +187,31 @@ namespace NobunAtelier
             ReleaseOnMaxChargeReached,
             ReleaseOnTimeout,
             CancelOnTimeout
+        }
+
+        // --- ISerializationCallbackReceiver ---
+
+        public void OnBeforeSerialize() { }
+
+        public void OnAfterDeserialize()
+        {
+            var seen = new HashSet<AbilityEffect>();
+            m_DefaultAction?.Resolve()?.DeduplicateInlineEffects(seen);
+
+            if (m_Mode == SkillMode.Hold && m_HoldConfig != null)
+            {
+                m_HoldConfig.HoldStartAction?.DeduplicateInlineEffects(seen);
+                m_HoldConfig.HoldCancelAction?.DeduplicateInlineEffects(seen);
+
+                if (m_HoldConfig.HoldLevels != null)
+                {
+                    foreach (var level in m_HoldConfig.HoldLevels)
+                    {
+                        level.OnLevelReached?.DeduplicateInlineEffects(seen);
+                        level.OnReleased?.DeduplicateInlineEffects(seen);
+                    }
+                }
+            }
         }
     }
 }
