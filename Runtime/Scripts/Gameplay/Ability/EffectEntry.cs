@@ -51,5 +51,28 @@ namespace NobunAtelier
         public AbilityEffect InlineEffect => m_Effect?.InlineData;
 
         internal void SetInlineEffect(AbilityEffect effect) => m_Effect?.SetInlineData(effect);
+
+#if UNITY_EDITOR
+        internal void AutoFillDescription()
+        {
+            if (!string.IsNullOrEmpty(m_Description))
+                return;
+
+            var effect = m_Effect?.Resolve();
+            if (effect == null)
+                return;
+
+            m_Description = $"[{m_Target}] {FormatEffectName(effect.GetType().Name)}";
+        }
+
+        private static string FormatEffectName(string typeName)
+        {
+            if (typeName.EndsWith("AbilityEffect"))
+                return typeName[..^"AbilityEffect".Length];
+            if (typeName.EndsWith("Effect"))
+                return typeName[..^"Effect".Length];
+            return typeName;
+        }
+#endif
     }
 }

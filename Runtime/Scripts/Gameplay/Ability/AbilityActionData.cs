@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 
 namespace NobunAtelier
@@ -59,6 +60,84 @@ namespace NobunAtelier
                 }
             }
         }
+
+#if UNITY_EDITOR
+        internal static void Validate(AbilityActionData data, string context, StringBuilder sb)
+        {
+            if (data == null)
+                return;
+
+            if (data.m_GameplayEvents != null)
+            {
+                var seenEvents = new HashSet<GameplayEventDefinition>();
+                for (int i = 0; i < data.m_GameplayEvents.Count; i++)
+                {
+                    var group = data.m_GameplayEvents[i];
+                    if (group.Event == null)
+                    {
+                        sb.AppendLine($"{context}: GameplayEvent[{i}] has null event.");
+                        continue;
+                    }
+
+                    if (!seenEvents.Add(group.Event))
+                    {
+                        sb.AppendLine($"{context}: Duplicate GameplayEvent '{group.Event.name}' at index {i}.");
+                    }
+                }
+            }
+
+            ValidateEffectList(data.m_OnStartEffects, $"{context}/OnStart", sb);
+            ValidateEffectList(data.m_OnActiveEffects, $"{context}/OnActive", sb);
+            ValidateEffectList(data.m_OnRecoveryEffects, $"{context}/OnRecovery", sb);
+
+            if (data.m_GameplayEvents != null)
+            {
+                for (int i = 0; i < data.m_GameplayEvents.Count; i++)
+                {
+                    var group = data.m_GameplayEvents[i];
+                    var eventName = group.Event != null ? group.Event.name : $"[{i}]";
+                    ValidateEffectList(group.Effects as List<EffectEntry>, $"{context}/{eventName}", sb);
+                }
+            }
+        }
+
+        private static void ValidateEffectList(List<EffectEntry> entries, string context, StringBuilder sb)
+        {
+            if (entries == null)
+                return;
+
+            for (int i = 0; i < entries.Count; i++)
+            {
+                if (entries[i].Resolved == null)
+                    sb.AppendLine($"{context}: EffectEntry[{i}] has null effect.");
+            }
+        }
+
+        internal void AutoFillDescriptions()
+        {
+            AutoFillList(m_OnStartEffects);
+            AutoFillList(m_OnActiveEffects);
+            AutoFillList(m_OnRecoveryEffects);
+
+            if (m_GameplayEvents != null)
+            {
+                foreach (var group in m_GameplayEvents)
+                {
+                    if (group.Effects is List<EffectEntry> list)
+                        AutoFillList(list);
+                }
+            }
+        }
+
+        private static void AutoFillList(List<EffectEntry> entries)
+        {
+            if (entries == null)
+                return;
+
+            foreach (var entry in entries)
+                entry.AutoFillDescription();
+        }
+#endif
 
         private static void DeduplicateEffects(List<EffectEntry> entries, HashSet<AbilityEffect> seen)
         {
