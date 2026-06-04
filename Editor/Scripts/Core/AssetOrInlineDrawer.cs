@@ -16,11 +16,16 @@ namespace NobunAtelier.Editor
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             var useAsset = property.FindPropertyRelative("m_UseAsset");
+            if (useAsset == null)
+                return EditorGUI.GetPropertyHeight(property, label, true);
 
             if (useAsset.boolValue)
                 return EditorGUIUtility.singleLineHeight;
 
             var inline = property.FindPropertyRelative("m_InlineData");
+            if (inline == null)
+                return EditorGUIUtility.singleLineHeight;
+
             return EditorGUIUtility.singleLineHeight
                 + EditorGUIUtility.standardVerticalSpacing
                 + EditorGUI.GetPropertyHeight(inline, GUIContent.none, true);
@@ -28,6 +33,16 @@ namespace NobunAtelier.Editor
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+            var useAsset = property.FindPropertyRelative("m_UseAsset");
+            var asset = property.FindPropertyRelative("m_Asset");
+            var inline = property.FindPropertyRelative("m_InlineData");
+
+            if (useAsset == null || asset == null || inline == null)
+            {
+                EditorGUI.PropertyField(position, property, label, true);
+                return;
+            }
+
             if (s_PopupStyle == null)
             {
                 s_PopupStyle = new GUIStyle(GUI.skin.GetStyle("PaneOptions"));
@@ -35,10 +50,6 @@ namespace NobunAtelier.Editor
             }
 
             EditorGUI.BeginProperty(position, label, property);
-
-            var useAsset = property.FindPropertyRelative("m_UseAsset");
-            var asset = property.FindPropertyRelative("m_Asset");
-            var inline = property.FindPropertyRelative("m_InlineData");
 
             // First line: label + gear popup + asset picker (if asset mode)
             var firstLine = new Rect(position.x, position.y,

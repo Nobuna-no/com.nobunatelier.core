@@ -26,17 +26,20 @@ namespace NobunAtelier
     [Serializable]
     public class EffectEntry
     {
+#if UNITY_EDITOR
+        [Tooltip("Editor only")]
+        [SerializeField] private string m_Description;
+#endif
+        [Tooltip("Effect definition (inline or shared asset).")]
+        [SerializeField] private AbilityEffectReference m_Effect;
+        [Tooltip("Whether the effect targets self or the ability's target.")]
+        [SerializeField] private EffectTarget m_Target;
+        
         [Tooltip("Lifecycle behavior: Execute (fire-and-forget), Start (keep alive), Stop (end running instance).")]
         [SerializeField] private BindingAction m_Action;
 
         [Tooltip("Multiplier applied to SkillDefinition.Value for this effect.")]
         [SerializeField] private float m_ValueMultiplier = 1f;
-
-        [Tooltip("Whether the effect targets self or the ability's target.")]
-        [SerializeField] private EffectTarget m_Target;
-
-        [Tooltip("Effect definition (inline or shared asset).")]
-        [SerializeField] private AbilityEffectReference m_Effect;
 
         public BindingAction Action => m_Action;
         public float ValueMultiplier => m_ValueMultiplier;

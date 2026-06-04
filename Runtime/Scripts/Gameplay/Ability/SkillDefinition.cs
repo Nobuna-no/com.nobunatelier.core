@@ -14,7 +14,7 @@ namespace NobunAtelier
     {
         [Header("Skill")]
         [Tooltip("Base value for this skill (damage, heal amount, etc.). Multiplied by EffectEntry.ValueMultiplier.")]
-        [SerializeField] private float m_Value;
+        [SerializeField] private float m_Value = 1f;
 
         [Tooltip("How movement is handled during this skill.")]
         [SerializeField] private MovementMode m_Movement = MovementMode.None;

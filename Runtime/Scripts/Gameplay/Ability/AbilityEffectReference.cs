@@ -4,10 +4,10 @@ using UnityEngine;
 namespace NobunAtelier
 {
     /// <summary>
-    /// Dual-slot reference: inline <see cref="AbilityEffect"/> or shared <see cref="AbilityEffectAsset"/>.
+    /// Dual-slot reference: inline <see cref="AbilityEffect"/> or shared <see cref="AbilityEffectDefinition"/>.
     /// </summary>
     [Serializable]
-    public class AbilityEffectReference : DataReference<AbilityEffect, AbilityEffectAsset>
+    public class AbilityEffectReference : DataReference<AbilityEffect, AbilityEffectDefinition>
     {
         [SerializeReference, SubclassSelector] private AbilityEffect m_InlineData;
 
@@ -16,7 +16,7 @@ namespace NobunAtelier
 
         internal void SetInlineData(AbilityEffect effect) => m_InlineData = effect;
 
-        protected override AbilityEffect GetDataFromAsset(AbilityEffectAsset asset)
-            => asset != null ? asset.Definition : null;
+        protected override AbilityEffect GetDataFromAsset(AbilityEffectDefinition definition)
+            => definition != null ? definition.Definition : null;
     }
 }

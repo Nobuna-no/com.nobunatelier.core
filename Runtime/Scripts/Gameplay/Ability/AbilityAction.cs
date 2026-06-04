@@ -4,12 +4,12 @@ using UnityEngine;
 namespace NobunAtelier
 {
     /// <summary>
-    /// ScriptableObject wrapper for <see cref="AbilityActionData"/>.
+    /// DataDefinition wrapper for <see cref="AbilityActionData"/>.
     /// Use as a shared asset when the same action is referenced by multiple skills.
     /// For one-off actions, inline <see cref="AbilityActionData"/> directly on SkillDefinition.
     /// </summary>
     [CreateAssetMenu(menuName = "NobunAtelier/Ability/Action")]
-    public class AbilityAction : ScriptableObject, ISerializationCallbackReceiver
+    public class AbilityAction : DataDefinition, ISerializationCallbackReceiver
     {
         [SerializeField] private AbilityActionData m_Data;
 
