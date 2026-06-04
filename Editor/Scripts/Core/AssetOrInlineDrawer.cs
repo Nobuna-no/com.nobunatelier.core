@@ -1,3 +1,4 @@
+using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -6,11 +7,10 @@ namespace NobunAtelier.Editor
     /// <summary>
     /// Base PropertyDrawer for dual-slot types following the AssetOrInline convention.
     /// Expects serialized fields: m_UseAsset (bool), m_Asset (SO ref), m_InlineData (inline data).
-    /// Shows a gear popup to toggle between asset and inline modes.
+    /// Shows a gear popup to toggle between asset and inline modes, with Extract/Inline actions.
     /// </summary>
     public class AssetOrInlineDrawer : PropertyDrawer
     {
-        private static readonly string[] k_PopupOptions = { "Inline", "Asset" };
         private static GUIStyle s_PopupStyle;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -66,12 +66,9 @@ namespace NobunAtelier.Editor
             var savedIndent = EditorGUI.indentLevel;
             EditorGUI.indentLevel = 0;
 
-            EditorGUI.BeginChangeCheck();
-            int result = EditorGUI.Popup(gearRect, useAsset.boolValue ? 1 : 0,
-                k_PopupOptions, s_PopupStyle);
-            if (EditorGUI.EndChangeCheck())
+            if (GUI.Button(gearRect, GUIContent.none, s_PopupStyle))
             {
-                useAsset.boolValue = result == 1;
+                ShowContextMenu(property, useAsset, asset, inline);
             }
 
             if (useAsset.boolValue)
@@ -98,6 +95,200 @@ namespace NobunAtelier.Editor
             }
 
             EditorGUI.EndProperty();
+        }
+
+        private void ShowContextMenu(SerializedProperty property,
+            SerializedProperty useAsset, SerializedProperty asset, SerializedProperty inline)
+        {
+            var menu = new GenericMenu();
+
+            menu.AddItem(new GUIContent("Inline"), !useAsset.boolValue, () =>
+            {
+                useAsset.boolValue = false;
+                property.serializedObject.ApplyModifiedProperties();
+            });
+
+            menu.AddItem(new GUIContent("Asset"), useAsset.boolValue, () =>
+            {
+                useAsset.boolValue = true;
+                property.serializedObject.ApplyModifiedProperties();
+            });
+
+            menu.AddSeparator("");
+
+            bool hasInlineData = !useAsset.boolValue && HasInlineData(inline);
+            bool hasAssetRef = useAsset.boolValue && asset.objectReferenceValue != null;
+
+            if (hasInlineData)
+            {
+                menu.AddItem(new GUIContent("Extract to Asset..."), false, () =>
+                {
+                    if (OnExtractToAsset(property))
+                    {
+                        property.serializedObject.ApplyModifiedProperties();
+                    }
+                });
+            }
+            else
+            {
+                menu.AddDisabledItem(new GUIContent("Extract to Asset..."));
+            }
+
+            if (hasAssetRef)
+            {
+                menu.AddItem(new GUIContent("Inline from Asset"), false, () =>
+                {
+                    if (OnInlineFromAsset(property))
+                    {
+                        property.serializedObject.ApplyModifiedProperties();
+                    }
+                });
+            }
+            else
+            {
+                menu.AddDisabledItem(new GUIContent("Inline from Asset"));
+            }
+
+            menu.ShowAsContext();
+        }
+
+        private static bool HasInlineData(SerializedProperty inline)
+        {
+            if (inline.propertyType == SerializedPropertyType.ManagedReference)
+                return inline.managedReferenceValue != null;
+
+            return inline.hasVisibleChildren;
+        }
+
+        /// <summary>
+        /// Override to implement Extract to Asset. Create a new SO, copy inline data to it,
+        /// save to disk, then set m_UseAsset=true and m_Asset to the new asset.
+        /// Return true if extraction succeeded.
+        /// </summary>
+        protected virtual bool OnExtractToAsset(SerializedProperty property) => false;
+
+        /// <summary>
+        /// Override to implement Inline from Asset. Copy asset data into m_InlineData,
+        /// deep-copying any [SerializeReference] fields. Set m_UseAsset=false.
+        /// Return true if inlining succeeded.
+        /// </summary>
+        protected virtual bool OnInlineFromAsset(SerializedProperty property) => false;
+
+        /// <summary>
+        /// Deep-copies a serialized property tree from source to destination.
+        /// Handles [SerializeReference] fields via JSON clone to avoid shared references.
+        /// Both properties must represent the same serializable type.
+        /// </summary>
+        protected static void CopyPropertyTree(SerializedProperty source, SerializedProperty dest)
+        {
+            var iter = source.Copy();
+            var end = source.GetEndProperty();
+            string srcRoot = source.propertyPath;
+            string dstRoot = dest.propertyPath;
+
+            bool enterChildren = true;
+            while (iter.NextVisible(enterChildren))
+            {
+                if (SerializedProperty.EqualContents(iter, end))
+                    break;
+
+                enterChildren = true;
+
+                string relativePath = iter.propertyPath[(srcRoot.Length + 1)..];
+                var dstProp = dest.FindPropertyRelative(relativePath);
+                if (dstProp == null)
+                    continue;
+
+                if (iter.propertyType == SerializedPropertyType.ManagedReference)
+                {
+                    var srcObj = iter.managedReferenceValue;
+                    if (srcObj != null)
+                    {
+                        var clone = Activator.CreateInstance(srcObj.GetType());
+                        JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(srcObj), clone);
+                        dstProp.managedReferenceValue = clone;
+                    }
+                    else
+                    {
+                        dstProp.managedReferenceValue = null;
+                    }
+
+                    enterChildren = false;
+                    continue;
+                }
+
+                if (!iter.hasVisibleChildren)
+                {
+                    CopyLeafProperty(iter, dstProp);
+                }
+            }
+        }
+
+        private static void CopyLeafProperty(SerializedProperty src, SerializedProperty dst)
+        {
+            switch (src.propertyType)
+            {
+                case SerializedPropertyType.Integer:
+                    dst.intValue = src.intValue;
+                    break;
+                case SerializedPropertyType.Boolean:
+                    dst.boolValue = src.boolValue;
+                    break;
+                case SerializedPropertyType.Float:
+                    dst.floatValue = src.floatValue;
+                    break;
+                case SerializedPropertyType.String:
+                    dst.stringValue = src.stringValue;
+                    break;
+                case SerializedPropertyType.ObjectReference:
+                    dst.objectReferenceValue = src.objectReferenceValue;
+                    break;
+                case SerializedPropertyType.Enum:
+                    dst.enumValueIndex = src.enumValueIndex;
+                    break;
+                case SerializedPropertyType.Color:
+                    dst.colorValue = src.colorValue;
+                    break;
+                case SerializedPropertyType.Vector2:
+                    dst.vector2Value = src.vector2Value;
+                    break;
+                case SerializedPropertyType.Vector3:
+                    dst.vector3Value = src.vector3Value;
+                    break;
+                case SerializedPropertyType.Vector4:
+                    dst.vector4Value = src.vector4Value;
+                    break;
+                case SerializedPropertyType.Rect:
+                    dst.rectValue = src.rectValue;
+                    break;
+                case SerializedPropertyType.AnimationCurve:
+                    dst.animationCurveValue = src.animationCurveValue;
+                    break;
+                case SerializedPropertyType.Bounds:
+                    dst.boundsValue = src.boundsValue;
+                    break;
+                case SerializedPropertyType.Quaternion:
+                    dst.quaternionValue = src.quaternionValue;
+                    break;
+                case SerializedPropertyType.Vector2Int:
+                    dst.vector2IntValue = src.vector2IntValue;
+                    break;
+                case SerializedPropertyType.Vector3Int:
+                    dst.vector3IntValue = src.vector3IntValue;
+                    break;
+                case SerializedPropertyType.RectInt:
+                    dst.rectIntValue = src.rectIntValue;
+                    break;
+                case SerializedPropertyType.BoundsInt:
+                    dst.boundsIntValue = src.boundsIntValue;
+                    break;
+                case SerializedPropertyType.Hash128:
+                    dst.hash128Value = src.hash128Value;
+                    break;
+                case SerializedPropertyType.ArraySize:
+                    dst.intValue = src.intValue;
+                    break;
+            }
         }
     }
 }
