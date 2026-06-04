@@ -1,4 +1,5 @@
 using System;
+using NaughtyAttributes;
 using UnityEngine;
 
 namespace NobunAtelier
@@ -105,6 +106,7 @@ namespace NobunAtelier
         [SerializeField] private string m_Name;
         [SerializeField] private int m_Priority;
         [SerializeField] private ResetMode m_ResetMode;
+        [AllowNesting, ShowIf("IsTimeout")]
         [SerializeField] private float m_ResetTimeout = 1.5f;
         [SerializeField] private MovesetStep[] m_Steps;
 
@@ -112,6 +114,10 @@ namespace NobunAtelier
         public ResetMode ResetMode => m_ResetMode;
         public float ResetTimeout => m_ResetTimeout;
         public MovesetStep[] Steps => m_Steps;
+
+#if UNITY_EDITOR
+        private bool IsTimeout => m_ResetMode == ResetMode.OnTimeout;
+#endif
     }
 
     [Serializable]
