@@ -6,7 +6,8 @@
         "NobunAtelier.Editor",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "NobunAtelier.Tests"
+        "NobunAtelier.Tests",
+        "NaughtyAttributes.Editor"
     ],
     "includePlatforms": [
         "Editor"

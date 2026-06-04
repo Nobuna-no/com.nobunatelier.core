@@ -4,7 +4,8 @@
     "references": [
         "NobunAtelier.Tests",
         "NobunAtelier.Core",
-        "NobunAtelier.Editor"
+        "NobunAtelier.Editor",
+        "NaughtyAttributes.Editor"
     ],
     "includePlatforms": [
         "Editor"
