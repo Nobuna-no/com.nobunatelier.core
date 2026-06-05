@@ -5,23 +5,8 @@ using static NobunAtelier.AbilityModuleDefinition;
 namespace NobunAtelier
 {
     /// <summary>
-    /// Determines the lifecycle behavior when an effect entry fires.
-    /// </summary>
-    public enum BindingAction
-    {
-        /// <summary>Fire-and-forget: create instance, call Execute, done.</summary>
-        Execute,
-
-        /// <summary>Start a duration-bound effect: create instance, call Execute, keep alive for Update calls.</summary>
-        Start,
-
-        /// <summary>Stop a running duration-bound effect: find running instance of same effect, call Stop.</summary>
-        Stop
-    }
-
-    /// <summary>
     /// One effect within a <see cref="GameplayEventGroup"/> or a phase effect list.
-    /// Defines what effect to execute and how (action, target, value scaling).
+    /// Defines what effect to execute and how (target, value scaling).
     /// </summary>
     [Serializable]
     public class EffectEntry
@@ -34,14 +19,10 @@ namespace NobunAtelier
         [SerializeField] private AbilityEffectReference m_Effect;
         [Tooltip("Whether the effect targets self or the ability's target.")]
         [SerializeField] private EffectTarget m_Target;
-        
-        [Tooltip("Lifecycle behavior: Execute (fire-and-forget), Start (keep alive), Stop (end running instance).")]
-        [SerializeField] private BindingAction m_Action;
 
         [Tooltip("Multiplier applied to SkillDefinition.Value for this effect.")]
         [SerializeField] private float m_ValueMultiplier = 1f;
 
-        public BindingAction Action => m_Action;
         public float ValueMultiplier => m_ValueMultiplier;
         public EffectTarget Target => m_Target;
         public AbilityEffectReference Effect => m_Effect;

@@ -443,12 +443,10 @@ namespace NobunAtelier
                         foreach (var entry in group.Effects)
                         {
                             var effect = entry.Resolved;
-                            if (effect == null && entry.Action != BindingAction.Stop)
+                            if (effect == null)
                                 continue;
 
-                            IAbilityEffectInstance instance = null;
-                            if (effect != null)
-                                instance = effect.CreateInstance(controller);
+                            var instance = effect.CreateInstance(controller);
 
                             if (!m_EventMap.TryGetValue(group.Event, out var list))
                             {
@@ -516,7 +514,7 @@ namespace NobunAtelier
 
                     instance.Execute(ctx);
 
-                    if (entry.Action == BindingAction.Start && instance.NeedsUpdate)
+                    if (instance.NeedsUpdate)
                         m_UpdatingInstances.Add(instance);
                 }
             }
@@ -531,21 +529,18 @@ namespace NobunAtelier
 
                 foreach (var (entry, instance) in entries)
                 {
-                    if (entry.Action == BindingAction.Execute || entry.Action == BindingAction.Start)
-                    {
-                        if (instance == null)
-                            continue;
+                    if (instance == null)
+                        continue;
 
-                        var ctx = new AbilityEffectContext(
-                            m_SkillValue * entry.ValueMultiplier,
-                            entry.Target,
-                            m_Controller);
+                    var ctx = new AbilityEffectContext(
+                        m_SkillValue * entry.ValueMultiplier,
+                        entry.Target,
+                        m_Controller);
 
-                        instance.Execute(ctx);
+                    instance.Execute(ctx);
 
-                        if (entry.Action == BindingAction.Start && instance.NeedsUpdate)
-                            m_UpdatingInstances.Add(instance);
-                    }
+                    if (instance.NeedsUpdate)
+                        m_UpdatingInstances.Add(instance);
                 }
             }
 
