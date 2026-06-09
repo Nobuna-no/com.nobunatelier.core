@@ -26,6 +26,7 @@ namespace NobunAtelier
         private CancellationTokenSource m_ExecutionCts;
         private CancellationToken m_ControllerToken;
         private AbilityController m_Controller;
+        private GameplayTagModule m_TagModule;
         private ContextualLogManager.LogPartition m_Log;
 
         // Charge state
@@ -50,6 +51,7 @@ namespace NobunAtelier
             m_Controller = controller;
             m_ControllerToken = controller.destroyCancellationToken;
             m_Log = controller.Log;
+            m_TagModule = controller.TagModule;
         }
 
         public bool TryExecute(SkillDefinition skill, AbilityExecutionContext? context = null)
@@ -161,6 +163,7 @@ namespace NobunAtelier
                 return;
 
             m_Log?.Record("Cancel");
+            RevokeCurrentPhaseTags();
 
             m_ActiveAction?.Cancel();
             m_ActiveAction = null;
@@ -192,6 +195,7 @@ namespace NobunAtelier
         {
             if (m_State != ExecutionState.Ready)
             {
+                RevokeCurrentPhaseTags();
                 m_ActiveAction?.Cancel();
                 m_ActiveAction = null;
                 ResetChargeState();
@@ -200,6 +204,45 @@ namespace NobunAtelier
 
             CancelExecutionToken();
         }
+
+        #region Phase Tags
+
+        private void GrantPhaseTags(GameplayTagDefinition[] tags)
+        {
+            if (m_TagModule == null || tags == null)
+                return;
+            for (int i = 0; i < tags.Length; i++)
+                m_TagModule.GrantTag(tags[i]);
+        }
+
+        private void RevokePhaseTags(GameplayTagDefinition[] tags)
+        {
+            if (m_TagModule == null || tags == null)
+                return;
+            for (int i = 0; i < tags.Length; i++)
+                m_TagModule.RevokeTag(tags[i]);
+        }
+
+        private void RevokeCurrentPhaseTags()
+        {
+            if (m_CurrentSkill == null)
+                return;
+
+            switch (m_State)
+            {
+                case ExecutionState.Starting:
+                    RevokePhaseTags(m_CurrentSkill.OnStartTags);
+                    break;
+                case ExecutionState.InProgress:
+                    RevokePhaseTags(m_CurrentSkill.OnActiveTags);
+                    break;
+                case ExecutionState.Recovery:
+                    RevokePhaseTags(m_CurrentSkill.OnRecoveryTags);
+                    break;
+            }
+        }
+
+        #endregion
 
         #region Phase Transitions (called by ActionExecution)
 
@@ -211,6 +254,8 @@ namespace NobunAtelier
                     if (m_State != ExecutionState.Starting)
                         return;
                     m_Log?.Record("Phase -> Active: Starting -> InProgress");
+                    RevokePhaseTags(m_CurrentSkill?.OnStartTags);
+                    GrantPhaseTags(m_CurrentSkill?.OnActiveTags);
                     m_State = ExecutionState.InProgress;
                     break;
 
@@ -218,6 +263,8 @@ namespace NobunAtelier
                     if (m_State != ExecutionState.InProgress)
                         return;
                     m_Log?.Record("Phase -> Recovery: InProgress -> Recovery");
+                    RevokePhaseTags(m_CurrentSkill?.OnActiveTags);
+                    GrantPhaseTags(m_CurrentSkill?.OnRecoveryTags);
                     m_State = ExecutionState.Recovery;
                     OnRecoveryWindowOpen?.Invoke();
                     break;
@@ -226,6 +273,7 @@ namespace NobunAtelier
                     if (m_State != ExecutionState.Recovery)
                         return;
                     m_Log?.Record("Phase -> Complete: Recovery -> Ready");
+                    RevokePhaseTags(m_CurrentSkill?.OnRecoveryTags);
                     m_ActiveAction?.Teardown();
                     m_ActiveAction = null;
                     CancelExecutionToken();
@@ -337,6 +385,7 @@ namespace NobunAtelier
             // State must be Starting before Activate — if StartupDuration is 0,
             // the driver fires Active synchronously during Activate.
             m_State = ExecutionState.Starting;
+            GrantPhaseTags(m_CurrentSkill?.OnStartTags);
 
             bool hasDriver = m_ActiveAction.Activate(
                 action, m_Controller, m_CurrentSkill, m_ExecutionCts.Token, this,
@@ -349,6 +398,7 @@ namespace NobunAtelier
                 return true;
             }
 
+            RevokePhaseTags(m_CurrentSkill?.OnStartTags);
             m_ActiveAction = null;
             m_State = ExecutionState.Ready;
             return false;

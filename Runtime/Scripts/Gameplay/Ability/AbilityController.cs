@@ -20,6 +20,7 @@ namespace NobunAtelier
         [SerializeField] private ContextualLogManager.LogSettings m_LogSettings;
 
         public TeamModule Team => m_TeamModule;
+        public GameplayTagModule TagModule => m_TagModule;
         public ContextualLogManager.LogPartition Log { get; private set; }
 
         public SkillDefinition CurrentSkill => m_Instance?.CurrentSkill;
@@ -29,6 +30,7 @@ namespace NobunAtelier
         public AbilityExecutionContext ExecutionContext => m_Instance?.ExecutionContext ?? default;
 
         private TeamModule m_TeamModule;
+        private GameplayTagModule m_TagModule;
         private AbilityInstance m_Instance;
 
         public override void ModuleInit(Character character)
@@ -36,6 +38,7 @@ namespace NobunAtelier
             base.ModuleInit(character);
             ModuleOwner.TryGetAbilityModule(out m_TeamModule);
             Debug.Assert(m_TeamModule, $"{name}: Owner needs to be part of a team!", this);
+            ModuleOwner.TryGetAbilityModule(out m_TagModule);
         }
 
         public bool TryExecute(SkillDefinition skill, AbilityExecutionContext? context = null)
