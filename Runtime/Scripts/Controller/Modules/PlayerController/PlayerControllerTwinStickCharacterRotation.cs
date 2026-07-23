@@ -52,7 +52,9 @@ namespace NobunAtelier
                 }
                 else
                 {
-                    Vector3 direction = Input.mousePosition - m_camera.WorldToScreenPoint(ControlledCharacter.transform.position);
+                    var mousePos = Mouse.current.position.value;
+                    Vector3 mousePos3 = new Vector3(mousePos.x, mousePos.y, 0);
+                    Vector3 direction = mousePos3 - m_camera.WorldToScreenPoint(ControlledCharacter.transform.position);
                     ControlledCharacter.Rotate(direction.normalized);
                 }
             }
