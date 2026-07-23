@@ -81,10 +81,12 @@ namespace NobunAtelier
             OnSingletonTermination();
         }
 
+#if UNITY_EDITOR
         protected override sealed void ServiceRegistration()
         {
             Instance = null;
         }
+#endif
 
         protected virtual IEnumerator SingletonInitialization()
         {
