@@ -12,6 +12,9 @@ namespace NobunAtelier
     public class StateModule_AnimancerLocomotion : StateComponentModule
     {
         [SerializeField] private AnimancerComponent m_Animancer;
+
+        [Tooltip("Animancer layer index. 0 = base body locomotion.")]
+        [SerializeField, Min(0)] private int m_LayerIndex;
         [SerializeField] private Character m_Character;
 
         [Tooltip("Transition Asset wrapping a Linear Mixer (idle / walk / run). Thresholds should use planar speed units (m/s).")]
@@ -42,7 +45,7 @@ namespace NobunAtelier
                 return;
             }
 
-            m_MixerState = m_Animancer.Play(m_LocomotionMixer) as LinearMixerState;
+            m_MixerState = m_Animancer.Layers[m_LayerIndex].Play(m_LocomotionMixer) as LinearMixerState;
             if (m_MixerState == null)
             {
                 Debug.LogError(
@@ -81,6 +84,31 @@ namespace NobunAtelier
         public override void Exit()
         {
             m_MixerState = null;
+        }
+
+        /// <summary>
+        /// Re-plays the locomotion mixer on the configured layer.
+        /// </summary>
+        public void Refresh()
+        {
+            if (m_Character == null)
+            {
+                m_Character = GetComponentInParent<Character>();
+            }
+
+            if (m_Animancer == null || m_LocomotionMixer == null || m_LocomotionMixer.GetTransition() == null)
+            {
+                return;
+            }
+
+            m_MixerState = m_Animancer.Layers[m_LayerIndex].Play(m_LocomotionMixer) as LinearMixerState;
+            if (m_MixerState == null)
+            {
+                return;
+            }
+
+            m_SmoothedParameter = m_Character != null ? m_Character.GetMoveSpeed() : 0f;
+            m_MixerState.Parameter = m_SmoothedParameter;
         }
 
         private void Reset()
