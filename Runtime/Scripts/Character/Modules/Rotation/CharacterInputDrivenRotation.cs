@@ -16,6 +16,7 @@ namespace NobunAtelier
 
         [SerializeField]
         private RotationAxis m_rotationAxis = RotationAxis.Y;
+        [Tooltip("Set to zero for instant.")]
         [SerializeField, Range(0, 10f)]
         private float m_rotationSpeed = 1f;
 
@@ -29,7 +30,15 @@ namespace NobunAtelier
         public override void RotationUpdate(float deltaTime)
         {
             var rot = TowDownDirectionToQuaternion(m_lastDirection);
-            ModuleOwner.transform.rotation = Quaternion.Slerp(ModuleOwner.transform.rotation, rot, m_rotationSpeed * deltaTime);
+
+            if (m_rotationSpeed <= 0f)
+            {
+                ModuleOwner.transform.rotation = rot;
+            }
+            else
+            {
+                ModuleOwner.transform.rotation = Quaternion.Slerp(ModuleOwner.transform.rotation, rot, m_rotationSpeed * deltaTime);
+            }
         }
 
         private Quaternion TowDownDirectionToQuaternion(Vector3 normalizedDirection)
