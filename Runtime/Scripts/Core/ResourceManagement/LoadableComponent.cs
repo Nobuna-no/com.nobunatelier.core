@@ -13,6 +13,7 @@ namespace NobunAtelier
     /// Generic wrapper of Addressable AssetReferenceGameObject for Unity Component.
     /// </summary>
     /// <typeparam name="T"></typeparam>
+    [System.Serializable]
     public class LoadableComponent<T> : AssetReferenceGameObject
         where T : Component
     {
