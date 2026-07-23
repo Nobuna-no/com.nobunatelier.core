@@ -24,8 +24,10 @@ namespace NobunAtelier
         [SerializeField] private Material m_DefaultStatueMaterial;
         [SerializeField] private RendererSwap[] m_RendererSwaps;
         [SerializeField] private bool m_AutoCollectRenderersOnEnter = true;
+        [SerializeField] private bool m_SkipSwapOnFirstEnter = true;
 
         private readonly List<ActiveSwap> m_ActiveSwaps = new List<ActiveSwap>();
+        private bool m_SkipSwap;
 
         private struct ActiveSwap
         {
@@ -33,8 +35,19 @@ namespace NobunAtelier
             public Material[] SavedMaterials;
         }
 
+        public override void Init(StateComponent moduleOwner)
+        {
+            base.Init(moduleOwner);
+            m_SkipSwap = m_SkipSwapOnFirstEnter;
+        }
+
         public override void Enter()
         {
+            if (m_SkipSwap)
+            {
+                return;
+            }
+
             m_ActiveSwaps.Clear();
 
             if (m_DefaultStatueMaterial == null)
@@ -75,6 +88,12 @@ namespace NobunAtelier
 
         public override void Exit()
         {
+            if (m_SkipSwap)
+            {
+                m_SkipSwap = false;
+                return;
+            }
+
             for (int i = 0; i < m_ActiveSwaps.Count; i++)
             {
                 var swap = m_ActiveSwaps[i];
