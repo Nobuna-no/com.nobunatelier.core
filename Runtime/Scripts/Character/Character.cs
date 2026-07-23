@@ -103,15 +103,27 @@ namespace NobunAtelier
 
         public Vector3 GetMoveVector()
         {
-            return m_CurrentVel;
+            return GetPlanarVelocity(m_CurrentVel);
         }
 
         public float GetMoveSpeed()
         {
-            return m_CurrentVel.magnitude;
+            return GetPlanarVelocity(m_CurrentVel).magnitude;
         }
 
-        public bool IsMoving => m_CurrentVel.sqrMagnitude > kMinimumMovementTreshold;
+        public bool IsMoving => GetPlanarVelocity(m_CurrentVel).sqrMagnitude > kMinimumMovementTreshold;
+
+        /// <summary>
+        /// Ignores grounded gravity stick from <see cref="CharacterGravityVelocity"/>.
+        /// </summary>
+        public Vector3 GetPlanarVelocity(Vector3 velocity)
+        {
+            if (Body.IsGrounded)
+            {
+                velocity.y = 0f;
+            }
+            return velocity;
+        }
 
         public Vector3 GetNormalizedMoveSpeed()
         {
