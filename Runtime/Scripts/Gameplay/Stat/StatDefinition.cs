@@ -36,7 +36,7 @@ namespace NobunAtelier.Gameplay
 
         public bool IsSameStatAs(IStatDefinition other)
         {
-            return other is StatDefinition stat && GetInstanceID() == stat.GetInstanceID();
+            return other is StatDefinition stat && GetEntityId() == stat.GetEntityId();
         }
     }
 
