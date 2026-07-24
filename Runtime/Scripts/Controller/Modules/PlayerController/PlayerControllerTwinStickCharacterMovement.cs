@@ -6,8 +6,14 @@ namespace NobunAtelier
     [AddComponentMenu("NobunAtelier/Controller/Player/Player Controller Module: TwinStick Movement")]
     public class PlayerControllerTwinStickCharacterMovement : PlayerControllerModuleBase
     {
+        private const float kMoveInputThreshold = 0.1f;
+
         private InputAction m_moveAction;
         private Vector2 m_lastMoveInputValue;
+
+        public Vector2 LastMoveInput => m_lastMoveInputValue;
+
+        public bool HasMoveInput => m_lastMoveInputValue.sqrMagnitude > kMoveInputThreshold * kMoveInputThreshold;
 
         public override void EnableModuleInput(PlayerInput playerInput, InputActionMap activeActionMap)
         {
