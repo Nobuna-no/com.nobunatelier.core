@@ -97,9 +97,16 @@ namespace NobunAtelier
 
         public override Vector3 ApplyRootMotionDelta(Vector3 delta, bool includeVertical = false)
         {
+            return ApplyRootMotionDeltaDetailed(delta, includeVertical).AppliedDelta;
+        }
+
+        public override CharacterRootMotionMoveResult ApplyRootMotionDeltaDetailed(
+            Vector3 delta,
+            bool includeVertical = false)
+        {
             if (m_targetCharacterController == null)
             {
-                return Vector3.zero;
+                return default;
             }
 
             if (!includeVertical)
@@ -108,8 +115,12 @@ namespace NobunAtelier
             }
 
             var previousPosition = m_targetCharacterController.transform.position;
-            m_targetCharacterController.Move(delta);
-            return m_targetCharacterController.transform.position - previousPosition;
+            var collisionFlags = m_targetCharacterController.Move(delta);
+            return new CharacterRootMotionMoveResult
+            {
+                AppliedDelta = m_targetCharacterController.transform.position - previousPosition,
+                CollisionFlags = collisionFlags
+            };
         }
 
         public override void ApplyVelocity(Vector3 newVelocity, float deltaTime)

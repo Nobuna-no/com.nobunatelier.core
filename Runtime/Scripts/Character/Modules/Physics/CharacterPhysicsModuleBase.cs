@@ -2,6 +2,12 @@ using UnityEngine;
 
 namespace NobunAtelier
 {
+    public struct CharacterRootMotionMoveResult
+    {
+        public Vector3 AppliedDelta;
+        public CollisionFlags CollisionFlags;
+    }
+
     public abstract class CharacterPhysicsModule : MonoBehaviour
     {
         public enum VelocityApplicationUpdate
@@ -29,6 +35,13 @@ namespace NobunAtelier
         /// </summary>
         public virtual Vector3 ApplyRootMotionDelta(Vector3 delta, bool includeVertical = false)
         {
+            return ApplyRootMotionDeltaDetailed(delta, includeVertical).AppliedDelta;
+        }
+
+        public virtual CharacterRootMotionMoveResult ApplyRootMotionDeltaDetailed(
+            Vector3 delta,
+            bool includeVertical = false)
+        {
             if (!includeVertical)
             {
                 delta.y = 0f;
@@ -36,7 +49,11 @@ namespace NobunAtelier
 
             var previousPosition = Position;
             Position += delta;
-            return Position - previousPosition;
+            return new CharacterRootMotionMoveResult
+            {
+                AppliedDelta = Position - previousPosition,
+                CollisionFlags = CollisionFlags.None
+            };
         }
 
         public virtual void ModuleInit(Character character)
