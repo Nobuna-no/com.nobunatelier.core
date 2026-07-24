@@ -95,6 +95,25 @@ namespace NobunAtelier
             );
         }
 
+        public override void ApplyRootMotionPosition(Vector3 worldPosition, bool includeVertical = false)
+        {
+            if (m_targetCharacterController == null)
+            {
+                return;
+            }
+
+            var transform = m_targetCharacterController.transform;
+            if (!includeVertical)
+            {
+                worldPosition.y = transform.position.y;
+            }
+
+            m_targetCharacterController.enabled = false;
+            transform.position = worldPosition;
+            m_targetCharacterController.enabled = true;
+            Physics.SyncTransforms();
+        }
+
         public override void ApplyVelocity(Vector3 newVelocity, float deltaTime)
         {
             newVelocity.x = Mathf.Clamp(newVelocity.x, -m_maxVelocity.x, m_maxVelocity.x);
