@@ -23,6 +23,19 @@ namespace NobunAtelier
 
         public abstract void ApplyVelocity(Vector3 newVelocity, float deltaTime);
 
+        /// <summary>
+        /// Places the body at a world-space position for authored root motion, bypassing velocity limits.
+        /// </summary>
+        public virtual void ApplyRootMotionPosition(Vector3 worldPosition, bool includeVertical = false)
+        {
+            if (!includeVertical)
+            {
+                worldPosition.y = Position.y;
+            }
+
+            Position = worldPosition;
+        }
+
         public virtual void ModuleInit(Character character)
         {
             ModuleOwner = character;
