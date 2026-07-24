@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using Animancer;
+using NaughtyAttributes;
 using UnityEngine;
 
 namespace NobunAtelier
@@ -56,23 +57,30 @@ namespace NobunAtelier
         [Tooltip("Layer AvatarMask on enter: Unchanged = keep current; FullBody = override locomotion; UpperBody = arms/torso only on layer 1.")]
         [SerializeField] private LayerMaskBehavior m_LayerMaskBehavior;
 
+        [ShowIf("UsesLayerMaskBehavior")]
         [Tooltip("Optional full-body mask for FullBody behavior. Falls back to a runtime humanoid mask when unset.")]
         [SerializeField] private AvatarMask m_FullBodyLayerMask;
 
+        [ShowIf("UsesLayerMaskBehavior")]
         [Tooltip("Upper-body mask for UpperBody behavior. Assign the same AvatarMask used on action layer 1.")]
         [SerializeField] private AvatarMask m_UpperBodyLayerMask;
 
+        [ShowIf("UsesLayerMaskBehavior")]
         [Tooltip("When enabled, preserve the layer on early exit; release it only when the clip reaches its end event.")]
         [SerializeField] private bool m_HoldLayerOnEarlyExit;
 
+        [ShowIf("UsesLayerMaskBehavior")]
         [Tooltip("Restore the layer AvatarMask saved on enter.")]
         [SerializeField] private bool m_RestoreLayerMaskOnExit = true;
 
+        [ShowIf("UsesLayerMaskBehavior")]
         [Tooltip("Fade the action layer out on exit so base locomotion/posture shows through again.")]
         [SerializeField] private bool m_ReleaseLayerOnExit = true;
 
+        [ShowIf("UsesLayerMaskBehavior")]
         [SerializeField, Min(0f)] private float m_FadeOutDuration = 0.15f;
 
+        [ShowIf("UsesLayerMaskBehavior")]
         [Tooltip("When this clip plays on the locomotion layer, re-play locomotion on exit.")]
         [SerializeField] private StateModule_AnimancerLocomotion m_RestoreLocomotionOnExit;
 
@@ -94,6 +102,9 @@ namespace NobunAtelier
         private static AvatarMask s_RuntimeFullBodyMask;
         private readonly List<BoundAnimancerCallback> m_BoundCallbacks = new List<BoundAnimancerCallback>();
 
+#if UNITY_EDITOR
+        private bool UsesLayerMaskBehavior => m_LayerMaskBehavior != LayerMaskBehavior.Unchanged;
+#endif
         public override void Enter()
         {
             m_BoundCallbacks.Clear();
