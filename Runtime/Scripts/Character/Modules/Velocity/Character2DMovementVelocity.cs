@@ -43,8 +43,8 @@ namespace NobunAtelier
         [ShowIf("DisplayCustomMovementAxisFields")]
         public Vector3 CustomRightAxis = Vector3.right;
 
-        [SerializeField, Range(0, 100f)]
-        private float m_maxSpeed = 10.0f;
+        [SerializeField, Range(0, 20f)]
+        private float m_MaxSpeed = 8.0f;
 
         [SerializeField]
         private VelocityClampingOption m_internalVelocityClamping = VelocityClampingOption.ClampWhenCharacterVelocityIsZero;
@@ -71,6 +71,9 @@ namespace NobunAtelier
 
         [SerializeField]
         private bool m_ignoreThirdAxis = false;
+        public float MaxSpeed => m_MaxSpeed * SpeedMultiplier;
+
+        public float SpeedMultiplier {get;set;} = 1f;
 
 #if UNITY_EDITOR
 
@@ -93,7 +96,7 @@ namespace NobunAtelier
 
         public void SetMovementMaxSpeed(float speed)
         {
-            m_maxSpeed = speed;
+            m_MaxSpeed = speed;
         }
 
         public bool EvaluateState()
@@ -169,7 +172,7 @@ namespace NobunAtelier
             switch (m_accelerationApplication)
             {
                 case VelocityProcessing.FromRawInput:
-                    m_velocity = m_movementVector * m_maxSpeed;
+                    m_velocity = m_movementVector * MaxSpeed;
                     break;
 
                 case VelocityProcessing.FromAcceleration:
@@ -182,7 +185,7 @@ namespace NobunAtelier
 
                         float previousSqrtMag = m_velocity.sqrMagnitude;
                         Vector3 acceleration = m_velocity.normalized / m_decelerationTimeInSeconds;
-                        m_velocity -= acceleration * m_maxSpeed * deltaTime;
+                        m_velocity -= acceleration * MaxSpeed * deltaTime;
 
                         if (m_velocity.sqrMagnitude > previousSqrtMag)
                         {
@@ -192,14 +195,14 @@ namespace NobunAtelier
                     else
                     {
                         Vector3 acceleration = m_movementVector / m_accelerationTimeInSeconds;
-                        m_velocity += acceleration * m_maxSpeed * deltaTime;
-                        m_velocity = Vector3.ClampMagnitude(m_velocity, m_maxSpeed);
+                        m_velocity += acceleration * MaxSpeed * deltaTime;
+                        m_velocity = Vector3.ClampMagnitude(m_velocity, MaxSpeed);
                     }
                     break;
 
                 // To move in a new module...
                 case VelocityProcessing.DesiredVelocityFromAcceleration:
-                    Vector3 desiredVelocity = m_movementVector * m_maxSpeed;
+                    Vector3 desiredVelocity = m_movementVector * MaxSpeed;
                     float maxSpeedChange = deltaTime * m_desiredVelocityMaxAcceleration;
 
                     m_velocity = Vector3.MoveTowards(currentVel, desiredVelocity, maxSpeedChange);
@@ -208,7 +211,7 @@ namespace NobunAtelier
                     // TO DO FOR SIMULACRA - Add something that allows to conserve current velocity...
             }
 
-            m_velocity = Vector3.ClampMagnitude(m_velocity, m_maxSpeed);
+            m_velocity = Vector3.ClampMagnitude(m_velocity, MaxSpeed);
 
             if (m_ignoreThirdAxis)
             {
