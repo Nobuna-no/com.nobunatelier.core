@@ -114,6 +114,16 @@ namespace NobunAtelier
         public bool IsMoving => GetPlanarVelocity(m_CurrentVel).sqrMagnitude > kMinimumMovementTreshold;
 
         /// <summary>
+        /// True while <see cref="CharacterProceduralMovementVelocity"/> is driving displacement
+        /// (virtual root motion, knockback-style curves, etc.).
+        /// </summary>
+        public bool IsProceduralMoving =>
+            TryGetVelocityModule<CharacterProceduralMovementVelocity>(out var proceduralMovement)
+            && proceduralMovement.IsMoving;
+
+        public bool IsVoluntaryMoving => IsMoving && !IsProceduralMoving;
+
+        /// <summary>
         /// Ignores grounded gravity stick from <see cref="CharacterGravityVelocity"/>.
         /// </summary>
         public Vector3 GetPlanarVelocity(Vector3 velocity)
