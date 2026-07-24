@@ -1,10 +1,15 @@
 using NaughtyAttributes;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace NobunAtelier.Gameplay
 {
+    public enum StoredItemFollowMode
+    {
+        ParentToSocket,
+        SmoothFollow,
+    }
+
     // TODO: move all animation related info to character or controller logic
     public class SocketStorageBehaviour : MonoBehaviour
     {
@@ -16,15 +21,18 @@ namespace NobunAtelier.Gameplay
         private int m_socketUsageMaxCount = 3;
 
         [SerializeField]
+        private StoredItemFollowMode m_followMode = StoredItemFollowMode.ParentToSocket;
+
+        [SerializeField, ShowIf(nameof(IsSmoothFollowMode))]
         private float m_lerpSpeed = 20;
 
-        [SerializeField]
+        [SerializeField, ShowIf(nameof(IsSmoothFollowMode))]
         private AnimationCurve m_lerpSpeedFactorPerIndex;
 
-        [SerializeField]
+        [SerializeField, ShowIf(nameof(IsSmoothFollowMode))]
         private bool m_useSocketLocalPositionAsOffset = false;
 
-        [SerializeField]
+        [SerializeField, ShowIf(nameof(IsSmoothFollowMode))]
         private bool m_doRotation = false;
 
         [SerializeField]
@@ -48,9 +56,24 @@ namespace NobunAtelier.Gameplay
         public bool HasAvailableSocket => m_isUsable && m_socketUsageMaxCount > m_backpackQueue.Count && m_backpackSockets.Length > m_backpackQueue.Count;
 
         private Queue<TransportableObjectBehaviour> m_backpackQueue = new Queue<TransportableObjectBehaviour>();
+        private readonly Dictionary<TransportableObjectBehaviour, Vector3> m_followPositionVelocities = new Dictionary<TransportableObjectBehaviour, Vector3>();
         private bool m_isUsable = true;
 
         public IReadOnlyList<Transform> Sockets => m_backpackSockets;
+
+        private bool IsSmoothFollowMode => m_followMode == StoredItemFollowMode.SmoothFollow;
+
+        public bool TryGetActiveSocketTransform(out Transform socket)
+        {
+            socket = null;
+            if (m_backpackQueue.Count == 0 || m_backpackSockets == null || m_backpackSockets.Length == 0)
+            {
+                return false;
+            }
+
+            socket = m_backpackSockets[0];
+            return socket != null;
+        }
 
         public bool ItemTryPeekFirst(out TransportableObjectBehaviour item)
         {
@@ -72,6 +95,8 @@ namespace NobunAtelier.Gameplay
             }
 
             m_backpackQueue.Enqueue(item);
+            int socketIndex = m_backpackQueue.Count - 1;
+            ApplyStoredItemFollow(item, socketIndex, snapImmediate: true);
 
             //if (m_animator && m_seedCountIntName != string.Empty)
             //{
@@ -91,6 +116,7 @@ namespace NobunAtelier.Gameplay
 
             if (m_backpackQueue.TryDequeue(out item))
             {
+                m_followPositionVelocities.Remove(item);
                 //if (m_animator && m_seedCountIntName != string.Empty)
                 //{
                 //    m_animator.SetInteger(m_seedCountIntName, m_backpackQueue.Count);
@@ -111,6 +137,7 @@ namespace NobunAtelier.Gameplay
                 item.Drop(true);
             }
             m_backpackQueue.Clear();
+            m_followPositionVelocities.Clear();
         }
 
         [Button]
@@ -128,6 +155,7 @@ namespace NobunAtelier.Gameplay
             }
 
             var item = m_backpackQueue.Dequeue();
+            m_followPositionVelocities.Remove(item);
             item.Drop(true);
         }
 
@@ -140,9 +168,44 @@ namespace NobunAtelier.Gameplay
             }
         }
 
-        private void FixedUpdate()
+        private void LateUpdate()
         {
-            if (!m_isUsable)
+            if (m_followMode != StoredItemFollowMode.SmoothFollow || !m_isUsable || m_backpackQueue.Count == 0)
+            {
+                return;
+            }
+
+            UpdateSmoothFollow(Time.deltaTime);
+        }
+
+        private void ApplyStoredItemFollow(TransportableObjectBehaviour item, int socketIndex, bool snapImmediate)
+        {
+            if (item == null || m_backpackSockets == null || socketIndex < 0 || socketIndex >= m_backpackSockets.Length)
+            {
+                return;
+            }
+
+            Transform socket = m_backpackSockets[socketIndex];
+            if (socket == null)
+            {
+                return;
+            }
+
+            if (m_followMode == StoredItemFollowMode.ParentToSocket)
+            {
+                item.AttachToSocket(socket);
+                return;
+            }
+
+            if (snapImmediate)
+            {
+                SnapItemForSmoothFollow(item, socket);
+            }
+        }
+
+        private void UpdateSmoothFollow(float deltaTime)
+        {
+            if (m_backpackSockets == null || m_backpackSockets.Length == 0)
             {
                 return;
             }
@@ -150,24 +213,72 @@ namespace NobunAtelier.Gameplay
             int index = 0;
             foreach (var item in m_backpackQueue)
             {
+                if (item == null)
+                {
+                    ++index;
+                    continue;
+                }
+
                 Rigidbody rb = item.TargetRigidbody;
+                if (rb == null)
+                {
+                    ++index;
+                    continue;
+                }
+
+                Transform socket = m_backpackSockets[index];
+                if (socket == null)
+                {
+                    ++index;
+                    continue;
+                }
 
                 float indexRatio = (float)index / (float)m_backpackSockets.Length;
-                if (m_useSocketLocalPositionAsOffset)
+                float speedFactor = m_lerpSpeed * m_lerpSpeedFactorPerIndex.Evaluate(indexRatio);
+                float smoothTime = speedFactor > 0f ? 1f / speedFactor : 0.01f;
+
+                Vector3 targetPosition = GetSocketWorldPosition(socket);
+                if (!m_followPositionVelocities.TryGetValue(item, out Vector3 positionVelocity))
                 {
-                    var pos = transform.position + m_backpackSockets[index].localPosition;
-                    rb.position = Vector3.SlerpUnclamped(rb.position, pos, Time.fixedDeltaTime * m_lerpSpeed * m_lerpSpeedFactorPerIndex.Evaluate(indexRatio));
+                    positionVelocity = Vector3.zero;
                 }
-                else
-                {
-                    rb.position = Vector3.SlerpUnclamped(rb.position, m_backpackSockets[index].position, Time.fixedDeltaTime * m_lerpSpeed * m_lerpSpeedFactorPerIndex.Evaluate(indexRatio));
-                }
+
+                Vector3 newPosition = Vector3.SmoothDamp(rb.position, targetPosition, ref positionVelocity, smoothTime, Mathf.Infinity, deltaTime);
+                m_followPositionVelocities[item] = positionVelocity;
+                rb.MovePosition(newPosition);
 
                 if (m_doRotation)
                 {
-                    rb.rotation = Quaternion.Slerp(rb.rotation, transform.rotation, Time.fixedDeltaTime * m_lerpSpeed);
+                    float rotationBlend = 1f - Mathf.Exp(-speedFactor * deltaTime);
+                    rb.MoveRotation(Quaternion.Slerp(rb.rotation, transform.rotation, rotationBlend));
                 }
+
                 ++index;
+            }
+        }
+
+        private Vector3 GetSocketWorldPosition(Transform socket)
+        {
+            if (m_useSocketLocalPositionAsOffset)
+            {
+                return transform.position + socket.localPosition;
+            }
+
+            return socket.position;
+        }
+
+        private void SnapItemForSmoothFollow(TransportableObjectBehaviour item, Transform socket)
+        {
+            Rigidbody rb = item.TargetRigidbody;
+            if (rb == null)
+            {
+                return;
+            }
+
+            rb.position = GetSocketWorldPosition(socket);
+            if (m_doRotation)
+            {
+                rb.rotation = transform.rotation;
             }
         }
     }
