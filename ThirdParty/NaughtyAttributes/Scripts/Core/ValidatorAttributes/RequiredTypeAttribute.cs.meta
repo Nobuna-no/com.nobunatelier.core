@@ -5,6 +5,6 @@ AssetOrigin:
   serializedVersion: 1
   productId: 129996
   packageName: NaughtyAttributes
-  packageVersion: 2.1.5
+  packageVersion: 2.1.6
   assetPath: Packages/com.nobunatelier.core/ThirdParty/NaughtyAttributes/Scripts/Core/ValidatorAttributes/RequiredTypeAttribute.cs
-  uploadId: 897264
+  uploadId: 943610
