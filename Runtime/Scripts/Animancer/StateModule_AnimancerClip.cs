@@ -17,6 +17,7 @@ namespace NobunAtelier
         {
             Unchanged = 0,
             FullBody = 1,
+            UpperBody = 2,
         }
 
         [System.Serializable]
@@ -52,11 +53,14 @@ namespace NobunAtelier
         [SerializeField] private float m_Duration = -1f;
 
         [Header("Layer overlay")]
-        [Tooltip("Swap the layer AvatarMask on enter so a full-body clip can override locomotion on layer 0 underneath.")]
+        [Tooltip("Layer AvatarMask on enter: Unchanged = keep current; FullBody = override locomotion; UpperBody = arms/torso only on layer 1.")]
         [SerializeField] private LayerMaskBehavior m_LayerMaskBehavior;
 
         [Tooltip("Optional full-body mask for FullBody behavior. Falls back to a runtime humanoid mask when unset.")]
         [SerializeField] private AvatarMask m_FullBodyLayerMask;
+
+        [Tooltip("Upper-body mask for UpperBody behavior. Assign the same AvatarMask used on action layer 1.")]
+        [SerializeField] private AvatarMask m_UpperBodyLayerMask;
 
         [Tooltip("When enabled, preserve the layer on early exit; release it only when the clip reaches its end event.")]
         [SerializeField] private bool m_HoldLayerOnEarlyExit;
@@ -286,18 +290,33 @@ namespace NobunAtelier
                 return;
             }
 
-            var fullBodyMask = ResolveFullBodyMask();
-            if (fullBodyMask == null)
+            var mask = ResolveLayerMask(m_LayerMaskBehavior);
+            if (mask == null)
             {
                 Debug.LogWarning(
-                    $"[{nameof(StateModule_AnimancerClip)}] Could not resolve a full-body AvatarMask on {gameObject.name}",
+                    $"[{nameof(StateModule_AnimancerClip)}] Could not resolve an AvatarMask for {m_LayerMaskBehavior} on {gameObject.name}",
                     this);
                 return;
             }
 
             m_PreviousLayerMask = layer.Mask;
             m_HasPreviousLayerMask = true;
-            layer.Mask = fullBodyMask;
+            layer.Mask = mask;
+        }
+
+        private AvatarMask ResolveLayerMask(LayerMaskBehavior behavior)
+        {
+            return behavior switch
+            {
+                LayerMaskBehavior.FullBody => ResolveFullBodyMask(),
+                LayerMaskBehavior.UpperBody => ResolveUpperBodyMask(),
+                _ => null,
+            };
+        }
+
+        private AvatarMask ResolveUpperBodyMask()
+        {
+            return m_UpperBodyLayerMask;
         }
 
         private AvatarMask ResolveFullBodyMask()
