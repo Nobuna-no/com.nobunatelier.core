@@ -23,6 +23,10 @@ namespace NobunAtelier
         [SerializeField]
         private bool m_IncludeVertical;
 
+        [Tooltip("Keeps body rotation captured at BeginMove so look input cannot steer the lunge.")]
+        [SerializeField]
+        private bool m_LockFacingDuringMove = true;
+
         [SerializeField, ReadOnly]
         private bool m_IsMoving;
 
@@ -41,6 +45,7 @@ namespace NobunAtelier
         private ProceduralMovementDefinition m_Definition;
         private Vector3 m_Origin;
         private Vector3 m_Destination;
+        private Quaternion m_FacingRotation;
 
         public void BeginMove(ProceduralMovementDefinition definition)
         {
@@ -66,6 +71,7 @@ namespace NobunAtelier
 
             var wasMoving = m_IsMoving;
             m_Origin = ModuleOwner.Position;
+            m_FacingRotation = ModuleOwner.Body != null ? ModuleOwner.Body.Rotation : ModuleOwner.transform.rotation;
             m_Definition = definition;
             m_CurrentTime = 0f;
             m_Velocity = Vector3.zero;
@@ -100,7 +106,10 @@ namespace NobunAtelier
 
         public override Vector3 VelocityUpdate(Vector3 currentVel, float deltaTime)
         {
-            currentVel -= m_Velocity;
+            if (m_LockFacingDuringMove && ModuleOwner.Body != null)
+            {
+                ModuleOwner.Body.Rotation = m_FacingRotation;
+            }
 
             if (m_OverridePlanarVelocity)
             {
@@ -108,27 +117,49 @@ namespace NobunAtelier
                 currentVel.z = 0f;
             }
 
-            var normalizedTime = m_CurrentTime;
+            m_CurrentTime += deltaTime / m_Definition.DurationInSeconds;
+            var normalizedTime = Mathf.Clamp01(m_CurrentTime);
             var curveValue = m_Definition.MovementAnimationCurve.Evaluate(normalizedTime);
             var frameDest = Vector3.Lerp(m_Origin, m_Destination, curveValue);
-            var frameDistance = frameDest - ModuleOwner.Position;
 
-            if (!m_IncludeVertical)
-            {
-                frameDistance.y = 0f;
-            }
-
-            m_Velocity = frameDistance / deltaTime;
-            currentVel += m_Velocity;
-
-            m_CurrentTime += deltaTime / m_Definition.DurationInSeconds;
+            m_Velocity = ApplyRootMotionToward(frameDest, deltaTime);
 
             if (m_CurrentTime > 1f)
             {
-                EndMove();
+                CompleteMove(ref currentVel);
             }
 
             return currentVel;
+        }
+
+        private Vector3 ApplyRootMotionToward(Vector3 worldPosition, float deltaTime)
+        {
+            if (ModuleOwner.Body == null || deltaTime <= 0f)
+            {
+                return Vector3.zero;
+            }
+
+            var delta = worldPosition - ModuleOwner.Position;
+            if (!m_IncludeVertical)
+            {
+                delta.y = 0f;
+            }
+
+            var appliedDelta = ModuleOwner.Body.ApplyRootMotionDelta(delta, m_IncludeVertical);
+            return appliedDelta / deltaTime;
+        }
+
+        private void CompleteMove(ref Vector3 currentVel)
+        {
+            m_Velocity = Vector3.zero;
+
+            if (m_OverridePlanarVelocity)
+            {
+                currentVel.x = 0f;
+                currentVel.z = 0f;
+            }
+
+            EndMove();
         }
 
         public override void Reset()
@@ -165,7 +196,7 @@ namespace NobunAtelier
                 forward.Normalize();
             }
 
-            var right = new Vector3(-forward.z, 0f, forward.x);
+            var right = Vector3.Cross(Vector3.up, forward);
             var xCord = (m_ForwardZ ? definition.MovementUnit.z : definition.MovementUnit.x) * forward;
             var zCord = (m_ForwardZ ? definition.MovementUnit.x : definition.MovementUnit.z) * right;
             var totalMovement = xCord + zCord;

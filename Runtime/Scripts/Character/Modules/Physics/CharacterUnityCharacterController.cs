@@ -95,23 +95,21 @@ namespace NobunAtelier
             );
         }
 
-        public override void ApplyRootMotionPosition(Vector3 worldPosition, bool includeVertical = false)
+        public override Vector3 ApplyRootMotionDelta(Vector3 delta, bool includeVertical = false)
         {
             if (m_targetCharacterController == null)
             {
-                return;
+                return Vector3.zero;
             }
 
-            var transform = m_targetCharacterController.transform;
             if (!includeVertical)
             {
-                worldPosition.y = transform.position.y;
+                delta.y = 0f;
             }
 
-            m_targetCharacterController.enabled = false;
-            transform.position = worldPosition;
-            m_targetCharacterController.enabled = true;
-            Physics.SyncTransforms();
+            var previousPosition = m_targetCharacterController.transform.position;
+            m_targetCharacterController.Move(delta);
+            return m_targetCharacterController.transform.position - previousPosition;
         }
 
         public override void ApplyVelocity(Vector3 newVelocity, float deltaTime)

@@ -23,6 +23,10 @@ namespace NobunAtelier
         [SerializeField]
         private bool m_useAttackerPositionInsteadOfImpactPosition = false;
 
+        [Tooltip("When enabled, XZ velocity from lower-priority modules is cleared while pushback is active.")]
+        [SerializeField]
+        private bool m_OverridePlanarVelocity = true;
+
         private float m_currentTime = 0;
         private ProceduralMovementDefinition m_pushBack;
 
@@ -74,6 +78,18 @@ namespace NobunAtelier
 
             Vector3 coord1 = m_origin - attackOrigin;
             coord1.y = 0;
+            if (coord1.sqrMagnitude < 0.0001f && info.OriginTeam != null && info.OriginTeam.ModuleOwner != null)
+            {
+                coord1 = m_origin - info.OriginTeam.ModuleOwner.Position;
+                coord1.y = 0;
+            }
+
+            if (coord1.sqrMagnitude < 0.0001f)
+            {
+                coord1 = ModuleOwner.transform.forward;
+                coord1.y = 0;
+            }
+
             coord1.Normalize();
             Vector3 coord2 = new Vector3(-coord1.z, 0, coord1.x);
             Vector3 xCord = (m_ForwardZ ? m_pushBack.MovementUnit.z : m_pushBack.MovementUnit.x) * coord1;
@@ -102,25 +118,48 @@ namespace NobunAtelier
 
         public override Vector3 VelocityUpdate(Vector3 currentVel, float deltaTime)
         {
-            currentVel -= m_velocity;
-
-            Vector3 frameDest = Vector3.Lerp(m_origin, m_destination, m_pushBack.MovementAnimationCurve.Evaluate(m_currentTime));
-            Vector3 frameDistance = frameDest - ModuleOwner.Position;
-            frameDistance.y = 0;
-            m_velocity = frameDistance / deltaTime;
-            currentVel += m_velocity;
+            if (m_OverridePlanarVelocity)
+            {
+                currentVel.x = 0f;
+                currentVel.z = 0f;
+            }
 
             m_currentTime += deltaTime / m_pushBack.DurationInSeconds;
+            var normalizedTime = Mathf.Clamp01(m_currentTime);
+            var curveValue = m_pushBack.MovementAnimationCurve.Evaluate(normalizedTime);
+            var frameDest = Vector3.Lerp(m_origin, m_destination, curveValue);
+
+            m_velocity = ApplyRootMotionToward(frameDest, deltaTime);
 
             if (m_currentTime > 1f)
             {
-                m_velocity = Vector3.zero;
-                m_isPushingBack = false;
-                m_currentTime = 0;
-                OnPushBackEnd?.Invoke();
+                CompletePushBack(ref currentVel);
             }
 
             return currentVel;
+        }
+
+        private Vector3 ApplyRootMotionToward(Vector3 worldPosition, float deltaTime)
+        {
+            if (ModuleOwner.Body == null || deltaTime <= 0f)
+            {
+                return Vector3.zero;
+            }
+
+            var delta = worldPosition - ModuleOwner.Position;
+            delta.y = 0f;
+            var appliedDelta = ModuleOwner.Body.ApplyRootMotionDelta(delta, includeVertical: false);
+            return appliedDelta / deltaTime;
+        }
+
+        private void CompletePushBack(ref Vector3 currentVel)
+        {
+            m_velocity = Vector3.zero;
+            currentVel.x = 0f;
+            currentVel.z = 0f;
+            m_isPushingBack = false;
+            m_currentTime = 0f;
+            OnPushBackEnd?.Invoke();
         }
 
         private void OnEnable()
