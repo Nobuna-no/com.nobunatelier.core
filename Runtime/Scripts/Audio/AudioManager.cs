@@ -23,6 +23,7 @@ namespace NobunAtelier
     /// Provides methods for loading, playing, pausing, resuming, and unloading audio resources.
     /// It also handles 3D audio and audio fading in and out (using Unity's AudioMixerSnapshot).
     /// </summary>
+    [DefaultExecutionOrder(50)]
     public class AudioManager : MonoBehaviourService<AudioManager>
     {
         [Header("Audio Settings")]
@@ -85,9 +86,86 @@ namespace NobunAtelier
         [FormerlySerializedAs("m_logDebug")]
         private bool m_LogDebug = false;
 
+        [Header("Listener")]
+        [SerializeField]
+        [Tooltip("World-space pose is driven by an active IAudioListenerPoseDriver. Assign a child with AudioListener, or leave empty to create one at runtime.")]
+        private Transform m_ListenerTransform;
+
+        private IAudioListenerPoseDriver m_ActiveListenerDriver;
+        private MonoBehaviour m_ActiveListenerDriverBehaviour;
+
         private Dictionary<AudioDefinition, AudioHandle> m_AudioHandlesDictionary = new Dictionary<AudioDefinition, AudioHandle>();
 
         private HashSet<AudioStitcherDefinition> m_AudioStitchers = new HashSet<AudioStitcherDefinition>();
+
+        /// <summary>
+        /// Room or scene driver takes ownership of the persistent listener pose until released.
+        /// Last registration wins if multiple drivers enable without disabling.
+        /// </summary>
+        public void ListenerTrackTarget(IAudioListenerPoseDriver driver)
+        {
+            if (driver == null)
+            {
+                return;
+            }
+
+            m_ActiveListenerDriver = driver;
+            m_ActiveListenerDriverBehaviour = driver as MonoBehaviour;
+        }
+
+        /// <summary>
+        /// Stops driving the listener when the given driver disables or unloads.
+        /// </summary>
+        public void ReleaseListenerTrackTarget(IAudioListenerPoseDriver driver)
+        {
+            if (m_ActiveListenerDriver != driver)
+            {
+                return;
+            }
+
+            m_ActiveListenerDriver = null;
+            m_ActiveListenerDriverBehaviour = null;
+        }
+
+        protected override void OnSingletonAwake()
+        {
+            EnsureListenerTransform();
+        }
+
+        private void LateUpdate()
+        {
+            if (m_ActiveListenerDriver == null)
+            {
+                return;
+            }
+
+            if (m_ActiveListenerDriverBehaviour == null)
+            {
+                m_ActiveListenerDriver = null;
+                return;
+            }
+
+            EnsureListenerTransform();
+            m_ActiveListenerDriver.ApplyListenerPose(m_ListenerTransform);
+        }
+
+        private void EnsureListenerTransform()
+        {
+            if (m_ListenerTransform != null)
+            {
+                if (!m_ListenerTransform.TryGetComponent<AudioListener>(out _))
+                {
+                    m_ListenerTransform.gameObject.AddComponent<AudioListener>();
+                }
+
+                return;
+            }
+
+            var listenerObject = new GameObject("Audio Listener");
+            listenerObject.transform.SetParent(transform, false);
+            listenerObject.AddComponent<AudioListener>();
+            m_ListenerTransform = listenerObject.transform;
+        }
 
         // LOAD AUDIO
         public void LoadAudio(AudioResourceDefinition baseAudioDefinition)
