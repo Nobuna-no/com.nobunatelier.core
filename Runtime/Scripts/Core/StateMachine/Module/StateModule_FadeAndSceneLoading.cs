@@ -225,8 +225,8 @@ namespace NobunAtelier
 
         private void FadeInEnd()
         {
-            bool isDoingSceneWork = LoadScenes();
-            isDoingSceneWork |= UnloadScenes();
+            bool isDoingSceneWork = UnloadScenes();
+            isDoingSceneWork |= LoadScenes();
 
             if (isDoingSceneWork)
             {
