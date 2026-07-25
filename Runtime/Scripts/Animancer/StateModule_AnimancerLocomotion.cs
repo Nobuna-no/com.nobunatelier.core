@@ -23,6 +23,9 @@ namespace NobunAtelier
         [Tooltip("When > 0, smooths mixer parameter changes. 0 = instant.")]
         [SerializeField, Min(0f)] private float m_ParameterSmoothing = 12f;
 
+        [Tooltip("When enabled, higher layers that already have playing states keep full weight (e.g. action overlay on layer 1 while base locomotion restarts on layer 0).")]
+        [SerializeField] private bool m_PreserveActiveOverlayLayers = true;
+
         private LinearMixerState m_MixerState;
         private float m_SmoothedParameter;
 
@@ -56,6 +59,7 @@ namespace NobunAtelier
 
             m_SmoothedParameter = m_Character != null ? m_Character.GetMoveSpeed() : 0f;
             m_MixerState.Parameter = m_SmoothedParameter;
+            PreserveActiveOverlayLayers();
         }
 
         public override void Tick(float deltaTime)
@@ -109,6 +113,46 @@ namespace NobunAtelier
 
             m_SmoothedParameter = m_Character != null ? m_Character.GetMoveSpeed() : 0f;
             m_MixerState.Parameter = m_SmoothedParameter;
+            PreserveActiveOverlayLayers();
+        }
+
+        private void PreserveActiveOverlayLayers()
+        {
+            if (!m_PreserveActiveOverlayLayers || m_Animancer == null)
+            {
+                return;
+            }
+
+            var layers = m_Animancer.Layers;
+            for (int i = m_LayerIndex + 1; i < layers.Count; i++)
+            {
+                var layer = layers[i];
+                if (layer == null || !LayerHasActiveOverlay(layer))
+                {
+                    continue;
+                }
+
+                layer.CancelFade();
+                if (layer.Weight < 1f)
+                {
+                    layer.Weight = 1f;
+                }
+            }
+        }
+
+        private static bool LayerHasActiveOverlay(AnimancerLayer layer)
+        {
+            var activeStates = layer.ActiveStates;
+            for (int i = 0; i < activeStates.Count; i++)
+            {
+                var state = activeStates[i];
+                if (state != null && state.IsPlaying && state.Weight > 0f)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void Reset()
