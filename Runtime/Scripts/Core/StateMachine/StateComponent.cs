@@ -25,9 +25,14 @@ namespace NobunAtelier
             return string.Empty;
         }
 
-        protected virtual void OnEnable()
+        protected virtual void Awake()
         {
             Log = ContextualLogManager.Register(this, m_LogSettings, this);
+        }
+
+        protected virtual void OnEnable()
+        {
+            Log ??= ContextualLogManager.Register(this, m_LogSettings, this);
         }
 
         protected virtual void OnDisable()
@@ -167,8 +172,9 @@ namespace NobunAtelier
             return $"State Module Count: {(m_stateModules == null ? 0 : m_stateModules.Length)}";
         }
 
-        protected virtual void Awake()
+        protected override void Awake()
         {
+            base.Awake();
             if (transform.parent != null)
             {
                 m_parentStateMachine = transform.parent.GetComponentInParent<NobunAtelier.StateMachineComponent<T, TCollection>>(true);

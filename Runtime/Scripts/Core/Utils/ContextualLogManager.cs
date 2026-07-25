@@ -2,10 +2,10 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 using UnityEngine;
-using static System.Collections.Specialized.BitVector32;
 
 namespace NobunAtelier
 {
+    [DefaultExecutionOrder(-100)]
     public class ContextualLogManager : MonoBehaviourService<ContextualLogManager>
     {
         [Header("Contextual Log")]
