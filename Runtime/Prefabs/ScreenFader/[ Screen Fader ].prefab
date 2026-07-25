@@ -56,6 +56,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 1
+  m_UseReflectionProbes: 0
   m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
@@ -189,11 +190,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55a0df82a0a9f4547976945dff9c0688, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_destroyGameObjectIfAlreadyExist: 1
   m_dontDestroyOnLoad: 0
-  m_startFilled: 0
+  m_onlyDestroyDuplicatedComponent: 1
+  m_startFilled: 1
   m_audioStartDelayInSecond: 0.2
-  m_FillAudioSource: {fileID: 0}
+  m_fillAudioSource: {fileID: 0}
+  m_clearAudioSource: {fileID: 0}
   m_fadeInAudioSource: {fileID: 0}
   m_fadeOutAudioSource: {fileID: 0}
   OnFadeInBegin:
