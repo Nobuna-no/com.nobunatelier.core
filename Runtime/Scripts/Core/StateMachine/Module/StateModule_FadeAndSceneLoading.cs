@@ -246,7 +246,7 @@ namespace NobunAtelier
 
         private IEnumerator FadeMinimumDelay_Coroutine(float delay)
         {
-            yield return new WaitForSeconds(delay);
+            yield return new WaitForSecondsRealtime(delay);
 
             if (IsSceneWorkDone())
             {
