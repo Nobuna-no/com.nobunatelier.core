@@ -574,6 +574,8 @@ namespace NobunAtelier
             {
                 m_Log?.Record($"ActionExecution.FireEvent: {gameplayEvent?.name ?? "null"}");
 
+                gameplayEvent?.Raise();
+
                 if (!m_EventMap.TryGetValue(gameplayEvent, out var entries))
                     return;
 
