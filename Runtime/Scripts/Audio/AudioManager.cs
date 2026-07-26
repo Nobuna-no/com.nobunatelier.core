@@ -286,7 +286,7 @@ namespace NobunAtelier
 
             foreach (var audio in audioCollection.Definitions)
             {
-                LoadAudio(audio as AudioDefinition);
+                LoadAudio(audio);
             }
         }
 
@@ -298,11 +298,7 @@ namespace NobunAtelier
                 Debug.Log($"{this.name}.Play3DAudio(AudioDefinition ({audioDefinition.name}), Transform ({newParent.name}))");
             }
 
-            if (!m_AudioHandlesDictionary.ContainsKey(audioDefinition))
-            {
-                LogHotLoadingWarning(audioDefinition.name);
-                LoadAudio(audioDefinition, true);
-            }
+            EnsureAudioHandleLoaded(audioDefinition, true);
 
             m_AudioHandlesDictionary[audioDefinition].audioSource.transform.parent = newParent;
             m_AudioHandlesDictionary[audioDefinition].audioSource.transform.localPosition = Vector3.zero;
@@ -317,11 +313,7 @@ namespace NobunAtelier
                 Debug.Log($"{this.name}.Play3DAudio(AudioDefinition ({audioDefinition.name}), Vector3 ({position}))");
             }
 
-            if (!m_AudioHandlesDictionary.ContainsKey(audioDefinition))
-            {
-                LogHotLoadingWarning(audioDefinition.name);
-                LoadAudio(audioDefinition, true);
-            }
+            EnsureAudioHandleLoaded(audioDefinition, true);
 
             m_AudioHandlesDictionary[audioDefinition].audioSource.transform.position = position;
             StartCoroutine(AudioHandle_PlayAudio_Coroutine(m_AudioHandlesDictionary[audioDefinition], audioDefinition.CanStartDelayed));
@@ -353,11 +345,7 @@ namespace NobunAtelier
                 Debug.Log($"{this.name}.PlayAudio(AudioDefinition): {audioDefinition.name}");
             }
 
-            if (!m_AudioHandlesDictionary.ContainsKey(audioDefinition))
-            {
-                LogHotLoadingWarning(audioDefinition.name);
-                LoadAudio(audioDefinition);
-            }
+            EnsureAudioHandleLoaded(audioDefinition);
 
             StartCoroutine(AudioHandle_PlayAudio_Coroutine(m_AudioHandlesDictionary[audioDefinition], audioDefinition.CanStartDelayed));
         }
@@ -378,11 +366,7 @@ namespace NobunAtelier
             for (int i = 0, c = audioStitcherDefinition.StitchedAudios.Length; i < c; ++i)
             {
                 var audioDefinition = audioStitcherDefinition.StitchedAudios[i].AudioDefinition;
-                if (!m_AudioHandlesDictionary.ContainsKey(audioDefinition))
-                {
-                    LogHotLoadingWarning(audioDefinition.name);
-                    LoadAudio(audioDefinition);
-                }
+                EnsureAudioHandleLoaded(audioDefinition);
             }
 
             StartCoroutine(AudioHandle_PlayStitchedAudio_Coroutine(audioStitcherDefinition));
@@ -419,12 +403,7 @@ namespace NobunAtelier
                 Debug.Log($"{this.name}.FadeInAndPlayAudio(AudioDefinition): {audioDefinition.name}");
             }
 
-            if (!m_AudioHandlesDictionary.ContainsKey(audioDefinition))
-            {
-                Debug.LogWarning($"{this.name}: {audioDefinition.name} hasn't been loaded yet. Loading now, this might affect the performance." +
-                    $"Prefer calling LoadAudio first.");
-                LoadAudio(audioDefinition);
-            }
+            EnsureAudioHandleLoaded(audioDefinition);
 
             StartCoroutine(AudioHandle_FadeInAndPlayAudio_Coroutine(m_AudioHandlesDictionary[audioDefinition], audioDefinition.CanStartDelayed));
         }
@@ -815,6 +794,18 @@ namespace NobunAtelier
             }
         }
 
+        private void EnsureAudioHandleLoaded(AudioDefinition audioDefinition, bool is3DAudio = false)
+        {
+            if (!m_AudioHandlesDictionary.TryGetValue(audioDefinition, out AudioHandle handle)
+                || handle == null
+                || handle.NeedInitialization()
+                || handle.IsResourceReleased)
+            {
+                LogHotLoadingWarning(audioDefinition.name);
+                LoadAudio(audioDefinition, is3DAudio);
+            }
+        }
+
         public class AudioHandle
         {
             public AssetReference audioAssetReference;
@@ -894,7 +885,11 @@ namespace NobunAtelier
 
             public bool IsReadyToPlay()
             {
-                Debug.Assert(resourceHandle.IsValid(), $"{audioSource.name} resource is not initialized yet.");
+                if (!resourceHandle.IsValid())
+                {
+                    return false;
+                }
+
                 return resourceHandle.IsDone;
             }
 
