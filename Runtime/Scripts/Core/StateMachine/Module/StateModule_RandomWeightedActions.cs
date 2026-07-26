@@ -22,13 +22,13 @@ namespace NobunAtelier
         [SerializeField]
         private RandomWeightedActionTriggerMode m_TriggerMode = RandomWeightedActionTriggerMode.OnStateEnter;
 
-        [SerializeField, ShowIf(nameof(UsesFixedDelay)), Min(0f)]
+        [SerializeField, ShowIf("UsesFixedDelay"), Min(0f)]
         private float m_DelaySeconds = 1f;
 
-        [SerializeField, ShowIf(nameof(UsesRangeDelay)), MinMaxSlider(0f, 60f)]
+        [SerializeField, ShowIf("UsesRangeDelay"), MinMaxSlider(0f, 60f)]
         private Vector2 m_DelayRangeSeconds = new Vector2(0f, 1f);
 
-        [SerializeField, ShowIf(nameof(UsesTimedTrigger))]
+        [SerializeField, ShowIf("UsesTimedTrigger")]
         private bool m_LoopTimedTrigger;
 
         [SerializeField]
