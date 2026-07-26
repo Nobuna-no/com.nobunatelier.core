@@ -237,7 +237,7 @@ namespace NobunAtelier.Gameplay
                 float speedFactor = m_lerpSpeed * m_lerpSpeedFactorPerIndex.Evaluate(indexRatio);
                 float smoothTime = speedFactor > 0f ? 1f / speedFactor : 0.01f;
 
-                Vector3 targetPosition = GetSocketWorldPosition(socket);
+                GetStoredItemTargetWorldPose(item, socket, out Vector3 targetPosition, out Quaternion targetRotation);
                 if (!m_followPositionVelocities.TryGetValue(item, out Vector3 positionVelocity))
                 {
                     positionVelocity = Vector3.zero;
@@ -250,11 +250,26 @@ namespace NobunAtelier.Gameplay
                 if (m_doRotation)
                 {
                     float rotationBlend = 1f - Mathf.Exp(-speedFactor * deltaTime);
-                    rb.MoveRotation(Quaternion.Slerp(rb.rotation, transform.rotation, rotationBlend));
+                    rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, rotationBlend));
                 }
 
                 ++index;
             }
+        }
+
+        private void GetStoredItemTargetWorldPose(TransportableObjectBehaviour item, Transform socket, out Vector3 worldPosition, out Quaternion worldRotation)
+        {
+            item.TryGetCarryLocalTransform(out Vector3 localPosition, out Quaternion localRotation);
+
+            if (m_useSocketLocalPositionAsOffset)
+            {
+                Quaternion baseRotation = m_doRotation ? transform.rotation : socket.rotation;
+                worldPosition = GetSocketWorldPosition(socket) + baseRotation * localPosition;
+                worldRotation = baseRotation * localRotation;
+                return;
+            }
+
+            item.GetCarryWorldPose(socket, out worldPosition, out worldRotation);
         }
 
         private Vector3 GetSocketWorldPosition(Transform socket)
@@ -275,10 +290,11 @@ namespace NobunAtelier.Gameplay
                 return;
             }
 
-            rb.position = GetSocketWorldPosition(socket);
+            GetStoredItemTargetWorldPose(item, socket, out Vector3 worldPosition, out Quaternion worldRotation);
+            rb.position = worldPosition;
             if (m_doRotation)
             {
-                rb.rotation = transform.rotation;
+                rb.rotation = worldRotation;
             }
         }
     }

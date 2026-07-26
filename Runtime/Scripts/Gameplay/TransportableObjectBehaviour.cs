@@ -20,6 +20,16 @@ namespace NobunAtelier.Gameplay
 
         public bool IsAttachedToSocket => m_attachedSocket != null;
 
+        [Header("Carry On Socket")]
+        [SerializeField] private Transform m_carryPoseAnchor;
+        [SerializeField] private bool m_useAuthoringCarryLocalTransform;
+        [ShowIf(nameof(ShowAuthoringCarryFields)), SerializeField]
+        private Vector3 m_authoringCarryLocalPosition = Vector3.zero;
+        [ShowIf(nameof(ShowAuthoringCarryFields)), SerializeField]
+        private Vector3 m_authoringCarryLocalEulerAngles = Vector3.zero;
+
+        private bool ShowAuthoringCarryFields => m_useAuthoringCarryLocalTransform && m_carryPoseAnchor == null;
+
         [Header("Throw Effect")]
         [SerializeField] private bool m_scaleThrowWithRigidbodyMass = false;
         [SerializeField] private bool m_resetLocalTransformOnThrow = true;
@@ -80,8 +90,45 @@ namespace NobunAtelier.Gameplay
             m_parentBeforeSocketAttach = transform.parent;
             m_attachedSocket = socket;
             transform.SetParent(socket, false);
-            transform.localPosition = Vector3.zero;
-            transform.localRotation = Quaternion.identity;
+            TryGetCarryLocalTransform(out Vector3 localPosition, out Quaternion localRotation);
+            transform.localPosition = localPosition;
+            transform.localRotation = localRotation;
+            SyncTargetRigidbodyTransform();
+        }
+
+        public void GetCarryWorldPose(Transform socket, out Vector3 worldPosition, out Quaternion worldRotation)
+        {
+            TryGetCarryLocalTransform(out Vector3 localPosition, out Quaternion localRotation);
+            if (socket == null)
+            {
+                worldPosition = transform.position;
+                worldRotation = transform.rotation;
+                return;
+            }
+
+            worldPosition = socket.TransformPoint(localPosition);
+            worldRotation = socket.rotation * localRotation;
+        }
+
+        public bool TryGetCarryLocalTransform(out Vector3 localPosition, out Quaternion localRotation)
+        {
+            if (m_carryPoseAnchor != null)
+            {
+                localPosition = -m_carryPoseAnchor.localPosition;
+                localRotation = Quaternion.Inverse(m_carryPoseAnchor.localRotation);
+                return true;
+            }
+
+            if (m_useAuthoringCarryLocalTransform)
+            {
+                localPosition = m_authoringCarryLocalPosition;
+                localRotation = Quaternion.Euler(m_authoringCarryLocalEulerAngles);
+                return true;
+            }
+
+            localPosition = Vector3.zero;
+            localRotation = Quaternion.identity;
+            return false;
         }
 
         public void DetachFromSocket()
@@ -229,6 +276,11 @@ namespace NobunAtelier.Gameplay
                 transform.position = worldPosition;
             }
 
+            SyncTargetRigidbodyTransform();
+        }
+
+        private void SyncTargetRigidbodyTransform()
+        {
             if (TargetRigidbody != null && TargetRigidbody.transform == transform)
             {
                 TargetRigidbody.position = transform.position;
