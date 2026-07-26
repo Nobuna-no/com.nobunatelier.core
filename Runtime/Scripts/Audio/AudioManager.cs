@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,6 +6,9 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.Audio;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.Serialization;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 // What is the goal of this Manager?
 // - Play a sound?
@@ -98,6 +102,38 @@ namespace NobunAtelier
 
         private HashSet<AudioStitcherDefinition> m_AudioStitchers = new HashSet<AudioStitcherDefinition>();
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+        private bool m_BrowserOutputUnlocked;
+#else
+        private bool m_BrowserOutputUnlocked = true;
+#endif
+
+        /// <summary>
+        /// Web builds: false until the player clicks, touches, or presses a key (browser audio policy).
+        /// Other platforms: always true.
+        /// </summary>
+        public bool IsBrowserOutputUnlocked => m_BrowserOutputUnlocked;
+
+        /// <summary>
+        /// Fired once when browser audio output becomes allowed (WebGL player builds only).
+        /// </summary>
+        public event Action BrowserOutputUnlocked;
+
+        /// <summary>
+        /// Call from a UI pointer/click handler when you need unlock in the same input callback as the gesture.
+        /// Also polled automatically from <see cref="Update"/> (Input System when enabled, else legacy Input).
+        /// </summary>
+        public void NotifyUserGesture()
+        {
+            if (m_BrowserOutputUnlocked)
+            {
+                return;
+            }
+
+            m_BrowserOutputUnlocked = true;
+            BrowserOutputUnlocked?.Invoke();
+        }
+
         /// <summary>
         /// Room or scene driver takes ownership of the persistent listener pose until released.
         /// Last registration wins if multiple drivers enable without disabling.
@@ -130,6 +166,16 @@ namespace NobunAtelier
         protected override void OnSingletonAwake()
         {
             EnsureListenerTransform();
+        }
+
+        private void Update()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            if (!m_BrowserOutputUnlocked && DetectUserGesture())
+            {
+                NotifyUserGesture();
+            }
+#endif
         }
 
         private void LateUpdate()
@@ -603,12 +649,83 @@ namespace NobunAtelier
             m_AudioStitchers.Clear();
         }
 
+        private static bool DetectUserGesture()
+        {
+#if ENABLE_INPUT_SYSTEM
+            if (Mouse.current != null)
+            {
+                if (Mouse.current.leftButton.wasPressedThisFrame
+                    || Mouse.current.rightButton.wasPressedThisFrame
+                    || Mouse.current.middleButton.wasPressedThisFrame)
+                {
+                    return true;
+                }
+            }
+
+            if (Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame)
+            {
+                return true;
+            }
+
+            if (Touchscreen.current != null)
+            {
+                foreach (var touchControl in Touchscreen.current.touches)
+                {
+                    if (touchControl.press.wasPressedThisFrame)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            if (Gamepad.current != null)
+            {
+                foreach (var control in Gamepad.current.allControls)
+                {
+                    if (control is UnityEngine.InputSystem.Controls.ButtonControl button && button.wasPressedThisFrame)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+#else
+            if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1) || Input.GetMouseButtonDown(2))
+            {
+                return true;
+            }
+
+            if (Input.anyKeyDown)
+            {
+                return true;
+            }
+
+            if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)
+            {
+                return true;
+            }
+
+            return false;
+#endif
+        }
+
+        private IEnumerator WaitForBrowserOutputUnlocked()
+        {
+            while (!m_BrowserOutputUnlocked)
+            {
+                yield return null;
+            }
+        }
+
         private IEnumerator AudioHandle_PlayAudio_Coroutine(AudioHandle audioHandle, bool canStartDelayed)
         {
             while (!audioHandle.IsReadyToPlay())
             {
                 yield return null;
             }
+
+            yield return WaitForBrowserOutputUnlocked();
 
             if (audioHandle.HasBeenStopped)
             {
@@ -644,6 +761,8 @@ namespace NobunAtelier
             {
                 yield return null;
             }
+
+            yield return WaitForBrowserOutputUnlocked();
 
             if (audioHandle.HasBeenStopped)
             {
@@ -749,6 +868,8 @@ namespace NobunAtelier
 
         private IEnumerator AudioHandle_PlayStitchedAudio_Coroutine(AudioStitcherDefinition audioStitcherDefinition)
         {
+            yield return WaitForBrowserOutputUnlocked();
+
             bool isFirstAudio = true;
             double scheduledStartTime = audioStitcherDefinition.CanStartDelayed ? m_AudioStartDelay : 0.0;
             foreach (var stitch in audioStitcherDefinition.StitchedAudios)
